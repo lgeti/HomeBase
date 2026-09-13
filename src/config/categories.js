@@ -7,7 +7,7 @@ export const CATEGORIES = [
     colorTw: 'cat-car',
     icon: 'car',
     description: 'Fuel, insurance, maintenance, parking, toll, tax',
-    subcategories: ['Fuel', 'Insurance', 'Maintenance', 'Parking', 'Toll', 'Tax'],
+    subcategories: ['Fuel', 'Insurance', 'Maintenance', 'Parking', 'Toll', 'Tax', 'Other'],
   },
   {
     id: 'subscriptions',
@@ -57,7 +57,7 @@ export const CATEGORIES = [
     colorTw: 'cat-utilities',
     icon: 'home',
     description: 'Rent, electricity, gas, water, internet, phone',
-    subcategories: ['Rent', 'Electricity', 'Gas', 'Water', 'Internet', 'Phone'],
+    subcategories: ['Rent', 'Electricity', 'Gas', 'Water', 'Internet', 'Phone', 'Other'],
   },
   {
     id: 'home',

@@ -3,6 +3,7 @@ import { useState } from 'react'
 export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -11,6 +12,12 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
     event.preventDefault()
     setError('')
     setMessage('')
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -50,6 +57,15 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             placeholder="Password"
+            minLength="6"
+            required
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+          />
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            placeholder="Confirm password"
             minLength="6"
             required
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"

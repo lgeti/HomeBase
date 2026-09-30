@@ -45,6 +45,21 @@ export const useAuth = () => {
     if (error) throw error
   }
 
+  const signInWithPassword = async (email, password) => {
+    if (!supabase) throw new Error('Supabase Auth is not configured')
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) throw error
+  }
+
+  const signUpWithPassword = async (email, password) => {
+    if (!supabase) throw new Error('Supabase Auth is not configured')
+
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) throw error
+    return data
+  }
+
   const signOut = async () => {
     if (supabase) await supabase.auth.signOut()
   }
@@ -55,6 +70,8 @@ export const useAuth = () => {
     isLoading,
     isConfigured: isSupabaseConfigured,
     signInWithGoogle,
+    signInWithPassword,
+    signUpWithPassword,
     signOut,
   }
 }

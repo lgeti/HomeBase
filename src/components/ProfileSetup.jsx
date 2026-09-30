@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
+  const [householdName, setHouseholdName] = useState('')
   const [person1, setPerson1] = useState('')
   const [person2, setPerson2] = useState('')
   const [error, setError] = useState('')
@@ -9,8 +10,8 @@ export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
     e.preventDefault()
     setError('')
 
-    if (!person1.trim() || !person2.trim()) {
-      setError('Both names are required')
+    if (!householdName.trim() || !person1.trim() || !person2.trim()) {
+      setError('Household name and both member names are required')
       return
     }
 
@@ -19,7 +20,11 @@ export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
       return
     }
 
-    onProfileSet({ person1: person1.trim(), person2: person2.trim() })
+    onProfileSet({
+      householdName: householdName.trim(),
+      person1: person1.trim(),
+      person2: person2.trim(),
+    })
   }
 
   return (
@@ -32,6 +37,19 @@ export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="householdName" className="block text-sm font-medium text-gray-700 mb-2">
+                Household name
+              </label>
+              <input
+                id="householdName"
+                type="text"
+                value={householdName}
+                onChange={(e) => setHouseholdName(e.target.value)}
+                placeholder="e.g., The Cabin"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
+              />
+            </div>
             <div>
               <label htmlFor="person1" className="block text-sm font-medium text-gray-700 mb-2">
                 Your name

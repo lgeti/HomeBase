@@ -5,19 +5,29 @@ import { createHousehold } from './core/api/expensesApi'
 import { useAuth } from './core/auth/useAuth'
 import ProfileSetup from './components/ProfileSetup'
 import Login from './modules/Auth/pages/Login'
+import Signup from './modules/Auth/pages/Signup'
 import CategoryView from './modules/Expenses/pages/CategoryView'
 import Dashboard from './modules/Expenses/pages/Dashboard'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
 
 export default function App() {
-  const { user: authUser, isLoading: authLoading, isConfigured, signInWithGoogle, signOut } = useAuth()
+  const {
+    user: authUser,
+    isLoading: authLoading,
+    isConfigured,
+    signInWithGoogle,
+    signInWithPassword,
+    signUpWithPassword,
+    signOut,
+  } = useAuth()
   const [user, setUser] = useLocalStorage('homebase_user', null)
   const [household, setHousehold] = useLocalStorage('homebase_household', null)
   const { expenses, addExpense, deleteExpense, isLoading: expensesLoading, error: expensesError } = useExpensesApi(household)
   const [isLoading, setIsLoading] = useState(true)
   const [isPreparingHousehold, setIsPreparingHousehold] = useState(false)
   const [apiError, setApiError] = useState('')
+  const [authMode, setAuthMode] = useState('login')
   const [showAddForm, setShowAddForm] = useState(false)
   const [activeView, setActiveView] = useState('categories')
   const [selectedCategoryId, setSelectedCategoryId] = useState('groceries')
@@ -36,7 +46,7 @@ export default function App() {
     setIsPreparingHousehold(true)
     setApiError('')
 
-    createHousehold(`${user.person1} & ${user.person2}`, [user.person1, user.person2])
+    createHousehold(user.householdName, [user.person1, user.person2])
       .then(setHousehold)
       .catch((error) => setApiError(error.message))
       .finally(() => setIsPreparingHousehold(false))
@@ -47,7 +57,7 @@ export default function App() {
 
     try {
       const createdHousehold = await createHousehold(
-        `${profile.person1} & ${profile.person2}`,
+        profile.householdName,
         [profile.person1, profile.person2]
       )
       setUser(profile)
@@ -87,7 +97,24 @@ export default function App() {
   }
 
   if (!authUser) {
-    return <Login isConfigured={isConfigured} onGoogleSignIn={signInWithGoogle} />
+    if (authMode === 'signup') {
+      return (
+        <Signup
+          isConfigured={isConfigured}
+          onSignUp={signUpWithPassword}
+          onSwitchToLogin={() => setAuthMode('login')}
+        />
+      )
+    }
+
+    return (
+      <Login
+        isConfigured={isConfigured}
+        onGoogleSignIn={signInWithGoogle}
+        onPasswordSignIn={signInWithPassword}
+        onSwitchToSignup={() => setAuthMode('signup')}
+      />
+    )
   }
 
   if (!user) {

@@ -2,11 +2,11 @@
 
 ## Overview
 
-A **shared household management app** for two people living together. Starts as an expense tracker, built modularly so features like chores, shopping lists, or meal planning can be added later. Mobile-first, always.
+A **shared household management app** for more people living together. Starts as an expense tracker, built modularly so features like chores, shopping lists, or meal planning can be added later. Mobile-first, always.
 
 ## Users
 
-Two named profiles — no full auth system needed. On first launch, you set your name and your partner's name. Every transaction is attributed to one of you.
+Named profiles — no full auth system needed. On first launch, you set your name and your partner's name. Every transaction is attributed to one of you.
 
 ## Expense Categories
 

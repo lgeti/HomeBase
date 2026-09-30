@@ -34,9 +34,12 @@ export const useAuth = () => {
   const signInWithGoogle = async () => {
     if (!supabase) throw new Error('Supabase Auth is not configured')
 
+    const redirectTo = import.meta.env.VITE_AUTH_REDIRECT_URL
+      || `${window.location.origin}${import.meta.env.BASE_URL}`
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname },
+      options: { redirectTo },
     })
 
     if (error) throw error

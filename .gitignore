@@ -3,3 +3,5 @@ dist
 .DS_Store
 *.local
 server/.env
+.env.local
+.env.production

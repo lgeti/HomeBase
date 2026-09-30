@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function ProfileSetup({ onProfileSet }) {
+export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
   const [person1, setPerson1] = useState('')
   const [person2, setPerson2] = useState('')
   const [error, setError] = useState('')
@@ -61,6 +61,7 @@ export default function ProfileSetup({ onProfileSet }) {
             </div>
 
             {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
+            {errorMessage && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{errorMessage}</div>}
 
             <button
               type="submit"

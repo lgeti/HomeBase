@@ -1,21 +1,24 @@
-import { useState, useEffect } from 'react'
-import { useLocalStorage, useExpenses } from './core/hooks/useLocalStorage'
+import { useState, useEffect, useRef } from 'react'
+import { useLocalStorage } from './core/hooks/useLocalStorage'
+import { useExpensesApi } from './core/hooks/useExpensesApi'
+import { createHousehold } from './core/api/expensesApi'
 import ProfileSetup from './components/ProfileSetup'
 import CategoryView from './modules/Expenses/pages/CategoryView'
 import Dashboard from './modules/Expenses/pages/Dashboard'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
-import { DEMO_TRANSACTIONS } from './core/utils/demoData'
-import { applyRecurringTransactions } from './core/utils/calculations'
 
 export default function App() {
   const [user, setUser] = useLocalStorage('homebase_user', null)
-  const { expenses, addExpense, deleteExpense, setExpenses } = useExpenses()
+  const [household, setHousehold] = useLocalStorage('homebase_household', null)
+  const { expenses, addExpense, deleteExpense, isLoading: expensesLoading, error: expensesError } = useExpensesApi(household)
   const [isLoading, setIsLoading] = useState(true)
-  const [showDemoLoader, setShowDemoLoader] = useState(false)
+  const [isPreparingHousehold, setIsPreparingHousehold] = useState(false)
+  const [apiError, setApiError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [activeView, setActiveView] = useState('categories')
   const [selectedCategoryId, setSelectedCategoryId] = useState('groceries')
+  const householdInitializationStarted = useRef(false)
 
   useEffect(() => {
     // Simulate brief loading state
@@ -24,44 +27,52 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!user) return
+    if (!user || household || householdInitializationStarted.current) return
 
-    const { expenses: nextExpenses, generated } = applyRecurringTransactions(expenses, new Date())
+    householdInitializationStarted.current = true
+    setIsPreparingHousehold(true)
+    setApiError('')
 
-    if (generated.length > 0) {
-      setExpenses([...generated, ...nextExpenses])
+    createHousehold(`${user.person1} & ${user.person2}`, [user.person1, user.person2])
+      .then(setHousehold)
+      .catch((error) => setApiError(error.message))
+      .finally(() => setIsPreparingHousehold(false))
+  }, [household, setHousehold, user])
+
+  const handleProfileSet = async (profile) => {
+    setApiError('')
+
+    try {
+      const createdHousehold = await createHousehold(
+        `${profile.person1} & ${profile.person2}`,
+        [profile.person1, profile.person2]
+      )
+      setUser(profile)
+      setHousehold(createdHousehold)
+    } catch (error) {
+      setApiError(error.message)
     }
-  }, [expenses, setExpenses, user])
-
-  const handleProfileSet = (profile) => {
-    setUser(profile)
-    // Check if expenses are empty and load demo data
-    const stored = localStorage.getItem('homebase_expenses')
-    if (!stored || JSON.parse(stored).length === 0) {
-      // Initialize with all demo transactions
-      localStorage.setItem('homebase_expenses', JSON.stringify(DEMO_TRANSACTIONS))
-      // Trigger page reload to reflect changes
-      setTimeout(() => window.location.reload(), 100)
-    }
-  }
-
-  const loadDemoData = () => {
-    // Add all remaining demo transactions
-    const existing = JSON.parse(localStorage.getItem('homebase_expenses') || '[]')
-    const allTransactions = [...DEMO_TRANSACTIONS, ...existing]
-    // Remove duplicates by ID
-    const unique = Array.from(new Map(allTransactions.map(t => [t.id, t])).values())
-    localStorage.setItem('homebase_expenses', JSON.stringify(unique))
-    // Force re-render
-    window.location.reload()
   }
 
   const handleAddTransaction = (expense) => {
-    addExpense(expense)
-    setShowAddForm(false)
+    const paidByMember = household?.members?.find(
+      (member) => member.display_name === expense.whoPaid
+    )
+
+    if (!paidByMember) {
+      setApiError('The selected payer is not connected to this household')
+      return
+    }
+
+    addExpense({
+      ...expense,
+      paidByMemberId: paidByMember.household_member_id,
+    })
+      .then(() => setShowAddForm(false))
+      .catch((error) => setApiError(error.message))
   }
 
-  if (isLoading) {
+  if (isLoading || isPreparingHousehold) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-warm-cream via-warm-beige to-spring-mint">
         <div className="text-center">
@@ -73,7 +84,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <ProfileSetup onProfileSet={handleProfileSet} />
+    return <ProfileSetup onProfileSet={handleProfileSet} errorMessage={apiError} />
   }
 
   return (
@@ -85,28 +96,9 @@ export default function App() {
         </p>
       </header>
 
-      {showDemoLoader && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-sm w-full space-y-4">
-            <h3 className="font-semibold text-gray-800">Demo Data</h3>
-            <p className="text-sm text-gray-600">
-              Load sample transactions to see how HomeBase works?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDemoLoader(false)}
-                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={loadDemoData}
-                className="flex-1 px-4 py-2 bg-spring-sage text-white rounded-lg text-sm hover:opacity-90"
-              >
-                Load Demo Data
-              </button>
-            </div>
-          </div>
+      {(apiError || expensesError) && (
+        <div className="bg-red-50 border-b border-red-100 px-4 py-2 text-sm text-red-700">
+          {apiError || expensesError}
         </div>
       )}
 
@@ -164,7 +156,7 @@ export default function App() {
             <span className="text-xs block">Dashboard</span>
           </button>
           <button
-            onClick={() => setShowDemoLoader(!showDemoLoader)}
+            onClick={() => setApiError('Settings are not available while the API migration is in progress')}
             className="flex-1 py-3 text-center text-gray-400 hover:text-gray-600"
           >
             <span className="text-xl">⚙️</span>

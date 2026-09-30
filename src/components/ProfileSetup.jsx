@@ -72,7 +72,7 @@ export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
           </form>
 
           <p className="text-xs text-center text-gray-500">
-            We store your data locally on this device. No account needed.
+            Your household data will be connected to your signed-in account.
           </p>
         </div>
       </div>

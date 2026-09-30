@@ -2,13 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocalStorage } from './core/hooks/useLocalStorage'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { createHousehold } from './core/api/expensesApi'
+import { useAuth } from './core/auth/useAuth'
 import ProfileSetup from './components/ProfileSetup'
+import Login from './modules/Auth/pages/Login'
 import CategoryView from './modules/Expenses/pages/CategoryView'
 import Dashboard from './modules/Expenses/pages/Dashboard'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
 
 export default function App() {
+  const { user: authUser, isLoading: authLoading, isConfigured, signInWithGoogle, signOut } = useAuth()
   const [user, setUser] = useLocalStorage('homebase_user', null)
   const [household, setHousehold] = useLocalStorage('homebase_household', null)
   const { expenses, addExpense, deleteExpense, isLoading: expensesLoading, error: expensesError } = useExpensesApi(household)
@@ -72,7 +75,7 @@ export default function App() {
       .catch((error) => setApiError(error.message))
   }
 
-  if (isLoading || isPreparingHousehold) {
+  if (authLoading || isLoading || isPreparingHousehold) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-warm-cream via-warm-beige to-spring-mint">
         <div className="text-center">
@@ -81,6 +84,10 @@ export default function App() {
         </div>
       </div>
     )
+  }
+
+  if (!authUser) {
+    return <Login isConfigured={isConfigured} onGoogleSignIn={signInWithGoogle} />
   }
 
   if (!user) {
@@ -156,11 +163,11 @@ export default function App() {
             <span className="text-xs block">Dashboard</span>
           </button>
           <button
-            onClick={() => setApiError('Settings are not available while the API migration is in progress')}
+            onClick={signOut}
             className="flex-1 py-3 text-center text-gray-400 hover:text-gray-600"
           >
             <span className="text-xl">⚙️</span>
-            <span className="text-xs block">Settings</span>
+            <span className="text-xs block">Sign out</span>
           </button>
         </nav>
       </footer>

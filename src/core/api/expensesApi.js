@@ -19,10 +19,10 @@ const mapExpense = (expense, members = []) => {
   }
 }
 
-export const createHousehold = (name, members) =>
+export const createHousehold = (name, ownerName, members = [], ownerUserId) =>
   apiRequest('/api/households', {
     method: 'POST',
-    body: JSON.stringify({ name, members }),
+    body: JSON.stringify({ name, ownerName, members, ownerUserId }),
   })
 
 export const fetchExpenses = async (householdId, members) => {

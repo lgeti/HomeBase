@@ -82,15 +82,22 @@ app.get('/api/categories', async (request, response) => {
 })
 
 app.post('/api/households', async (request, response) => {
-  const { name, members = [] } = request.body
+  const { name, ownerName, members = [], ownerUserId } = request.body
 
-  if (!name || !Array.isArray(members) || members.length < 2) {
-    return sendError(response, 400, 'name and at least two members are required')
+  if (!name || !ownerName || !Array.isArray(members) || !ownerUserId) {
+    return sendError(response, 400, 'name, ownerName, members, and ownerUserId are required')
+  }
+
+  const uniqueMembers = [...new Set(members.map((member) => String(member).trim()).filter(Boolean))]
+  const allNames = [ownerName.trim(), ...uniqueMembers]
+
+  if (!ownerName.trim() || new Set(allNames.map((member) => member.toLowerCase())).size !== allNames.length) {
+    return sendError(response, 400, 'member names must be non-empty and different')
   }
 
   const { data: household, error: householdError } = await supabase
     .from('households')
-    .insert({ name })
+    .insert({ name, owner_user_id: ownerUserId })
     .select()
     .single()
 
@@ -98,7 +105,13 @@ app.post('/api/households', async (request, response) => {
 
   const { data: createdMembers, error: memberError } = await supabase
     .from('household_members')
-    .insert(members.map((displayName) => ({ household_id: household.household_id, display_name: displayName })))
+    .insert(allNames.map((displayName, index) => ({
+      household_id: household.household_id,
+      display_name: displayName,
+      auth_user_id: index === 0 ? ownerUserId : null,
+      role: index === 0 ? 'owner' : 'member',
+      status: index === 0 ? 'active' : 'pending',
+    })))
     .select()
 
   if (memberError) {
@@ -114,10 +127,23 @@ app.get('/api/households/:householdId/members', async (request, response) => {
     .from('household_members')
     .select('*')
     .eq('household_id', request.params.householdId)
+    .neq('status', 'removed')
     .order('display_name')
 
   if (error) return sendError(response, 500, error.message)
   response.json(data)
+})
+
+app.delete('/api/households/:householdId/members/:memberId', async (request, response) => {
+  const { error } = await supabase
+    .from('household_members')
+    .update({ status: 'removed' })
+    .eq('household_id', request.params.householdId)
+    .eq('household_member_id', request.params.memberId)
+    .neq('status', 'removed')
+
+  if (error) return sendError(response, 400, error.message)
+  response.status(204).send()
 })
 
 app.get('/api/households/:householdId/expenses', async (request, response) => {

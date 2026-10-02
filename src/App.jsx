@@ -40,17 +40,20 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!user || household || householdInitializationStarted.current) return
+    if (!authUser || !user || household || householdInitializationStarted.current) return
 
     householdInitializationStarted.current = true
     setIsPreparingHousehold(true)
     setApiError('')
 
-    createHousehold(user.householdName, [user.person1, user.person2])
+    const ownerName = user.ownerName || user.person1
+    const memberNames = user.members || [user.person2].filter(Boolean)
+
+    createHousehold(user.householdName, ownerName, memberNames, authUser.id)
       .then(setHousehold)
       .catch((error) => setApiError(error.message))
       .finally(() => setIsPreparingHousehold(false))
-  }, [household, setHousehold, user])
+  }, [authUser, household, setHousehold, user])
 
   const handleProfileSet = async (profile) => {
     setApiError('')
@@ -58,7 +61,9 @@ export default function App() {
     try {
       const createdHousehold = await createHousehold(
         profile.householdName,
-        [profile.person1, profile.person2]
+        profile.ownerName,
+        profile.members,
+        authUser.id
       )
       setUser(profile)
       setHousehold(createdHousehold)

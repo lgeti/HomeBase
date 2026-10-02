@@ -2,29 +2,44 @@ import { useState } from 'react'
 
 export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
   const [householdName, setHouseholdName] = useState('')
-  const [person1, setPerson1] = useState('')
-  const [person2, setPerson2] = useState('')
+  const [members, setMembers] = useState([''])
   const [error, setError] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
     setError('')
 
-    if (!householdName.trim() || !person1.trim() || !person2.trim()) {
-      setError('Household name and both member names are required')
+    const memberNames = members.map((member) => member.trim()).filter(Boolean)
+
+    if (!householdName.trim() || memberNames.length === 0) {
+      setError('Household name and at least one member name are required')
       return
     }
 
-    if (person1.trim() === person2.trim()) {
-      setError('Names must be different')
+    if (new Set(memberNames.map((member) => member.toLowerCase())).size !== memberNames.length) {
+      setError('Member names must be different')
       return
     }
 
     onProfileSet({
       householdName: householdName.trim(),
-      person1: person1.trim(),
-      person2: person2.trim(),
+      ownerName: memberNames[0],
+      members: memberNames.slice(1),
+      person1: memberNames[0],
+      person2: memberNames[1] || memberNames[0],
     })
+  }
+
+  const updateMember = (index, value) => {
+    setMembers((currentMembers) =>
+      currentMembers.map((member, memberIndex) => memberIndex === index ? value : member)
+    )
+  }
+
+  const addMember = () => setMembers((currentMembers) => [...currentMembers, ''])
+
+  const removeMember = (index) => {
+    setMembers((currentMembers) => currentMembers.filter((_, memberIndex) => memberIndex !== index))
   }
 
   return (
@@ -50,32 +65,39 @@ export default function ProfileSetup({ onProfileSet, errorMessage = '' }) {
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
               />
             </div>
-            <div>
-              <label htmlFor="person1" className="block text-sm font-medium text-gray-700 mb-2">
-                Your name
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700">
+                Household members
               </label>
-              <input
-                id="person1"
-                type="text"
-                value={person1}
-                onChange={(e) => setPerson1(e.target.value)}
-                placeholder="e.g., Alex"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="person2" className="block text-sm font-medium text-gray-700 mb-2">
-                Partner's name
-              </label>
-              <input
-                id="person2"
-                type="text"
-                value={person2}
-                onChange={(e) => setPerson2(e.target.value)}
-                placeholder="e.g., Jordan"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
-              />
+              {members.map((member, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    id={`member-${index}`}
+                    type="text"
+                    value={member}
+                    onChange={(event) => updateMember(index, event.target.value)}
+                    placeholder={index === 0 ? 'Your name' : 'Member name'}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
+                  />
+                  {members.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeMember(index)}
+                      className="px-3 text-gray-400 hover:text-red-500"
+                      aria-label={`Remove member ${index + 1}`}
+                    >
+                      x
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addMember}
+                className="text-sm text-spring-sage font-semibold hover:underline"
+              >
+                + Add another member
+              </button>
             </div>
 
             {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}

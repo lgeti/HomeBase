@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import crypto from 'node:crypto'
 import cors from 'cors'
 import express from 'express'
 import { createClient } from '@supabase/supabase-js'
@@ -14,6 +15,46 @@ if (!supabaseUrl || !supabaseSecretKey) {
 const supabase = createClient(supabaseUrl, supabaseSecretKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
+
+const getUserFromToken = async (authorizationHeader) => {
+  if (!authorizationHeader?.startsWith('Bearer ')) return null
+
+  const token = authorizationHeader.replace('Bearer ', '').trim()
+  const { data, error } = await supabase.auth.getUser(token)
+
+  if (error || !data.user) return null
+  return data.user
+}
+
+const requireAuth = async (request, response, next) => {
+  const user = await getUserFromToken(request.headers.authorization)
+  if (!user) {
+    return sendError(response, 401, 'Unauthorized')
+  }
+
+  request.user = user
+  next()
+}
+
+const requireHouseholdMember = async (request, response, next) => {
+  const householdId = request.params.householdId
+  const userId = request.user.id
+
+  const { data, error } = await supabase
+    .from('household_members')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('auth_user_id', userId)
+    .eq('status', 'active')
+    .single()
+
+  if (error || !data) {
+    return sendError(response, 403, 'Forbidden: User is not an active member of this household')
+  }
+
+  request.householdMember = data
+  next()
+}
 
 const app = express()
 
@@ -81,17 +122,20 @@ app.get('/api/categories', async (request, response) => {
   response.json(data)
 })
 
-app.post('/api/households', async (request, response) => {
-  const { name, ownerName, members = [], ownerUserId } = request.body
+// Create a household, including the owner and any additional members - authenticated user is the source of truth
+app.post('/api/households', requireAuth, async (request, response) => {
+  const { name, ownerName, members = [] } = request.body
+  const ownerUserId = request.user.id
 
-  if (!name || !ownerName || !Array.isArray(members) || !ownerUserId) {
-    return sendError(response, 400, 'name, ownerName, members, and ownerUserId are required')
+  if (!name || !ownerName || !Array.isArray(members)) {
+    return sendError(response, 400, 'name, ownerName, and members are required')
   }
 
+  const trimmedOwnerName = String(ownerName).trim()
   const uniqueMembers = [...new Set(members.map((member) => String(member).trim()).filter(Boolean))]
-  const allNames = [ownerName.trim(), ...uniqueMembers]
+  const allNames = [trimmedOwnerName, ...uniqueMembers]
 
-  if (!ownerName.trim() || new Set(allNames.map((member) => member.toLowerCase())).size !== allNames.length) {
+  if (!trimmedOwnerName || new Set(allNames.map((member) => member.toLowerCase())).size !== allNames.length) {
     return sendError(response, 400, 'member names must be non-empty and different')
   }
 
@@ -111,6 +155,7 @@ app.post('/api/households', async (request, response) => {
       auth_user_id: index === 0 ? ownerUserId : null,
       role: index === 0 ? 'owner' : 'member',
       status: index === 0 ? 'active' : 'pending',
+      invited_email: index === 0 ? null : null,
     })))
     .select()
 
@@ -122,7 +167,126 @@ app.post('/api/households', async (request, response) => {
   response.status(201).json({ ...household, members: createdMembers })
 })
 
-app.get('/api/households/:householdId/members', async (request, response) => {
+app.post('/api/households/:householdId/invitations', requireAuth, requireHouseholdMember, async (request, response) => {
+  const { email, role = 'member' } = request.body
+
+  if (!email || !['admin', 'member'].includes(role)) {
+    return sendError(response, 400, 'email and valid role are required')
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase()
+  const token = crypto.randomUUID()
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
+
+  const { data: existingMember, error: existingMemberError } = await supabase
+    .from('household_members')
+    .select('household_member_id')
+    .eq('household_id', request.params.householdId)
+    .eq('invited_email', normalizedEmail)
+    .neq('status', 'removed')
+    .maybeSingle()
+
+  if (existingMemberError) {
+    return sendError(response, 500, existingMemberError.message)
+  }
+
+  if (existingMember) {
+    return sendError(response, 409, 'An invitation already exists for this email in this household')
+  }
+
+  const { data: invitation, error: inviteError } = await supabase
+    .from('household_invitations')
+    .insert({
+      household_id: request.params.householdId,
+      invited_email: normalizedEmail,
+      invited_role: role,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+    })
+    .select()
+    .single()
+
+  if (inviteError) {
+    return sendError(response, 400, inviteError.message)
+  }
+
+  response.status(201).json({
+    invitationId: invitation.invitation_id,
+    email: normalizedEmail,
+    role,
+    expiresAt,
+    inviteToken: token,
+  })
+})
+
+app.post('/api/invitations/:token/accept', requireAuth, async (request, response) => {
+  const token = request.params.token
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+
+  const { data: invitation, error: inviteError } = await supabase
+    .from('household_invitations')
+    .select('*')
+    .eq('token_hash', tokenHash)
+    .gt('expires_at', new Date().toISOString())
+    .is('accepted_at', null)
+    .is('revoked_at', null)
+    .maybeSingle()
+
+  if (inviteError) {
+    return sendError(response, 500, inviteError.message)
+  }
+
+  if (!invitation) {
+    return sendError(response, 400, 'Invitation is invalid, expired, or already used')
+  }
+
+  const { data: member, error: memberLookupError } = await supabase
+    .from('household_members')
+    .select('*')
+    .eq('household_id', invitation.household_id)
+    .eq('invited_email', invitation.invited_email)
+    .neq('status', 'removed')
+    .maybeSingle()
+
+  if (memberLookupError) {
+    return sendError(response, 500, memberLookupError.message)
+  }
+
+  if (!member) {
+    return sendError(response, 404, 'No pending household member record found for this invitation')
+  }
+
+  const { data: updatedMember, error: updateError } = await supabase
+    .from('household_members')
+    .update({
+      auth_user_id: request.user.id,
+      role: invitation.invited_role,
+      status: 'active',
+      invited_email: invitation.invited_email,
+      accepted_at: new Date().toISOString(),
+    })
+    .eq('household_member_id', member.household_member_id)
+    .select()
+    .single()
+
+  if (updateError) {
+    return sendError(response, 400, updateError.message)
+  }
+
+  await supabase
+    .from('household_invitations')
+    .update({ accepted_at: new Date().toISOString() })
+    .eq('invitation_id', invitation.invitation_id)
+
+  response.json({
+    householdId: invitation.household_id,
+    member: updatedMember,
+  })
+})
+
+// Get all members of a household, excluding those with status 'removed' - needs authentication
+app.get('/api/households/:householdId/members', requireAuth, requireHouseholdMember, async (request, response) => {
   const { data, error } = await supabase
     .from('household_members')
     .select('*')
@@ -134,7 +298,8 @@ app.get('/api/households/:householdId/members', async (request, response) => {
   response.json(data)
 })
 
-app.delete('/api/households/:householdId/members/:memberId', async (request, response) => {
+// Remove a member from a household by setting their status to 'removed' - needs authentication
+app.delete('/api/households/:householdId/members/:memberId', requireAuth, requireHouseholdMember, async (request, response) => {
   const { error } = await supabase
     .from('household_members')
     .update({ status: 'removed' })
@@ -146,7 +311,8 @@ app.delete('/api/households/:householdId/members/:memberId', async (request, res
   response.status(204).send()
 })
 
-app.get('/api/households/:householdId/expenses', async (request, response) => {
+// Expense endpoints - needs authentication
+app.get('/api/households/:householdId/expenses', requireAuth, requireHouseholdMember, async (request, response) => {
   let query = supabase
     .from('expenses')
     .select('*')
@@ -163,7 +329,8 @@ app.get('/api/households/:householdId/expenses', async (request, response) => {
   response.json(data)
 })
 
-app.post('/api/households/:householdId/expenses', async (request, response) => {
+// Create a new expense for a household - needs authentication
+app.post('/api/households/:householdId/expenses', requireAuth, requireHouseholdMember, async (request, response) => {
   const expense = normalizeExpense({ ...request.body, householdId: request.params.householdId })
   const validationError = validateExpense(expense)
   if (validationError) return sendError(response, 400, validationError)
@@ -178,7 +345,8 @@ app.post('/api/households/:householdId/expenses', async (request, response) => {
   response.status(201).json(data)
 })
 
-app.patch('/api/households/:householdId/expenses/:expenseId', async (request, response) => {
+// Update an existing expense for a household - needs authentication
+app.patch('/api/households/:householdId/expenses/:expenseId', requireAuth, requireHouseholdMember, async (request, response) => {
   const updates = normalizeExpense({ ...request.body, householdId: request.params.householdId })
   delete updates.household_id
   const validationError = validateExpense({ ...updates, household_id: request.params.householdId })
@@ -197,7 +365,8 @@ app.patch('/api/households/:householdId/expenses/:expenseId', async (request, re
   response.json(data)
 })
 
-app.delete('/api/households/:householdId/expenses/:expenseId', async (request, response) => {
+// Delete an existing expense for a household - needs authentication
+app.delete('/api/households/:householdId/expenses/:expenseId', requireAuth, requireHouseholdMember, async (request, response) => {
   const { error } = await supabase
     .from('expenses')
     .update({ deleted_at_utc: new Date().toISOString() })

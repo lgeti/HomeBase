@@ -36,12 +36,13 @@ export const getMonthCategoryBreakdown = (expenses, year, month) => {
     .sort((left, right) => right.total - left.total)
 }
 
-export const getPersonSummary = (expenses, person1, person2, year, month) => {
+export const getMemberSummary = (expenses, members, year, month) => {
   const monthExpenses = getMonthExpenses(expenses, year, month)
-  const summary = {
-    [person1]: { paid: 0, owed: 0, net: 0 },
-    [person2]: { paid: 0, owed: 0, net: 0 },
-  }
+  const memberNames = members.map((member) => member.display_name || member)
+  const summary = Object.fromEntries(memberNames.map((memberName) => [
+    memberName,
+    { paid: 0, owed: 0, net: 0 },
+  ]))
 
   monthExpenses.forEach((expense) => {
     const amount = parseFloat(expense.amount || 0)
@@ -52,15 +53,18 @@ export const getPersonSummary = (expenses, person1, person2, year, month) => {
     }
 
     if (expense.splitType === 'split') {
-      summary[person1].owed += amount / 2
-      summary[person2].owed += amount / 2
+      const share = memberNames.length > 0 ? amount / memberNames.length : 0
+      memberNames.forEach((memberName) => {
+        summary[memberName].owed += share
+      })
     } else if (summary[expense.whoPaid]) {
       summary[expense.whoPaid].owed += amount
     }
   })
 
-  summary[person1].net = summary[person1].paid - summary[person1].owed
-  summary[person2].net = summary[person2].paid - summary[person2].owed
+  memberNames.forEach((memberName) => {
+    summary[memberName].net = summary[memberName].paid - summary[memberName].owed
+  })
 
   return summary
 }
@@ -78,18 +82,21 @@ export const getPersonTotal = (expenses, person, year, month) => {
     .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
 }
 
-export const calculateBalance = (expenses, person1, person2, year, month) => {
-  const summary = getPersonSummary(expenses, person1, person2, year, month)
-  const person1Net = summary[person1].net
-  const person2Net = summary[person2].net
-  const difference = Math.abs(person1Net - person2Net)
+export const calculateBalance = (expenses, members, year, month) => {
+  const summary = getMemberSummary(expenses, members, year, month)
+  const sortedMembers = Object.entries(summary).sort((left, right) => right[1].net - left[1].net)
+  const owed = sortedMembers[0]
+  const owes = sortedMembers[sortedMembers.length - 1]
 
-  if (person1Net > person2Net) {
-    return { owes: person2, owed: person1, amount: difference }
-  } else if (person2Net > person1Net) {
-    return { owes: person1, owed: person2, amount: difference }
+  if (!owed || !owes || owed[0] === owes[0] || owed[1].net <= 0 || owes[1].net >= 0) {
+    return { owes: null, owed: null, amount: 0 }
   }
-  return { owes: null, owed: null, amount: 0 }
+
+  return {
+    owes: owes[0],
+    owed: owed[0],
+    amount: Math.min(owed[1].net, Math.abs(owes[1].net)),
+  }
 }
 
 export const formatCurrency = (amount, currency = '€') => {

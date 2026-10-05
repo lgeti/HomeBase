@@ -4,7 +4,7 @@ import { getCategoryTotal, getMonthTotal, formatCurrency, getCurrentMonthYear } 
 import TabBar from '../../../components/TabBar.jsx'
 import TransactionList from '../../../components/TransactionList.jsx'
 
-export default function CategoryView({ expenses, onDeleteExpense, user, onCategoryChange }) {
+export default function CategoryView({ expenses, onDeleteExpense, members, onCategoryChange }) {
   const [activeTab, setActiveTab] = useState('All')
   const { year, month } = getCurrentMonthYear()
 
@@ -73,7 +73,7 @@ export default function CategoryView({ expenses, onDeleteExpense, user, onCatego
           <TransactionList
             transactions={sortedExpenses}
             onDelete={onDeleteExpense}
-            user={user}
+            members={members}
           />
         </div>
       </div>

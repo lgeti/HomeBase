@@ -2,14 +2,16 @@ import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../../../config/categories'
 import { getNextRecurringDate } from '../../../core/utils/calculations'
 
-export default function TransactionForm({ user, onSubmit, onCancel, defaultCategoryId = 'groceries' }) {
+export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries' }) {
+  const memberNames = members.map((member) => member.display_name)
+  const defaultPayer = memberNames[0] || ''
   const [formData, setFormData] = useState({
     amount: '',
     categoryId: defaultCategoryId,
     tag: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    whoPaid: user.person1,
+    whoPaid: defaultPayer,
     splitType: 'one',
     isRecurring: false,
     recurringFrequency: 'monthly',
@@ -73,7 +75,7 @@ export default function TransactionForm({ user, onSubmit, onCancel, defaultCateg
       tag: '',
       description: '',
       date: new Date().toISOString().split('T')[0],
-      whoPaid: user.person1,
+      whoPaid: defaultPayer,
       splitType: 'one',
       isRecurring: false,
       recurringFrequency: 'monthly',
@@ -182,30 +184,21 @@ export default function TransactionForm({ user, onSubmit, onCancel, defaultCateg
 
       {/* Who Paid */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Who paid?</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Who paid?</label>
         <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="whoPaid"
-              value={user.person1}
-              checked={formData.whoPaid === user.person1}
-              onChange={handleChange}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-gray-700">{user.person1}</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="whoPaid"
-              value={user.person2}
-              checked={formData.whoPaid === user.person2}
-              onChange={handleChange}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-gray-700">{user.person2}</span>
-          </label>
+            {members.map((member) => (
+              <label key={member.household_member_id} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="whoPaid"
+                  value={member.display_name}
+                  checked={formData.whoPaid === member.display_name}
+                  onChange={handleChange}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm text-gray-700">{member.display_name}</span>
+              </label>
+            ))}
         </div>
       </div>
 

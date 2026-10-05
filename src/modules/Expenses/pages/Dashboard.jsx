@@ -7,10 +7,10 @@ import {
   getMonthCategoryBreakdown,
   getMonthName,
   getMonthTotal,
-  getPersonSummary,
+  getMemberSummary,
 } from '../../../core/utils/calculations'
 
-export default function Dashboard({ expenses, user }) {
+export default function Dashboard({ expenses, members }) {
   const [selectedMonth, setSelectedMonth] = useState(() => getCurrentMonthYear())
 
   const monthName = getMonthName(selectedMonth.year, selectedMonth.month)
@@ -22,27 +22,23 @@ export default function Dashboard({ expenses, user }) {
       selectedMonth.year,
       selectedMonth.month
     )
-    const personSummary = getPersonSummary(
+    const memberSummary = getMemberSummary(
       expenses,
-      user.person1,
-      user.person2,
+      members,
       selectedMonth.year,
       selectedMonth.month
     )
     const balance = calculateBalance(
       expenses,
-      user.person1,
-      user.person2,
+      members,
       selectedMonth.year,
       selectedMonth.month
     )
 
-    return { total, categoryBreakdown, personSummary, balance }
-  }, [expenses, selectedMonth.month, selectedMonth.year, user.person1, user.person2])
+    return { total, categoryBreakdown, memberSummary, balance }
+  }, [expenses, members, selectedMonth.month, selectedMonth.year])
 
-  const totalPaid = monthData.personSummary[user.person1].paid + monthData.personSummary[user.person2].paid
-  const person1Share = totalPaid > 0 ? (monthData.personSummary[user.person1].paid / totalPaid) * 100 : 0
-  const person2Share = totalPaid > 0 ? (monthData.personSummary[user.person2].paid / totalPaid) * 100 : 0
+  const totalPaid = Object.values(monthData.memberSummary).reduce((sum, member) => sum + member.paid, 0)
 
   const moveMonth = (offset) => {
     setSelectedMonth((current) => {
@@ -100,27 +96,24 @@ export default function Dashboard({ expenses, user }) {
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <article className="rounded-3xl bg-white p-4 border border-gray-100 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">{user.person1}</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-2">{formatCurrency(monthData.personSummary[user.person1].paid)}</p>
-          <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
-            <div className="h-full rounded-full bg-spring-sage" style={{ width: `${person1Share}%` }} />
-          </div>
-          <p className="text-sm text-gray-500 mt-2">
-            Paid {person1Share.toFixed(0)}% of tracked spending · Net {monthData.personSummary[user.person1].net >= 0 ? '+' : '-'}{formatCurrency(Math.abs(monthData.personSummary[user.person1].net))}
-          </p>
-        </article>
+        {members.map((member, index) => {
+          const memberName = member.display_name
+          const memberSummary = monthData.memberSummary[memberName] || { paid: 0, net: 0 }
+          const memberShare = totalPaid > 0 ? (memberSummary.paid / totalPaid) * 100 : 0
 
-        <article className="rounded-3xl bg-white p-4 border border-gray-100 shadow-sm">
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">{user.person2}</p>
-          <p className="text-2xl font-semibold text-gray-900 mt-2">{formatCurrency(monthData.personSummary[user.person2].paid)}</p>
-          <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
-            <div className="h-full rounded-full bg-spring-peach" style={{ width: `${person2Share}%` }} />
-          </div>
-          <p className="text-sm text-gray-500 mt-2">
-            Paid {person2Share.toFixed(0)}% of tracked spending · Net {monthData.personSummary[user.person2].net >= 0 ? '+' : '-'}{formatCurrency(Math.abs(monthData.personSummary[user.person2].net))}
-          </p>
-        </article>
+          return (
+            <article key={member.household_member_id || memberName} className="rounded-3xl bg-white p-4 border border-gray-100 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">{memberName}</p>
+              <p className="text-2xl font-semibold text-gray-900 mt-2">{formatCurrency(memberSummary.paid)}</p>
+              <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
+                <div className={`h-full rounded-full ${index % 2 ? 'bg-spring-peach' : 'bg-spring-sage'}`} style={{ width: `${memberShare}%` }} />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">
+                Paid {memberShare.toFixed(0)}% of tracked spending · Net {memberSummary.net >= 0 ? '+' : '-'}{formatCurrency(Math.abs(memberSummary.net))}
+              </p>
+            </article>
+          )
+        })}
       </section>
 
       <section className="rounded-3xl bg-white p-5 border border-gray-100 shadow-sm space-y-4">

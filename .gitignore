@@ -5,3 +5,4 @@ dist
 server/.env
 .env
 client_secret_*.json
+docs/myNotes.md

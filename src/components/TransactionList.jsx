@@ -1,7 +1,7 @@
 import { getCategoryById } from '../config/categories'
 import { formatCurrency, formatDate } from '../core/utils/calculations'
 
-export default function TransactionList({ transactions, onDelete, user }) {
+export default function TransactionList({ transactions, onDelete, members }) {
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12">
@@ -15,8 +15,7 @@ export default function TransactionList({ transactions, onDelete, user }) {
     <div className="space-y-2">
       {transactions.map((transaction) => {
         const category = getCategoryById(transaction.categoryId)
-        const isPaidByYou = transaction.whoPaid === user.person1
-        const personLabel = isPaidByYou ? 'You paid' : `${user.person2} paid`
+        const personLabel = `${transaction.whoPaid} paid`
 
         return (
           <div

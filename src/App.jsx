@@ -46,10 +46,10 @@ export default function App() {
     setIsPreparingHousehold(true)
     setApiError('')
 
-    const ownerName = user.ownerName || user.person1
-    const memberNames = user.members || [user.person2].filter(Boolean)
+    const ownerName = user.ownerName
+    const memberNames = user.members || []
 
-    createHousehold(user.householdName, ownerName, memberNames, authUser.id)
+    createHousehold(user.householdName, ownerName, memberNames)
       .then(setHousehold)
       .catch((error) => setApiError(error.message))
       .finally(() => setIsPreparingHousehold(false))
@@ -62,8 +62,7 @@ export default function App() {
       const createdHousehold = await createHousehold(
         profile.householdName,
         profile.ownerName,
-        profile.members,
-        authUser.id
+        profile.members
       )
       setUser(profile)
       setHousehold(createdHousehold)
@@ -123,7 +122,17 @@ export default function App() {
   }
 
   if (!user) {
-    return <ProfileSetup onProfileSet={handleProfileSet} errorMessage={apiError} />
+    const initialOwnerName = authUser.user_metadata?.full_name
+      || authUser.user_metadata?.name
+      || authUser.email?.split('@')[0]
+
+    return (
+      <ProfileSetup
+        onProfileSet={handleProfileSet}
+        initialOwnerName={initialOwnerName}
+        errorMessage={apiError}
+      />
+    )
   }
 
   return (
@@ -131,7 +140,7 @@ export default function App() {
       <header className="bg-white/95 backdrop-blur-sm shadow-sm px-4 py-3 sticky top-0 z-10">
         <h1 className="text-lg font-semibold text-gray-800">HomeBase</h1>
         <p className="text-xs text-gray-500">
-          {user.person1} & {user.person2}
+          {household?.members?.map((member) => member.display_name).join(' · ')}
         </p>
       </header>
 
@@ -143,12 +152,12 @@ export default function App() {
 
       <div className="flex-1 min-h-0">
         {activeView === 'dashboard' ? (
-          <Dashboard expenses={expenses} user={user} />
+          <Dashboard expenses={expenses} members={household?.members || []} />
         ) : (
           <CategoryView
             expenses={expenses}
             onDeleteExpense={deleteExpense}
-            user={user}
+            members={household?.members || []}
             onCategoryChange={setSelectedCategoryId}
           />
         )}
@@ -160,7 +169,7 @@ export default function App() {
         onClose={() => setShowAddForm(false)}
       >
         <TransactionForm
-          user={user}
+          members={household?.members || []}
           onSubmit={handleAddTransaction}
           onCancel={() => setShowAddForm(false)}
           defaultCategoryId={selectedCategoryId}

@@ -100,7 +100,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
             value={formData.amount}
             onChange={handleChange}
             placeholder="0.00"
-            step="1.00"
+            step="0.01"
             min="0"
             className="w-full pl-6 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
           />

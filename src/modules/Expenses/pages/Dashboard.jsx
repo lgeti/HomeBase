@@ -40,6 +40,15 @@ export default function Dashboard({ expenses, members }) {
 
   const totalPaid = Object.values(monthData.memberSummary).reduce((sum, member) => sum + member.paid, 0)
 
+  const recentMonths = [0, -1, -2].map((offset) => {
+    const date = new Date(selectedMonth.year, selectedMonth.month + offset, 1)
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      total: getMonthTotal(expenses, date.getFullYear(), date.getMonth()),
+    }
+  })
+
   const moveMonth = (offset) => {
     setSelectedMonth((current) => {
       const nextDate = new Date(current.year, current.month + offset, 1)
@@ -93,6 +102,22 @@ export default function Dashboard({ expenses, members }) {
             <p className="text-sm font-medium text-gray-700 mt-1">{balanceLabel}</p>
           </div>
         </div>
+      </section>
+
+      <section className="grid grid-cols-3 gap-2">
+        {recentMonths.map((recentMonth, index) => (
+          <article
+            key={`${recentMonth.year}-${recentMonth.month}`}
+            className={`rounded-2xl p-3 border ${index === 0 ? 'bg-spring-mint/30 border-spring-sage/30' : 'bg-white border-gray-100'}`}
+          >
+            <p className="text-xs text-gray-500 truncate">
+              {getMonthName(recentMonth.year, recentMonth.month)}
+            </p>
+            <p className="text-base font-semibold text-gray-900 mt-1">
+              {formatCurrency(recentMonth.total)}
+            </p>
+          </article>
+        ))}
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">

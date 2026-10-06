@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocalStorage } from './core/hooks/useLocalStorage'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
-import { createHousehold } from './core/api/expensesApi'
+import { fetchMyHousehold, createHousehold } from './core/api/expensesApi'
 import { useAuth } from './core/auth/useAuth'
 import ProfileSetup from './components/ProfileSetup'
 import Login from './modules/Auth/pages/Login'
@@ -40,20 +40,36 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!authUser || !user || household || householdInitializationStarted.current) return
+    if (!authUser) {
+      householdInitializationStarted.current = false
+      return
+    }
+
+    if (household || householdInitializationStarted.current) return
 
     householdInitializationStarted.current = true
     setIsPreparingHousehold(true)
     setApiError('')
 
-    const ownerName = user.ownerName
-    const memberNames = user.members || []
+    fetchMyHousehold()
+      .then((existingHousehold) => {
+        if (!existingHousehold) return
 
-    createHousehold(user.householdName, ownerName, memberNames)
-      .then(setHousehold)
+        setHousehold(existingHousehold)
+        const owner = existingHousehold.members.find(
+          (member) => member.auth_user_id === authUser.id
+        )
+        setUser({
+          householdName: existingHousehold.name,
+          ownerName: owner?.display_name || authUser.email?.split('@')[0] || 'Owner',
+          members: existingHousehold.members
+            .filter((member) => member.auth_user_id !== authUser.id)
+            .map((member) => member.display_name),
+        })
+      })
       .catch((error) => setApiError(error.message))
       .finally(() => setIsPreparingHousehold(false))
-  }, [authUser, household, setHousehold, user])
+  }, [authUser, household, setHousehold, setUser])
 
   const handleProfileSet = async (profile) => {
     setApiError('')
@@ -121,7 +137,7 @@ export default function App() {
     )
   }
 
-  if (!user) {
+  if (!household) {
     const initialOwnerName = authUser.user_metadata?.full_name
       || authUser.user_metadata?.name
       || authUser.email?.split('@')[0]

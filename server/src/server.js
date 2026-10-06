@@ -122,6 +122,39 @@ app.get('/api/categories', async (request, response) => {
   response.json(data)
 })
 
+app.get('/api/households/me', requireAuth, async (request, response) => {
+  const { data: membership, error: membershipError } = await supabase
+    .from('household_members')
+    .select('household_id')
+    .eq('auth_user_id', request.user.id)
+    .eq('status', 'active')
+    .order('created_at_utc', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  if (membershipError) return sendError(response, 500, membershipError.message)
+  if (!membership) return response.json(null)
+
+  const { data: household, error: householdError } = await supabase
+    .from('households')
+    .select('*')
+    .eq('household_id', membership.household_id)
+    .single()
+
+  if (householdError) return sendError(response, 500, householdError.message)
+
+  const { data: members, error: membersError } = await supabase
+    .from('household_members')
+    .select('*')
+    .eq('household_id', household.household_id)
+    .neq('status', 'removed')
+    .order('display_name')
+
+  if (membersError) return sendError(response, 500, membersError.message)
+
+  response.json({ ...household, members })
+})
+
 // Create a household, including the owner and any additional members - authenticated user is the source of truth
 app.post('/api/households', requireAuth, async (request, response) => {
   const { name, ownerName, members = [] } = request.body

@@ -25,6 +25,8 @@ export const createHousehold = (name, ownerName, members = []) =>
     body: JSON.stringify({ name, ownerName, members }),
   })
 
+export const fetchMyHousehold = () => apiRequest('/api/households/me')
+
 export const fetchExpenses = async (householdId, members) => {
   const expenses = await apiRequest(`/api/households/${householdId}/expenses`)
   return expenses.map((expense) => mapExpense(expense, members))

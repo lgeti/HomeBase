@@ -144,7 +144,6 @@ export default function App() {
         </p>
       </header>
 
-      // Display any API or expenses errors
       {(apiError || expensesError) && (
         <div className="bg-red-50 border-b border-red-100 px-4 py-2 text-sm text-red-700">
           {apiError || expensesError}

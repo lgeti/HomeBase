@@ -123,6 +123,8 @@ app.get('/api/categories', async (request, response) => {
 })
 
 app.get('/api/households/me', requireAuth, async (request, response) => {
+  let householdId = null
+
   const { data: membership, error: membershipError } = await supabase
     .from('household_members')
     .select('household_id')
@@ -133,12 +135,28 @@ app.get('/api/households/me', requireAuth, async (request, response) => {
     .maybeSingle()
 
   if (membershipError) return sendError(response, 500, membershipError.message)
-  if (!membership) return response.json(null)
+
+  if (membership) {
+    householdId = membership.household_id
+  } else {
+    const { data: ownerHousehold, error: ownerHouseholdError } = await supabase
+      .from('households')
+      .select('household_id')
+      .eq('owner_user_id', request.user.id)
+      .order('created_at_utc', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (ownerHouseholdError) return sendError(response, 500, ownerHouseholdError.message)
+    householdId = ownerHousehold?.household_id || null
+  }
+
+  if (!householdId) return response.json(null)
 
   const { data: household, error: householdError } = await supabase
     .from('households')
     .select('*')
-    .eq('household_id', membership.household_id)
+    .eq('household_id', householdId)
     .single()
 
   if (householdError) return sendError(response, 500, householdError.message)

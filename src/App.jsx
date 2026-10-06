@@ -42,6 +42,8 @@ export default function App() {
   useEffect(() => {
     if (!authUser) {
       householdInitializationStarted.current = false
+      setHousehold(null)
+      setUser(null)
       return
     }
 
@@ -53,7 +55,11 @@ export default function App() {
 
     fetchMyHousehold()
       .then((existingHousehold) => {
-        if (!existingHousehold) return
+        if (!existingHousehold) {
+          setHousehold(null)
+          setUser(null)
+          return
+        }
 
         setHousehold(existingHousehold)
         const owner = existingHousehold.members.find(
@@ -68,7 +74,10 @@ export default function App() {
         })
       })
       .catch((error) => setApiError(error.message))
-      .finally(() => setIsPreparingHousehold(false))
+      .finally(() => {
+        householdInitializationStarted.current = false
+        setIsPreparingHousehold(false)
+      })
   }, [authUser, household, setHousehold, setUser])
 
   const handleProfileSet = async (profile) => {

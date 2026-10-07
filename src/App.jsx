@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { useLocalStorage } from './core/hooks/useLocalStorage'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { fetchMyHousehold, createHousehold } from './core/api/expensesApi'
 import { useAuth } from './core/auth/useAuth'
@@ -21,8 +20,8 @@ export default function App() {
     signUpWithPassword,
     signOut,
   } = useAuth()
-  const [user, setUser] = useLocalStorage('homebase_user', null)
-  const [household, setHousehold] = useLocalStorage('homebase_household', null)
+  const [user, setUser] = useState(null)
+  const [household, setHousehold] = useState(null)
   const { expenses, addExpense, deleteExpense, isLoading: expensesLoading, error: expensesError } = useExpensesApi(household)
   const [isLoading, setIsLoading] = useState(true)
   const [isPreparingHousehold, setIsPreparingHousehold] = useState(false)

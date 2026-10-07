@@ -11,7 +11,7 @@ export default function ProfileSetup({ onProfileSet, initialOwnerName = '', erro
 
     const trimmedHouseholdName = householdName.trim()
     const trimmedOwnerName = ownerName.trim()
-    debugger
+    
     if (!trimmedHouseholdName || !trimmedOwnerName) {
       setError('Household name and your name are required')
       return

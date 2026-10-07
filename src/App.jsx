@@ -40,7 +40,9 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    console.log('authUser changed:', authUser)
     if (!authUser) {
+      console.log('No authUser, resetting household and user state')
       householdInitializationStarted.current = false
       setHousehold(null)
       setUser(null)
@@ -49,6 +51,7 @@ export default function App() {
 
     if (household || householdInitializationStarted.current) return
 
+    console.log('Fetching household for authUser:', authUser) 
     householdInitializationStarted.current = true
     setIsPreparingHousehold(true)
     setHouseholdLookupError('')

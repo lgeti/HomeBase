@@ -26,6 +26,7 @@ export default function App() {
   const { expenses, addExpense, deleteExpense, isLoading: expensesLoading, error: expensesError } = useExpensesApi(household)
   const [isLoading, setIsLoading] = useState(true)
   const [isPreparingHousehold, setIsPreparingHousehold] = useState(false)
+  const [householdLookupError, setHouseholdLookupError] = useState('')
   const [apiError, setApiError] = useState('')
   const [authMode, setAuthMode] = useState('login')
   const [showAddForm, setShowAddForm] = useState(false)
@@ -51,6 +52,7 @@ export default function App() {
 
     householdInitializationStarted.current = true
     setIsPreparingHousehold(true)
+    setHouseholdLookupError('')
     setApiError('')
 
     fetchMyHousehold()
@@ -73,7 +75,7 @@ export default function App() {
             .map((member) => member.display_name),
         })
       })
-      .catch((error) => setApiError(error.message))
+      .catch((error) => setHouseholdLookupError(error.message))
       .finally(() => {
         householdInitializationStarted.current = false
         setIsPreparingHousehold(false)
@@ -147,6 +149,27 @@ export default function App() {
   }
 
   if (!household) {
+    if (householdLookupError) {
+      return (
+        <div className="flex items-center justify-center min-h-screen bg-warm-cream px-4">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-lg">
+            <h1 className="text-2xl font-semibold text-gray-800">HomeBase</h1>
+            <p className="mt-3 text-sm text-red-700">
+              HomeBase could not reach the household service. Your data was not changed.
+            </p>
+            <p className="mt-2 break-words text-xs text-gray-500">{householdLookupError}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-6 w-full rounded-lg bg-spring-sage py-3 font-semibold text-white"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     const initialOwnerName = authUser.user_metadata?.full_name
       || authUser.user_metadata?.name
       || authUser.email?.split('@')[0]

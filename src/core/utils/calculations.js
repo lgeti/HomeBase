@@ -69,19 +69,6 @@ export const getMemberSummary = (expenses, members, year, month) => {
   return summary
 }
 
-export const getPersonTotal = (expenses, person, year, month) => {
-  return expenses
-    .filter((exp) => {
-      const expDate = new Date(exp.date)
-      return (
-        exp.whoPaid === person &&
-        expDate.getFullYear() === year &&
-        expDate.getMonth() === month
-      )
-    })
-    .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
-}
-
 export const calculateBalance = (expenses, members, year, month) => {
   const summary = getMemberSummary(expenses, members, year, month)
   const sortedMembers = Object.entries(summary).sort((left, right) => right[1].net - left[1].net)
@@ -143,35 +130,3 @@ export const getNextRecurringDate = (dateString, frequency = 'monthly') => {
   return nextDate.toISOString()
 }
 
-export const applyRecurringTransactions = (expenses, today = new Date()) => {
-  const currentDate = new Date(today)
-  const todayValue = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
-
-  const generated = []
-  const updatedExpenses = expenses.map((expense) => {
-    if (!expense.isRecurring || !expense.nextDueDate) {
-      return expense
-    }
-
-    const dueDate = new Date(expense.nextDueDate)
-    const dueValue = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate())
-
-    if (dueValue <= todayValue) {
-      generated.push({
-        ...expense,
-        id: `${expense.id}-generated-${Date.now()}`,
-        date: dueDate.toISOString(),
-        nextDueDate: getNextRecurringDate(expense.nextDueDate, expense.recurringFrequency || 'monthly'),
-      })
-
-      return {
-        ...expense,
-        nextDueDate: getNextRecurringDate(expense.nextDueDate, expense.recurringFrequency || 'monthly'),
-      }
-    }
-
-    return expense
-  })
-
-  return { expenses: updatedExpenses, generated }
-}

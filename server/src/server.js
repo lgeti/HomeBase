@@ -170,17 +170,6 @@ app.get('/health', (request, response) => {
   response.json({ status: 'ok' })
 })
 
-app.get('/api/categories', async (request, response) => {
-  const { data, error } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order')
-
-  if (error) return sendError(response, 500, error.message)
-  response.json(data)
-})
-
 app.get('/api/households/me', requireAuth, async (request, response) => {
   let householdId = null
 

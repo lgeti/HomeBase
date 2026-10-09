@@ -1,3 +1,6 @@
+// The single source for categories shown in the app (names, emoji, colors, descriptions).
+// The database's categories table only lists the valid ids that expenses can reference, so every id here
+// must also be seeded in server/db/001_initial_schema.sql. categories.test.js checks that they match.
 export const CATEGORIES = [
   {
     id: 'car',

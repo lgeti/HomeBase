@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { fetchMyHousehold, createHousehold } from './core/api/expensesApi'
 import { useAuth } from './core/auth/useAuth'
@@ -20,69 +20,46 @@ export default function App() {
     signUpWithPassword,
     signOut,
   } = useAuth()
-  const [user, setUser] = useState(null)
   const [household, setHousehold] = useState(null)
-  const { expenses, addExpense, deleteExpense, isLoading: expensesLoading, error: expensesError } = useExpensesApi(household)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isPreparingHousehold, setIsPreparingHousehold] = useState(false)
+  // The signed-in user whose household lookup has finished, so the setup screen never flashes while it loads
+  const [householdCheckedFor, setHouseholdCheckedFor] = useState(null)
+  const { expenses, addExpense, deleteExpense, error: expensesError } = useExpensesApi(household)
   const [householdLookupError, setHouseholdLookupError] = useState('')
   const [apiError, setApiError] = useState('')
   const [authMode, setAuthMode] = useState('login')
   const [showAddForm, setShowAddForm] = useState(false)
   const [activeView, setActiveView] = useState('categories')
   const [selectedCategoryId, setSelectedCategoryId] = useState('groceries')
-  const householdInitializationStarted = useRef(false)
+  const authUserId = authUser?.id
 
   useEffect(() => {
-    // Simulate brief loading state
-    const timer = setTimeout(() => setIsLoading(false), 300)
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    console.log('authUser changed:', authUser)
-    if (!authUser) {
-      console.log('No authUser, resetting household and user state')
-      householdInitializationStarted.current = false
+    if (!authUserId) {
       setHousehold(null)
-      setUser(null)
-      return
+      setHouseholdCheckedFor(null)
+      return undefined
     }
 
-    if (household || householdInitializationStarted.current) return
+    if (householdCheckedFor === authUserId) return undefined
 
-    console.log('Fetching household for authUser:', authUser) 
-    householdInitializationStarted.current = true
-    setIsPreparingHousehold(true)
+    let isCancelled = false
     setHouseholdLookupError('')
     setApiError('')
 
     fetchMyHousehold()
       .then((existingHousehold) => {
-        if (!existingHousehold) {
-          setHousehold(null)
-          setUser(null)
-          return
-        }
-
-        setHousehold(existingHousehold)
-        const owner = existingHousehold.members.find(
-          (member) => member.auth_user_id === authUser.id
-        )
-        setUser({
-          householdName: existingHousehold.name,
-          ownerName: owner?.display_name || authUser.email?.split('@')[0] || 'Owner',
-          members: existingHousehold.members
-            .filter((member) => member.auth_user_id !== authUser.id)
-            .map((member) => member.display_name),
-        })
+        if (!isCancelled) setHousehold(existingHousehold)
       })
-      .catch((error) => setHouseholdLookupError(error.message))
+      .catch((error) => {
+        if (!isCancelled) setHouseholdLookupError(error.message)
+      })
       .finally(() => {
-        householdInitializationStarted.current = false
-        setIsPreparingHousehold(false)
+        if (!isCancelled) setHouseholdCheckedFor(authUserId)
       })
-  }, [authUser, household, setHousehold, setUser])
+
+    return () => {
+      isCancelled = true
+    }
+  }, [authUserId, householdCheckedFor])
 
   const handleProfileSet = async (profile) => {
     setApiError('')
@@ -93,7 +70,6 @@ export default function App() {
         profile.ownerName,
         profile.members
       )
-      setUser(profile)
       setHousehold(createdHousehold)
     } catch (error) {
       setApiError(error.message)
@@ -118,7 +94,7 @@ export default function App() {
       .catch((error) => setApiError(error.message))
   }
 
-  if (authLoading || isLoading || isPreparingHousehold) {
+  if (authLoading || (authUserId && householdCheckedFor !== authUserId)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-warm-cream via-warm-beige to-spring-mint">
         <div className="text-center">

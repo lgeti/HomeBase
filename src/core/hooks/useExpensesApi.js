@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createExpense, deleteExpense as deleteExpenseRequest, fetchExpenses } from '../api/expensesApi'
 
-export const useExpensesApi = (household, enabled = true) => {
+export const useExpensesApi = (household) => {
   const [expenses, setExpenses] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -10,7 +10,7 @@ export const useExpensesApi = (household, enabled = true) => {
   const members = household?.members || []
 
   const reload = useCallback(async () => {
-    if (!enabled || !householdId) return
+    if (!householdId) return
 
     setIsLoading(true)
     setError('')
@@ -23,7 +23,7 @@ export const useExpensesApi = (household, enabled = true) => {
     } finally {
       setIsLoading(false)
     }
-  }, [enabled, householdId, members])
+  }, [householdId, members])
 
   useEffect(() => {
     reload()

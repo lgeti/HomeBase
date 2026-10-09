@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { getCategoryByName } from '../../../config/categories'
-import { getCategoryTotal, getMonthTotal, formatCurrency, getCurrentMonthYear } from '../../../core/utils/calculations'
+import { getCategoryTotal, getMonthExpenses, getMonthTotal, formatCurrency, getCurrentMonthYear } from '../../../core/utils/calculations'
 import TabBar from '../../../components/TabBar.jsx'
 import TransactionList from '../../../components/TransactionList.jsx'
 
@@ -21,22 +21,11 @@ export default function CategoryView({ expenses, onDeleteExpense, members, onCat
   }
 
   const filteredExpenses = useMemo(() => {
-    if (activeTab === 'All') {
-      return expenses.filter((exp) => {
-        const expDate = new Date(exp.date)
-        return expDate.getFullYear() === year && expDate.getMonth() === month
-      })
-    }
+    const monthExpenses = getMonthExpenses(expenses, year, month)
+    if (activeTab === 'All') return monthExpenses
 
     const category = getCategoryByName(activeTab)
-    return expenses.filter((exp) => {
-      const expDate = new Date(exp.date)
-      return (
-        exp.categoryId === category.id &&
-        expDate.getFullYear() === year &&
-        expDate.getMonth() === month
-      )
-    })
+    return monthExpenses.filter((exp) => exp.categoryId === category.id)
   }, [activeTab, expenses, year, month])
 
   const monthTotal = useMemo(() => {
@@ -44,16 +33,11 @@ export default function CategoryView({ expenses, onDeleteExpense, members, onCat
       return getMonthTotal(expenses, year, month)
     }
     const category = getCategoryByName(activeTab)
-    return getCategoryTotal(
-      expenses.filter((exp) => {
-        const expDate = new Date(exp.date)
-        return expDate.getFullYear() === year && expDate.getMonth() === month
-      }),
-      category.id
-    )
+    return getCategoryTotal(getMonthExpenses(expenses, year, month), category.id)
   }, [activeTab, expenses, year, month])
 
-  const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date))
+  // 'YYYY-MM-DD' strings sort correctly as text, newest first
+  const sortedExpenses = [...filteredExpenses].sort((a, b) => b.date.localeCompare(a.date))
 
   return (
     <div className="flex flex-col h-full">

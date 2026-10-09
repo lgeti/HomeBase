@@ -9,9 +9,22 @@ export const getEffectiveAmount = (expense) => {
   return expense.splitType === 'split' ? amount / 2 : amount
 }
 
+// Expense dates are 'YYYY-MM-DD' calendar dates. new Date('YYYY-MM-DD') would read them as UTC midnight,
+// which is still the previous day anywhere west of UTC, so build the date in local time instead.
+export const parseLocalDate = (dateString) => {
+  const [year, month, day] = String(dateString).slice(0, 10).split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+// Today's local calendar date as 'YYYY-MM-DD' (toISOString would give the UTC date)
+export const todayDateString = (now = new Date()) => {
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 export const getMonthExpenses = (expenses, year, month) => {
   return expenses.filter((exp) => {
-    const expDate = new Date(exp.date)
+    const expDate = parseLocalDate(exp.date)
     return expDate.getFullYear() === year && expDate.getMonth() === month
   })
 }
@@ -91,8 +104,7 @@ export const formatCurrency = (amount, currency = '€') => {
 }
 
 export const formatDate = (dateString) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
+  return parseLocalDate(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',

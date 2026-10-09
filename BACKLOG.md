@@ -24,6 +24,5 @@ Split expenses are counted three different ways:
 - **Payer is matched by display name.** `whoPaid` is a name and the calculations group by name. Use `paidByMemberId` all the way through.
 - **Two sources of categories.** The `categories` database table and `src/config/categories.js` both define them, and the client never reads the table.
 - **Slow first load.** It takes about 3–6 seconds before the household appears.
-- **Dates can land in the wrong month.** `new Date('2026-10-01')` is parsed as UTC, so for users west of UTC an expense on the 1st falls into the previous month.
 - **`App.jsx` does too much,** and `server/src/server.js` is one large file. Split them before adding bank sync.
 - **Stale docs.** `FEATURE_STATUS.md` still says there's no backend or auth, and `docs/` has several superseded implementation plans.

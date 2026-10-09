@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../../../config/categories'
+import { todayDateString } from '../../../core/utils/calculations'
 
 export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries' }) {
   const memberNames = members.map((member) => member.display_name)
@@ -9,7 +10,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
     categoryId: defaultCategoryId,
     tag: '',
     description: '',
-    date: new Date().toISOString().split('T')[0],
+    date: todayDateString(),
     whoPaid: defaultPayer,
     splitType: 'one',
     isRecurring: false,
@@ -70,7 +71,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
       categoryId: defaultCategoryId,
       tag: '',
       description: '',
-      date: new Date().toISOString().split('T')[0],
+      date: todayDateString(),
       whoPaid: defaultPayer,
       splitType: 'one',
       isRecurring: false,

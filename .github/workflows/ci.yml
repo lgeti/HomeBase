@@ -28,7 +28,7 @@ jobs:
       - run: npm test
 
   web-build:
-    name: Web app build
+    name: Web app tests and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,4 +38,5 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
       - run: npm ci
+      - run: npm test
       - run: npm run build

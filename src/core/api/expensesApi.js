@@ -16,6 +16,7 @@ const mapExpense = (expense, members = []) => {
     isRecurring: expense.is_recurring,
     recurringFrequency: expense.recurring_frequency || undefined,
     nextDueDate: expense.next_due_date || undefined,
+    isAutoAdded: Boolean(expense.recurring_source_id),
   }
 }
 

@@ -39,6 +39,9 @@ export default function TransactionList({ transactions, onDelete, members }) {
                     🔁 {transaction.recurringFrequency || 'monthly'}
                   </p>
                 )}
+                {transaction.isAutoAdded && (
+                  <p className="text-[11px] text-gray-400 mt-1">🔁 Added automatically</p>
+                )}
               </div>
             </div>
 

@@ -6,6 +6,7 @@
   "homepage": "https://lgeti.github.io/HomeBase/",
   "scripts": {
     "dev": "vite",
+    "dev:all": "node scripts/dev.js",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && gh-pages -d dist"

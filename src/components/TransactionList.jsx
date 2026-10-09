@@ -51,10 +51,15 @@ export default function TransactionList({ transactions, onDelete, members }) {
                   <p className="text-xs text-gray-400">50/50</p>
                 )}
               </div>
+              {/* Always visible on touch screens; mouse users see it on hover or keyboard focus */}
               <button
-                onClick={() => onDelete(transaction.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition ml-2"
+                type="button"
+                onClick={() => {
+                  if (window.confirm('Delete this expense?')) onDelete(transaction.id)
+                }}
+                className="p-2 -m-2 ml-0 text-gray-400 hover:text-red-500 focus:opacity-100 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                 title="Delete"
+                aria-label="Delete expense"
               >
                 ✕
               </button>

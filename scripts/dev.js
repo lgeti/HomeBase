@@ -10,8 +10,8 @@ if (!existsSync(serverEnvFile) || !existsSync('.env.development.local')) {
   process.exit(1)
 }
 
-const run = (name, args, options = {}) => {
-  const child = spawn('npm', args, { stdio: 'inherit', shell: true, ...options })
+const run = (name, command, env = process.env) => {
+  const child = spawn(command, { stdio: 'inherit', shell: true, env })
   child.on('exit', (code) => {
     console.log(`[${name}] exited with code ${code}`)
     process.exit(code ?? 0)
@@ -19,7 +19,8 @@ const run = (name, args, options = {}) => {
   return child
 }
 
-run('api', ['start', '--prefix', 'server'], {
-  env: { ...process.env, DOTENV_CONFIG_PATH: '.env.development.local' },
-})
-run('web', ['run', 'dev'])
+// Drop any inherited PORT so the API uses the PORT from its own env file instead of the web app's
+const { PORT, ...apiEnv } = process.env
+
+run('api', 'npm start --prefix server', { ...apiEnv, DOTENV_CONFIG_PATH: '.env.development.local' })
+run('web', 'npm run dev')

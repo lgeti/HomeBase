@@ -3,6 +3,7 @@ import crypto from 'node:crypto'
 import cors from 'cors'
 import express from 'express'
 import { createClient } from '@supabase/supabase-js'
+import { canAcceptInvitation, canInvite, canRemoveMember, normalizeEmail } from './authorization.js'
 
 const port = Number(process.env.PORT || 3000)
 const supabaseUrl = process.env.SUPABASE_URL
@@ -206,7 +207,6 @@ app.post('/api/households', requireAuth, async (request, response) => {
       auth_user_id: index === 0 ? ownerUserId : null,
       role: index === 0 ? 'owner' : 'member',
       status: index === 0 ? 'active' : 'pending',
-      invited_email: index === 0 ? null : null,
     })))
     .select()
 
@@ -218,38 +218,89 @@ app.post('/api/households', requireAuth, async (request, response) => {
   response.status(201).json({ ...household, members: createdMembers })
 })
 
+// Invite someone by email - links the invite to an existing pending member (memberId) or creates a new pending member (displayName)
 app.post('/api/households/:householdId/invitations', requireAuth, requireHouseholdMember, async (request, response) => {
-  const { email, role = 'member' } = request.body
+  const { email, role = 'member', memberId, displayName } = request.body
+  const householdId = request.params.householdId
+  const normalizedEmail = normalizeEmail(email)
 
-  if (!email || !['admin', 'member'].includes(role)) {
-    return sendError(response, 400, 'email and valid role are required')
+  if (!normalizedEmail.includes('@') || !['admin', 'member'].includes(role)) {
+    return sendError(response, 400, 'a valid email and role are required')
   }
 
-  const normalizedEmail = String(email).trim().toLowerCase()
-  const token = crypto.randomUUID()
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
+  if (!memberId && !String(displayName || '').trim()) {
+    return sendError(response, 400, 'memberId or displayName is required')
+  }
 
-  const { data: existingMember, error: existingMemberError } = await supabase
+  if (!canInvite(request.householdMember.role, role)) {
+    return sendError(response, 403, 'Forbidden: your role cannot send this invitation')
+  }
+
+  const { data: emailOwner, error: emailOwnerError } = await supabase
     .from('household_members')
     .select('household_member_id')
-    .eq('household_id', request.params.householdId)
+    .eq('household_id', householdId)
     .eq('invited_email', normalizedEmail)
     .neq('status', 'removed')
     .maybeSingle()
 
-  if (existingMemberError) {
-    return sendError(response, 500, existingMemberError.message)
+  if (emailOwnerError) return sendError(response, 500, emailOwnerError.message)
+
+  if (emailOwner && emailOwner.household_member_id !== memberId) {
+    return sendError(response, 409, 'This email is already invited to another member of this household')
   }
 
-  if (existingMember) {
-    return sendError(response, 409, 'An invitation already exists for this email in this household')
+  let member
+  if (memberId) {
+    const { data, error } = await supabase
+      .from('household_members')
+      .update({ invited_email: normalizedEmail, invited_at: new Date().toISOString() })
+      .eq('household_id', householdId)
+      .eq('household_member_id', memberId)
+      .eq('status', 'pending')
+      .select()
+      .maybeSingle()
+
+    if (error) return sendError(response, 400, error.message)
+    if (!data) return sendError(response, 404, 'No pending member found with this id')
+    member = data
+  } else {
+    const { data, error } = await supabase
+      .from('household_members')
+      .insert({
+        household_id: householdId,
+        display_name: String(displayName).trim(),
+        role: 'member',
+        status: 'pending',
+        invited_email: normalizedEmail,
+        invited_at: new Date().toISOString(),
+      })
+      .select()
+      .single()
+
+    if (error) return sendError(response, 400, error.message)
+    member = data
   }
+
+  // Only the newest invitation for an email stays usable
+  const { error: revokeError } = await supabase
+    .from('household_invitations')
+    .update({ revoked_at: new Date().toISOString() })
+    .eq('household_id', householdId)
+    .eq('invited_email', normalizedEmail)
+    .is('accepted_at', null)
+    .is('revoked_at', null)
+
+  if (revokeError) return sendError(response, 500, revokeError.message)
+
+  const token = crypto.randomUUID()
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString()
 
   const { data: invitation, error: inviteError } = await supabase
     .from('household_invitations')
     .insert({
-      household_id: request.params.householdId,
+      household_id: householdId,
       invited_email: normalizedEmail,
       invited_role: role,
       token_hash: tokenHash,
@@ -258,12 +309,11 @@ app.post('/api/households/:householdId/invitations', requireAuth, requireHouseho
     .select()
     .single()
 
-  if (inviteError) {
-    return sendError(response, 400, inviteError.message)
-  }
+  if (inviteError) return sendError(response, 400, inviteError.message)
 
   response.status(201).json({
     invitationId: invitation.invitation_id,
+    memberId: member.household_member_id,
     email: normalizedEmail,
     role,
     expiresAt,
@@ -272,8 +322,7 @@ app.post('/api/households/:householdId/invitations', requireAuth, requireHouseho
 })
 
 app.post('/api/invitations/:token/accept', requireAuth, async (request, response) => {
-  const token = request.params.token
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex')
+  const tokenHash = crypto.createHash('sha256').update(request.params.token).digest('hex')
 
   const { data: invitation, error: inviteError } = await supabase
     .from('household_invitations')
@@ -284,29 +333,30 @@ app.post('/api/invitations/:token/accept', requireAuth, async (request, response
     .is('revoked_at', null)
     .maybeSingle()
 
-  if (inviteError) {
-    return sendError(response, 500, inviteError.message)
+  if (inviteError) return sendError(response, 500, inviteError.message)
+  if (!invitation) return sendError(response, 400, 'Invitation is invalid, expired, or already used')
+
+  if (!canAcceptInvitation(request.user, invitation)) {
+    return sendError(response, 403, 'Forbidden: this invitation was sent to a different email')
   }
 
-  if (!invitation) {
-    return sendError(response, 400, 'Invitation is invalid, expired, or already used')
-  }
-
-  const { data: member, error: memberLookupError } = await supabase
-    .from('household_members')
-    .select('*')
-    .eq('household_id', invitation.household_id)
-    .eq('invited_email', invitation.invited_email)
-    .neq('status', 'removed')
+  // Claim the invitation first so the same token cannot be accepted twice
+  const { data: claimed, error: claimError } = await supabase
+    .from('household_invitations')
+    .update({ accepted_at: new Date().toISOString() })
+    .eq('invitation_id', invitation.invitation_id)
+    .is('accepted_at', null)
+    .is('revoked_at', null)
+    .select()
     .maybeSingle()
 
-  if (memberLookupError) {
-    return sendError(response, 500, memberLookupError.message)
-  }
+  if (claimError) return sendError(response, 500, claimError.message)
+  if (!claimed) return sendError(response, 400, 'Invitation is invalid, expired, or already used')
 
-  if (!member) {
-    return sendError(response, 404, 'No pending household member record found for this invitation')
-  }
+  const releaseClaim = () => supabase
+    .from('household_invitations')
+    .update({ accepted_at: null })
+    .eq('invitation_id', invitation.invitation_id)
 
   const { data: updatedMember, error: updateError } = await supabase
     .from('household_members')
@@ -314,21 +364,23 @@ app.post('/api/invitations/:token/accept', requireAuth, async (request, response
       auth_user_id: request.user.id,
       role: invitation.invited_role,
       status: 'active',
-      invited_email: invitation.invited_email,
       accepted_at: new Date().toISOString(),
     })
-    .eq('household_member_id', member.household_member_id)
+    .eq('household_id', invitation.household_id)
+    .eq('invited_email', invitation.invited_email)
+    .eq('status', 'pending')
     .select()
-    .single()
+    .maybeSingle()
 
   if (updateError) {
+    await releaseClaim()
     return sendError(response, 400, updateError.message)
   }
 
-  await supabase
-    .from('household_invitations')
-    .update({ accepted_at: new Date().toISOString() })
-    .eq('invitation_id', invitation.invitation_id)
+  if (!updatedMember) {
+    await releaseClaim()
+    return sendError(response, 404, 'No pending household member record found for this invitation')
+  }
 
   response.json({
     householdId: invitation.household_id,
@@ -349,14 +401,28 @@ app.get('/api/households/:householdId/members', requireAuth, requireHouseholdMem
   response.json(data)
 })
 
-// Remove a member from a household by setting their status to 'removed' - needs authentication
+// Remove a member from a household by setting their status to 'removed' - owners and admins only, never the owner
 app.delete('/api/households/:householdId/members/:memberId', requireAuth, requireHouseholdMember, async (request, response) => {
+  const { data: target, error: targetError } = await supabase
+    .from('household_members')
+    .select('*')
+    .eq('household_id', request.params.householdId)
+    .eq('household_member_id', request.params.memberId)
+    .neq('status', 'removed')
+    .maybeSingle()
+
+  if (targetError) return sendError(response, 500, targetError.message)
+  if (!target) return sendError(response, 404, 'Member not found')
+
+  if (!canRemoveMember(request.householdMember, target)) {
+    return sendError(response, 403, 'Forbidden: your role cannot remove this member')
+  }
+
   const { error } = await supabase
     .from('household_members')
     .update({ status: 'removed' })
     .eq('household_id', request.params.householdId)
-    .eq('household_member_id', request.params.memberId)
-    .neq('status', 'removed')
+    .eq('household_member_id', target.household_member_id)
 
   if (error) return sendError(response, 400, error.message)
   response.status(204).send()

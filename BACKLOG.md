@@ -27,4 +27,3 @@ Split expenses are counted three different ways:
 - **Dates can land in the wrong month.** `new Date('2026-10-01')` is parsed as UTC, so for users west of UTC an expense on the 1st falls into the previous month.
 - **`App.jsx` does too much,** and `server/src/server.js` is one large file. Split them before adding bank sync.
 - **Stale docs.** `FEATURE_STATUS.md` still says there's no backend or auth, and `docs/` has several superseded implementation plans.
-- **No CI.** `npm test` only runs when someone runs it by hand.

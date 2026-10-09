@@ -340,6 +340,21 @@ app.post('/api/invitations/:token/accept', requireAuth, async (request, response
     return sendError(response, 403, 'Forbidden: this invitation was sent to a different email')
   }
 
+  // The app supports one household per person, so a member of another household cannot join this one
+  const { data: existingMembership, error: membershipError } = await supabase
+    .from('household_members')
+    .select('household_id')
+    .eq('auth_user_id', request.user.id)
+    .eq('status', 'active')
+    .neq('household_id', invitation.household_id)
+    .limit(1)
+    .maybeSingle()
+
+  if (membershipError) return sendError(response, 500, membershipError.message)
+  if (existingMembership) {
+    return sendError(response, 409, 'You already belong to another household')
+  }
+
   // Claim the invitation first so the same token cannot be accepted twice
   const { data: claimed, error: claimError } = await supabase
     .from('household_invitations')
@@ -398,6 +413,27 @@ app.get('/api/households/:householdId/members', requireAuth, requireHouseholdMem
     .order('display_name')
 
   if (error) return sendError(response, 500, error.message)
+  response.json(data)
+})
+
+// Change your own display name in a household
+app.patch('/api/households/:householdId/members/me', requireAuth, requireHouseholdMember, async (request, response) => {
+  const displayName = String(request.body.displayName || '').trim()
+
+  if (displayName.length < 1 || displayName.length > 100) {
+    return sendError(response, 400, 'displayName must be between 1 and 100 characters')
+  }
+
+  const { data, error } = await supabase
+    .from('household_members')
+    .update({ display_name: displayName, updated_at_utc: new Date().toISOString() })
+    .eq('household_member_id', request.householdMember.household_member_id)
+    .select()
+    .single()
+
+  // 23505 = unique violation: names must be unique within a household
+  if (error?.code === '23505') return sendError(response, 409, 'Someone in this household already uses that name')
+  if (error) return sendError(response, 400, error.message)
   response.json(data)
 })
 

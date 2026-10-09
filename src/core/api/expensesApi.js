@@ -27,6 +27,22 @@ export const createHousehold = (name, ownerName, members = []) =>
 
 export const fetchMyHousehold = () => apiRequest('/api/households/me')
 
+// Pass memberId to invite an existing pending member, or displayName to add someone new
+export const createInvitation = (householdId, { email, memberId, displayName }) =>
+  apiRequest(`/api/households/${householdId}/invitations`, {
+    method: 'POST',
+    body: JSON.stringify({ email, memberId, displayName }),
+  })
+
+export const updateMyDisplayName = (householdId, displayName) =>
+  apiRequest(`/api/households/${householdId}/members/me`, {
+    method: 'PATCH',
+    body: JSON.stringify({ displayName }),
+  })
+
+export const acceptInvitation = (token) =>
+  apiRequest(`/api/invitations/${encodeURIComponent(token)}/accept`, { method: 'POST' })
+
 export const fetchExpenses = async (householdId, members) => {
   const expenses = await apiRequest(`/api/households/${householdId}/expenses`)
   return expenses.map((expense) => mapExpense(expense, members))

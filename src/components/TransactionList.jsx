@@ -1,5 +1,5 @@
 import { getCategoryById } from '../config/categories'
-import { formatCurrency, formatDate } from '../core/utils/calculations'
+import { formatCurrency, formatDate, getMemberName } from '../core/utils/calculations'
 
 export default function TransactionList({ transactions, onDelete, members }) {
   if (transactions.length === 0) {
@@ -15,7 +15,7 @@ export default function TransactionList({ transactions, onDelete, members }) {
     <div className="space-y-2">
       {transactions.map((transaction) => {
         const category = getCategoryById(transaction.categoryId)
-        const personLabel = `${transaction.whoPaid} paid`
+        const personLabel = `${getMemberName(members, transaction.paidByMemberId)} paid`
 
         return (
           <div

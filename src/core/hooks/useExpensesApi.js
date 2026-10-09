@@ -7,7 +7,6 @@ export const useExpensesApi = (household) => {
   const [error, setError] = useState('')
 
   const householdId = household?.household_id
-  const members = household?.members || []
 
   const reload = useCallback(async () => {
     if (!householdId) return
@@ -16,14 +15,14 @@ export const useExpensesApi = (household) => {
     setError('')
 
     try {
-      const nextExpenses = await fetchExpenses(householdId, members)
+      const nextExpenses = await fetchExpenses(householdId)
       setExpenses(nextExpenses)
     } catch (requestError) {
       setError(requestError.message)
     } finally {
       setIsLoading(false)
     }
-  }, [householdId, members])
+  }, [householdId])
 
   useEffect(() => {
     reload()
@@ -33,7 +32,7 @@ export const useExpensesApi = (household) => {
     if (!householdId) throw new Error('No household is connected')
 
     setError('')
-    const createdExpense = await createExpense(householdId, expense, members)
+    const createdExpense = await createExpense(householdId, expense)
     setExpenses((currentExpenses) => [createdExpense, ...currentExpenses])
     return createdExpense
   }

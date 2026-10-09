@@ -49,34 +49,39 @@ export const getMonthCategoryBreakdown = (expenses, year, month) => {
     .sort((left, right) => right.total - left.total)
 }
 
+// Name to show for a payer. Members who were removed are no longer in the household's member list.
+export const getMemberName = (members, memberId) =>
+  members.find((member) => member.household_member_id === memberId)?.display_name || 'Removed member'
+
+// Paid, owed and net amounts for the month, keyed by household_member_id
 export const getMemberSummary = (expenses, members, year, month) => {
   const monthExpenses = getMonthExpenses(expenses, year, month)
-  const memberNames = members.map((member) => member.display_name || member)
-  const summary = Object.fromEntries(memberNames.map((memberName) => [
-    memberName,
-    { paid: 0, owed: 0, net: 0 },
+  const summary = Object.fromEntries(members.map((member) => [
+    member.household_member_id,
+    { name: member.display_name, paid: 0, owed: 0, net: 0 },
   ]))
+  const memberSummaries = Object.values(summary)
 
   monthExpenses.forEach((expense) => {
     const amount = parseFloat(expense.amount || 0)
-    const payer = summary[expense.whoPaid]
+    const payer = summary[expense.paidByMemberId]
 
     if (payer) {
       payer.paid += amount
     }
 
     if (expense.splitType === 'split') {
-      const share = memberNames.length > 0 ? amount / memberNames.length : 0
-      memberNames.forEach((memberName) => {
-        summary[memberName].owed += share
+      const share = memberSummaries.length > 0 ? amount / memberSummaries.length : 0
+      memberSummaries.forEach((member) => {
+        member.owed += share
       })
-    } else if (summary[expense.whoPaid]) {
-      summary[expense.whoPaid].owed += amount
+    } else if (payer) {
+      payer.owed += amount
     }
   })
 
-  memberNames.forEach((memberName) => {
-    summary[memberName].net = summary[memberName].paid - summary[memberName].owed
+  memberSummaries.forEach((member) => {
+    member.net = member.paid - member.owed
   })
 
   return summary
@@ -93,8 +98,8 @@ export const calculateBalance = (expenses, members, year, month) => {
   }
 
   return {
-    owes: owes[0],
-    owed: owed[0],
+    owes: owes[1].name,
+    owed: owed[1].name,
     amount: Math.min(owed[1].net, Math.abs(owes[1].net)),
   }
 }

@@ -105,19 +105,16 @@ export default function App() {
   }
 
   const handleAddTransaction = (expense) => {
-    const paidByMember = household?.members?.find(
-      (member) => member.display_name === expense.whoPaid
+    const isHouseholdMember = household?.members?.some(
+      (member) => member.household_member_id === expense.paidByMemberId
     )
 
-    if (!paidByMember) {
+    if (!isHouseholdMember) {
       setApiError('The selected payer is not connected to this household')
       return
     }
 
-    addExpense({
-      ...expense,
-      paidByMemberId: paidByMember.household_member_id,
-    })
+    addExpense(expense)
       .then(() => setShowAddForm(false))
       .catch((error) => setApiError(error.message))
   }
@@ -239,6 +236,7 @@ export default function App() {
           onSubmit={handleAddTransaction}
           onCancel={() => setShowAddForm(false)}
           defaultCategoryId={selectedCategoryId}
+          defaultPayerId={household.members.find((member) => member.auth_user_id === authUserId)?.household_member_id}
         />
       </AddTransactionSheetWrapper>
 

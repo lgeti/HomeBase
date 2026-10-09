@@ -123,11 +123,11 @@ export default function Dashboard({ expenses, members }) {
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {members.map((member, index) => {
           const memberName = member.display_name
-          const memberSummary = monthData.memberSummary[memberName] || { paid: 0, net: 0 }
+          const memberSummary = monthData.memberSummary[member.household_member_id] || { paid: 0, net: 0 }
           const memberShare = totalPaid > 0 ? (memberSummary.paid / totalPaid) * 100 : 0
 
           return (
-            <article key={member.household_member_id || memberName} className="rounded-3xl bg-white p-4 border border-gray-100 shadow-sm">
+            <article key={member.household_member_id} className="rounded-3xl bg-white p-4 border border-gray-100 shadow-sm">
               <p className="text-xs uppercase tracking-[0.2em] text-gray-400 font-semibold">{memberName}</p>
               <p className="text-2xl font-semibold text-gray-900 mt-2">{formatCurrency(memberSummary.paid)}</p>
               <div className="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">

@@ -1,8 +1,6 @@
 import { apiRequest } from './client'
 
-const mapExpense = (expense, members = []) => {
-  const payer = members.find((member) => member.household_member_id === expense.paid_by_member_id)
-
+const mapExpense = (expense) => {
   return {
     id: expense.expense_id,
     categoryId: expense.category_id,
@@ -10,7 +8,6 @@ const mapExpense = (expense, members = []) => {
     tag: expense.tag || undefined,
     description: expense.description || undefined,
     date: expense.expense_date,
-    whoPaid: payer?.display_name || expense.paid_by_member_id,
     paidByMemberId: expense.paid_by_member_id,
     splitType: expense.split_type,
     isRecurring: expense.is_recurring,
@@ -44,17 +41,17 @@ export const updateMyDisplayName = (householdId, displayName) =>
 export const acceptInvitation = (token) =>
   apiRequest(`/api/invitations/${encodeURIComponent(token)}/accept`, { method: 'POST' })
 
-export const fetchExpenses = async (householdId, members) => {
+export const fetchExpenses = async (householdId) => {
   const expenses = await apiRequest(`/api/households/${householdId}/expenses`)
-  return expenses.map((expense) => mapExpense(expense, members))
+  return expenses.map(mapExpense)
 }
 
-export const createExpense = async (householdId, expense, members) => {
+export const createExpense = async (householdId, expense) => {
   const createdExpense = await apiRequest(`/api/households/${householdId}/expenses`, {
     method: 'POST',
     body: JSON.stringify(expense),
   })
-  return mapExpense(createdExpense, members)
+  return mapExpense(createdExpense)
 }
 
 export const deleteExpense = (householdId, expenseId) =>

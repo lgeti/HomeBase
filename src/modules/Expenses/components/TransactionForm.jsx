@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../../../config/categories'
-import { getNextRecurringDate } from '../../../core/utils/calculations'
 
 export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries' }) {
   const memberNames = members.map((member) => member.display_name)
@@ -58,14 +57,11 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
       amount: parseFloat(formData.amount),
       tag: formData.tag || undefined,
       description: formData.description || undefined,
-      date: new Date(formData.date).toISOString(),
+      date: formData.date,
       whoPaid: formData.whoPaid,
       splitType: formData.splitType,
       isRecurring: formData.isRecurring,
       recurringFrequency: formData.recurringFrequency,
-      nextDueDate: formData.isRecurring
-        ? getNextRecurringDate(formData.date, formData.recurringFrequency)
-        : undefined,
     }
 
     onSubmit(expense)

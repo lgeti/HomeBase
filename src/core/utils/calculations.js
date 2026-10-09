@@ -110,23 +110,3 @@ export const getCurrentMonthYear = () => {
   const now = new Date()
   return { year: now.getFullYear(), month: now.getMonth() }
 }
-
-export const getNextRecurringDate = (dateString, frequency = 'monthly') => {
-  const nextDate = new Date(dateString)
-
-  switch (frequency) {
-    case 'weekly':
-      nextDate.setDate(nextDate.getDate() + 7)
-      break
-    case 'yearly':
-      nextDate.setFullYear(nextDate.getFullYear() + 1)
-      break
-    case 'monthly':
-    default:
-      nextDate.setMonth(nextDate.getMonth() + 1)
-      break
-  }
-
-  return nextDate.toISOString()
-}
-

@@ -21,7 +21,6 @@ Split expenses are counted three different ways:
 
 ## Not yet prioritized
 
-- **Recurring expenses are never generated.** They're saved with a frequency and a next due date, but nothing creates the new occurrences since the move off localStorage.
 - **Payer is matched by display name.** `whoPaid` is a name and the calculations group by name. Use `paidByMemberId` all the way through.
 - **Two sources of categories.** The `categories` database table and `src/config/categories.js` both define them, and the client never reads the table.
 - **Slow first load.** It takes about 3–6 seconds before the household appears.

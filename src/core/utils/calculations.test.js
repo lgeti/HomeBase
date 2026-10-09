@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { formatDate, getMonthExpenses, parseLocalDate, todayDateString } from './calculations.js'
+import {
+  calculateBalance,
+  formatDate,
+  getMemberName,
+  getMemberSummary,
+  getMonthExpenses,
+  parseLocalDate,
+  todayDateString,
+} from './calculations.js'
 
 // West of UTC, new Date('2026-10-01') is still September 30 locally. These tests run there on purpose.
 process.env.TZ = 'America/New_York'
@@ -39,5 +47,35 @@ describe('todayDateString', () => {
 
   it('pads month and day', () => {
     assert.equal(todayDateString(new Date(2026, 0, 5)), '2026-01-05')
+  })
+})
+
+describe('payers are matched by member id', () => {
+  const members = [
+    { household_member_id: 'm-ana', display_name: 'Ana' },
+    { household_member_id: 'm-bor', display_name: 'Bor' },
+  ]
+  const expenses = [
+    { date: '2026-10-02', amount: 100, paidByMemberId: 'm-ana', splitType: 'split' },
+    { date: '2026-10-03', amount: 30, paidByMemberId: 'm-bor', splitType: 'one' },
+  ]
+
+  it('names the payer from the member list', () => {
+    assert.equal(getMemberName(members, 'm-bor'), 'Bor')
+  })
+
+  it('labels a payer who left the household instead of showing an id', () => {
+    assert.equal(getMemberName(members, 'm-gone'), 'Removed member')
+  })
+
+  it('keeps totals when a member is renamed', () => {
+    const renamed = [{ ...members[0], display_name: 'Ana Novak' }, members[1]]
+    const summary = getMemberSummary(expenses, renamed, 2026, 9)
+    assert.deepEqual(summary['m-ana'], { name: 'Ana Novak', paid: 100, owed: 50, net: 50 })
+    assert.deepEqual(summary['m-bor'], { name: 'Bor', paid: 30, owed: 80, net: -50 })
+  })
+
+  it('reports who owes whom by name', () => {
+    assert.deepEqual(calculateBalance(expenses, members, 2026, 9), { owes: 'Bor', owed: 'Ana', amount: 50 })
   })
 })

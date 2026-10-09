@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react'
 import { CATEGORIES } from '../../../config/categories'
-import { todayDateString } from '../../../core/utils/calculations'
+import { getMemberName, todayDateString } from '../../../core/utils/calculations'
 
-export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries' }) {
-  const memberNames = members.map((member) => member.display_name)
-  const defaultPayer = memberNames[0] || ''
+export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries', defaultPayerId }) {
+  const defaultPayer = defaultPayerId || members[0]?.household_member_id || ''
   const [formData, setFormData] = useState({
     amount: '',
     categoryId: defaultCategoryId,
     tag: '',
     description: '',
     date: todayDateString(),
-    whoPaid: defaultPayer,
+    paidByMemberId: defaultPayer,
     splitType: 'one',
     isRecurring: false,
     recurringFrequency: 'monthly',
@@ -59,7 +58,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
       tag: formData.tag || undefined,
       description: formData.description || undefined,
       date: formData.date,
-      whoPaid: formData.whoPaid,
+      paidByMemberId: formData.paidByMemberId,
       splitType: formData.splitType,
       isRecurring: formData.isRecurring,
       recurringFrequency: formData.recurringFrequency,
@@ -72,7 +71,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
       tag: '',
       description: '',
       date: todayDateString(),
-      whoPaid: defaultPayer,
+      paidByMemberId: defaultPayer,
       splitType: 'one',
       isRecurring: false,
       recurringFrequency: 'monthly',
@@ -187,9 +186,9 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
               <label key={member.household_member_id} className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="whoPaid"
-                  value={member.display_name}
-                  checked={formData.whoPaid === member.display_name}
+                  name="paidByMemberId"
+                  value={member.household_member_id}
+                  checked={formData.paidByMemberId === member.household_member_id}
                   onChange={handleChange}
                   className="w-4 h-4"
                 />
@@ -212,7 +211,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
               onChange={handleChange}
               className="w-4 h-4"
             />
-            <span className="text-sm text-gray-700">{formData.whoPaid} paid it all</span>
+            <span className="text-sm text-gray-700">{getMemberName(members, formData.paidByMemberId)} paid it all</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input

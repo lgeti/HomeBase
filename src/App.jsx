@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
-import { fetchMyHousehold, createHousehold } from './core/api/expensesApi'
+import { fetchMyHousehold, createHousehold, acceptInvitation } from './core/api/expensesApi'
+import { hasPendingInvite, takePendingInvite } from './core/utils/pendingInvite'
 import { useAuth } from './core/auth/useAuth'
 import ProfileSetup from './components/ProfileSetup'
 import Login from './modules/Auth/pages/Login'
@@ -9,6 +10,20 @@ import CategoryView from './modules/Expenses/pages/CategoryView'
 import Dashboard from './modules/Expenses/pages/Dashboard'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
+import HouseholdView from './modules/Household/pages/HouseholdView'
+
+// Accepts an invite link opened before sign-in. Resolves to an error message, or '' when there was nothing to accept.
+const acceptPendingInvite = async () => {
+  const token = takePendingInvite()
+  if (!token) return ''
+
+  try {
+    await acceptInvitation(token)
+    return ''
+  } catch (error) {
+    return `Could not join the household from your invite link: ${error.message}`
+  }
+}
 
 export default function App() {
   const {
@@ -26,6 +41,9 @@ export default function App() {
   const { expenses, addExpense, deleteExpense, error: expensesError } = useExpensesApi(household)
   const [householdLookupError, setHouseholdLookupError] = useState('')
   const [apiError, setApiError] = useState('')
+  const [inviteError, setInviteError] = useState('')
+  // Shared across effect re-runs (React StrictMode runs effects twice) so an invite is only accepted once
+  const inviteAcceptance = useRef(null)
   const [authMode, setAuthMode] = useState('login')
   const [showAddForm, setShowAddForm] = useState(false)
   const [activeView, setActiveView] = useState('categories')
@@ -34,6 +52,7 @@ export default function App() {
 
   useEffect(() => {
     if (!authUserId) {
+      inviteAcceptance.current = null
       setHousehold(null)
       setHouseholdCheckedFor(null)
       return undefined
@@ -45,7 +64,12 @@ export default function App() {
     setHouseholdLookupError('')
     setApiError('')
 
-    fetchMyHousehold()
+    inviteAcceptance.current ??= acceptPendingInvite()
+    inviteAcceptance.current
+      .then((acceptError) => {
+        if (!isCancelled && acceptError) setInviteError(acceptError)
+        return fetchMyHousehold()
+      })
       .then((existingHousehold) => {
         if (!isCancelled) setHousehold(existingHousehold)
       })
@@ -60,6 +84,10 @@ export default function App() {
       isCancelled = true
     }
   }, [authUserId, householdCheckedFor])
+
+  const refreshHousehold = async () => {
+    setHousehold(await fetchMyHousehold())
+  }
 
   const handleProfileSet = async (profile) => {
     setApiError('')
@@ -106,23 +134,28 @@ export default function App() {
   }
 
   if (!authUser) {
-    if (authMode === 'signup') {
-      return (
-        <Signup
-          isConfigured={isConfigured}
-          onSignUp={signUpWithPassword}
-          onSwitchToLogin={() => setAuthMode('login')}
-        />
-      )
-    }
-
     return (
-      <Login
-        isConfigured={isConfigured}
-        onGoogleSignIn={signInWithGoogle}
-        onPasswordSignIn={signInWithPassword}
-        onSwitchToSignup={() => setAuthMode('signup')}
-      />
+      <>
+        {hasPendingInvite() && (
+          <div className="fixed inset-x-0 top-0 z-50 bg-spring-sage px-4 py-2 text-center text-sm text-white">
+            You've been invited to a household. Sign in or create an account with the email the invite was sent to.
+          </div>
+        )}
+        {authMode === 'signup' ? (
+          <Signup
+            isConfigured={isConfigured}
+            onSignUp={signUpWithPassword}
+            onSwitchToLogin={() => setAuthMode('login')}
+          />
+        ) : (
+          <Login
+            isConfigured={isConfigured}
+            onGoogleSignIn={signInWithGoogle}
+            onPasswordSignIn={signInWithPassword}
+            onSwitchToSignup={() => setAuthMode('signup')}
+          />
+        )}
+      </>
     )
   }
 
@@ -156,7 +189,7 @@ export default function App() {
       <ProfileSetup
         onProfileSet={handleProfileSet}
         initialOwnerName={initialOwnerName}
-        errorMessage={apiError}
+        errorMessage={apiError || inviteError}
       />
     )
   }
@@ -164,21 +197,27 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-warm-cream">
       <header className="bg-white/95 backdrop-blur-sm shadow-sm px-4 py-3 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold text-gray-800">HomeBase</h1>
+        <h1 className="text-lg font-semibold text-gray-800">{household.name}</h1>
         <p className="text-xs text-gray-500">
           {household?.members?.map((member) => member.display_name).join(' · ')}
         </p>
       </header>
 
-      {(apiError || expensesError) && (
+      {(apiError || inviteError || expensesError) && (
         <div className="bg-red-50 border-b border-red-100 px-4 py-2 text-sm text-red-700">
-          {apiError || expensesError}
+          {apiError || inviteError || expensesError}
         </div>
       )}
 
       <div className="flex-1 min-h-0">
-        {activeView === 'dashboard' ? (
-          // Render the Dashboard view
+        {activeView === 'household' ? (
+          <HouseholdView
+            household={household}
+            currentUserId={authUserId}
+            onHouseholdChange={refreshHousehold}
+            onSignOut={signOut}
+          />
+        ) : activeView === 'dashboard' ? (
           <Dashboard expenses={expenses} members={household?.members || []} />
         ) : (
           <CategoryView
@@ -231,11 +270,13 @@ export default function App() {
             <span className="text-xs block">Dashboard</span>
           </button>
           <button
-            onClick={signOut}
-            className="flex-1 py-3 text-center text-gray-400 hover:text-gray-600"
+            onClick={() => setActiveView('household')}
+            className={`flex-1 py-3 text-center font-semibold hover:text-opacity-80 ${
+              activeView === 'household' ? 'text-spring-sage' : 'text-gray-400 hover:text-gray-600'
+            }`}
           >
-            <span className="text-xl">⚙️</span>
-            <span className="text-xs block">Sign out</span>
+            <span className="text-xl">👥</span>
+            <span className="text-xs block">Household</span>
           </button>
         </nav>
       </footer>

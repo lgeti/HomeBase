@@ -21,7 +21,6 @@ Split expenses are counted three different ways:
 
 ## Not yet prioritized
 
-- **Two sources of categories.** The `categories` database table and `src/config/categories.js` both define them, and the client never reads the table.
 - **The API sleeps when idle.** Render's free plan stops the API after about 15 idle minutes, and the next visit waits about 20 seconds (measured: 22 s cold, 0.13 s warm). The app shows a "waking up" message after 3 seconds. Fixes if it becomes a problem: Render's paid plan, or a scheduled ping that keeps it awake.
 - **`App.jsx` does too much,** and `server/src/server.js` is one large file. Split them before adding bank sync.
 - **Stale docs.** `FEATURE_STATUS.md` still says there's no backend or auth, and `docs/` has several superseded implementation plans.

@@ -122,7 +122,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
     <div className="h-full overflow-y-auto pb-24">
       <div className="max-w-lg mx-auto p-4 space-y-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-spring-sage font-semibold">Household</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-spring-sage-deep font-semibold">Household</p>
           <h2 className="text-2xl font-semibold text-gray-800">{household.name}</h2>
         </div>
 
@@ -142,7 +142,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     value={nameDraft}
                     onChange={(event) => setNameDraft(event.target.value)}
                     autoFocus
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
                   />
                   {nameError && <div className="p-2 bg-red-100 text-red-700 rounded-lg text-sm">{nameError}</div>}
                   <div className="flex gap-2">
@@ -156,7 +156,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     <button
                       type="submit"
                       disabled={isSavingName}
-                      className="flex-1 rounded-lg bg-spring-sage disabled:opacity-60 py-2 text-sm font-semibold text-white"
+                      className="flex-1 rounded-lg bg-spring-sage-deep disabled:opacity-60 py-2 text-sm font-semibold text-white"
                     >
                       {isSavingName ? 'Saving...' : 'Save'}
                     </button>
@@ -177,7 +177,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     <button
                       type="button"
                       onClick={() => setNameDraft(member.display_name)}
-                      className="mt-1 text-xs font-semibold text-spring-sage"
+                      className="mt-1 text-xs font-semibold text-spring-sage-deep"
                     >
                       Change your name
                     </button>
@@ -222,7 +222,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     id="inviteTarget"
                     value={inviteTarget}
                     onChange={(event) => setInviteTarget(event.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-spring-sage"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
                   >
                     {pendingMembers.map((member) => (
                       <option key={member.household_member_id} value={member.household_member_id}>
@@ -245,7 +245,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     value={displayName}
                     onChange={(event) => setDisplayName(event.target.value)}
                     placeholder="e.g., Sam"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
                   />
                 </div>
               )}
@@ -260,7 +260,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="The email they sign in with"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
                 />
               </div>
 
@@ -269,7 +269,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
               <button
                 type="submit"
                 disabled={isSending}
-                className="w-full bg-spring-sage hover:bg-opacity-90 disabled:opacity-60 text-white font-semibold py-3 rounded-lg transition"
+                className="w-full bg-spring-sage-deep hover:bg-opacity-90 disabled:opacity-60 text-white font-semibold py-3 rounded-lg transition"
               >
                 {isSending ? 'Creating link...' : 'Create invite link'}
               </button>
@@ -292,7 +292,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                   <button
                     type="button"
                     onClick={copyLink}
-                    className="flex-1 rounded-lg border border-spring-sage py-2 text-sm font-semibold text-spring-sage"
+                    className="flex-1 rounded-lg border border-spring-sage-deep py-2 text-sm font-semibold text-spring-sage-deep"
                   >
                     {copied ? 'Copied!' : 'Copy link'}
                   </button>
@@ -300,7 +300,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     <button
                       type="button"
                       onClick={shareLink}
-                      className="flex-1 rounded-lg bg-spring-sage py-2 text-sm font-semibold text-white"
+                      className="flex-1 rounded-lg bg-spring-sage-deep py-2 text-sm font-semibold text-white"
                     >
                       Share
                     </button>

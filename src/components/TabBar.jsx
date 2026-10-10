@@ -17,7 +17,7 @@ export default function TabBar({ activeTab, onTabChange }) {
             onClick={() => onTabChange(tab)}
             className={`px-4 py-2 rounded-full whitespace-nowrap font-medium text-sm transition ${
               isActive
-                ? `text-white ${category ? 'bg-opacity-90' : 'bg-spring-sage'}`
+                ? `text-white ${category ? 'bg-opacity-90' : 'bg-spring-sage-deep'}`
                 : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
             }`}
             style={isActive && category ? { backgroundColor: category.color } : {}}

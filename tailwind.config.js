@@ -20,6 +20,8 @@ export default {
         'warm-cream': '#faf8f3',
         'warm-beige': '#f5ede3',
         'spring-sage': '#c4d4d0',
+        // Readable shade of sage for text, buttons with white text and focus rings (5.6:1 on white)
+        'spring-sage-deep': '#4f6e67',
         'spring-mint': '#d4e8e4',
         'spring-peach': '#f5c2a0',
         'spring-lavender': '#d9c9e8',

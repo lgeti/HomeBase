@@ -1,5 +1,5 @@
 const tabClass = (isActive) => `flex-1 py-3 text-center font-semibold hover:text-opacity-80 ${
-  isActive ? 'text-spring-sage' : 'text-gray-400 hover:text-gray-600'
+  isActive ? 'text-spring-sage-deep' : 'text-gray-500 hover:text-gray-700'
 }`
 
 export default function BottomNav({ activeView, onNavigate, onAdd }) {
@@ -12,7 +12,7 @@ export default function BottomNav({ activeView, onNavigate, onAdd }) {
         </button>
         <button
           onClick={onAdd}
-          className="flex-1 py-3 text-center text-spring-sage font-semibold hover:text-opacity-80"
+          className="flex-1 py-3 text-center text-spring-sage-deep font-semibold hover:text-opacity-80"
         >
           <span className="text-xl">➕</span>
           <span className="text-xs block">Add</span>

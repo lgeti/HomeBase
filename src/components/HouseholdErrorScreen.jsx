@@ -10,7 +10,7 @@ export default function HouseholdErrorScreen({ message }) {
         <button
           type="button"
           onClick={() => window.location.reload()}
-          className="mt-6 w-full rounded-lg bg-spring-sage py-3 font-semibold text-white"
+          className="mt-6 w-full rounded-lg bg-spring-sage-deep py-3 font-semibold text-white"
         >
           Try again
         </button>

@@ -50,7 +50,7 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
           />
           <input
             type="password"
@@ -59,7 +59,7 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
             placeholder="Password"
             minLength="6"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
           />
           <input
             type="password"
@@ -68,12 +68,12 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
             placeholder="Confirm password"
             minLength="6"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
           />
           <button
             type="submit"
             disabled={!isConfigured || isSubmitting}
-            className="w-full py-3 rounded-lg bg-spring-sage text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
+            className="w-full py-3 rounded-lg bg-spring-sage-deep text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
           >
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
@@ -82,7 +82,7 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
         <button
           type="button"
           onClick={onSwitchToLogin}
-          className="w-full text-sm text-spring-sage hover:underline"
+          className="w-full text-sm text-spring-sage-deep hover:underline"
         >
           Back to sign in
         </button>

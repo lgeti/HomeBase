@@ -44,7 +44,7 @@ export default function ProfileSetup({ onProfileSet, initialOwnerName = '', erro
                 value={householdName}
                 onChange={(e) => setHouseholdName(e.target.value)}
                 placeholder="e.g., The Cabin"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition"
               />
             </div>
             <div>
@@ -57,7 +57,7 @@ export default function ProfileSetup({ onProfileSet, initialOwnerName = '', erro
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
                 placeholder="Your name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition"
               />
             </div>
 
@@ -66,7 +66,7 @@ export default function ProfileSetup({ onProfileSet, initialOwnerName = '', erro
 
             <button
               type="submit"
-              className="w-full bg-spring-sage hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg transition"
+              className="w-full bg-spring-sage-deep hover:bg-opacity-90 text-white font-semibold py-3 rounded-lg transition"
             >
               Get Started
             </button>

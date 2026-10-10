@@ -98,7 +98,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
             placeholder="0.00"
             step="0.01"
             min="0"
-            className="w-full pl-6 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
+            className="w-full pl-6 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition"
           />
         </div>
         {errors.amount && <p className="text-red-500 text-xs mt-1">{errors.amount}</p>}
@@ -114,7 +114,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
           name="categoryId"
           value={formData.categoryId}
           onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition appearance-none"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition appearance-none"
         >
           {CATEGORIES.map((cat) => (
             <option key={cat.id} value={cat.id}>
@@ -135,7 +135,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
             name="tag"
             value={formData.tag}
             onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition appearance-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition appearance-none"
           >
             <option value="">Select a type...</option>
             {selectedCategory.subcategories.map((sub) => (
@@ -159,7 +159,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
           value={formData.description}
           onChange={handleChange}
           placeholder="e.g., Weekly groceries"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition"
         />
       </div>
 
@@ -174,7 +174,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
           name="date"
           value={formData.date}
           onChange={handleChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition"
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition"
         />
       </div>
 
@@ -234,7 +234,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
             name="isRecurring"
             checked={formData.isRecurring}
             onChange={(e) => setFormData((prev) => ({ ...prev, isRecurring: e.target.checked }))}
-            className="h-4 w-4 rounded border-gray-300 text-spring-sage focus:ring-spring-sage"
+            className="h-4 w-4 rounded border-gray-300 text-spring-sage-deep focus:ring-spring-sage-deep"
           />
           Repeat this expense
         </label>
@@ -248,7 +248,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
               name="recurringFrequency"
               value={formData.recurringFrequency}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage transition appearance-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep transition appearance-none"
             >
               <option value="weekly">Weekly</option>
               <option value="monthly">Monthly</option>
@@ -269,7 +269,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
         </button>
         <button
           type="submit"
-          className="flex-1 px-4 py-3 bg-spring-sage text-white rounded-lg font-medium hover:opacity-90 transition"
+          className="flex-1 px-4 py-3 bg-spring-sage-deep text-white rounded-lg font-medium hover:opacity-90 transition"
         >
           Add
         </button>

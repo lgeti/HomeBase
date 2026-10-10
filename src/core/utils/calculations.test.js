@@ -4,6 +4,7 @@ import {
   calculateBalance,
   formatDate,
   getCategoryTotal,
+  getJoinedMembers,
   getMonthCategoryBreakdown,
   getMonthTotal,
   getMemberName,
@@ -124,5 +125,24 @@ describe('split expenses', () => {
     const total = getMonthTotal(expenses, 2026, 9)
     assert.equal(summary.reduce((sum, member) => sum + member.paid, 0), total)
     assert.equal(summary.reduce((sum, member) => sum + member.owed, 0), total)
+  })
+})
+
+describe('only joined members share expenses', () => {
+  const members = [
+    { household_member_id: 'm-ana', display_name: 'Ana', status: 'active' },
+    { household_member_id: 'm-bor', display_name: 'Bor', status: 'active' },
+    { household_member_id: 'm-cene', display_name: 'Cene', status: 'pending' },
+  ]
+  const expenses = [{ date: '2026-10-02', amount: 100, paidByMemberId: 'm-ana', splitType: 'split' }]
+
+  it('leaves out members who have not joined', () => {
+    assert.deepEqual(getJoinedMembers(members).map((member) => member.display_name), ['Ana', 'Bor'])
+  })
+
+  it('shares a split only between joined members', () => {
+    const summary = getMemberSummary(expenses, members, 2026, 9)
+    assert.deepEqual(Object.keys(summary), ['m-ana', 'm-bor'])
+    assert.equal(summary['m-bor'].owed, 50)
   })
 })

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from './core/auth/useAuth'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { useHousehold } from './core/hooks/useHousehold'
+import { getJoinedMembers } from './core/utils/calculations'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import BottomNav from './components/BottomNav'
 import HouseholdErrorScreen from './components/HouseholdErrorScreen'
@@ -54,7 +55,7 @@ export default function App() {
   }
 
   const handleAddTransaction = (expense) => {
-    const isHouseholdMember = household?.members?.some(
+    const isHouseholdMember = getJoinedMembers(household?.members || []).some(
       (member) => member.household_member_id === expense.paidByMemberId
     )
 
@@ -97,7 +98,9 @@ export default function App() {
     )
   }
 
+  // All members, for naming the payer of older expenses; only joined members pay and share new ones
   const members = household.members || []
+  const joinedMembers = getJoinedMembers(members)
   const errorMessage = apiError || inviteError || expensesError
 
   return (
@@ -105,7 +108,7 @@ export default function App() {
       <header className="bg-white/95 backdrop-blur-sm shadow-sm px-4 py-3 sticky top-0 z-10">
         <h1 className="text-lg font-semibold text-gray-800">{household.name}</h1>
         <p className="text-xs text-gray-500">
-          {members.map((member) => member.display_name).join(' · ')}
+          {joinedMembers.map((member) => member.display_name).join(' · ')}
         </p>
       </header>
 
@@ -124,7 +127,7 @@ export default function App() {
             onSignOut={signOut}
           />
         ) : activeView === 'dashboard' ? (
-          <Dashboard expenses={expenses} members={members} />
+          <Dashboard expenses={expenses} members={joinedMembers} />
         ) : (
           <CategoryView
             expenses={expenses}
@@ -137,11 +140,11 @@ export default function App() {
 
       <AddTransactionSheetWrapper isOpen={showAddForm} onClose={() => setShowAddForm(false)}>
         <TransactionForm
-          members={members}
+          members={joinedMembers}
           onSubmit={handleAddTransaction}
           onCancel={() => setShowAddForm(false)}
           defaultCategoryId={selectedCategoryId}
-          defaultPayerId={members.find((member) => member.auth_user_id === authUserId)?.household_member_id}
+          defaultPayerId={joinedMembers.find((member) => member.auth_user_id === authUserId)?.household_member_id}
         />
       </AddTransactionSheetWrapper>
 

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
-export default function Login({ isConfigured, onGoogleSignIn, onPasswordSignIn, onSwitchToSignup }) {
-  debugger
+export default function Login({ isConfigured, onGoogleSignIn, onPasswordSignIn, onSwitchToSignup, onForgotPassword }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -72,6 +71,13 @@ export default function Login({ isConfigured, onGoogleSignIn, onPasswordSignIn, 
             className="w-full py-3 rounded-lg bg-spring-sage text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
           >
             {isSigningIn ? 'Signing in...' : 'Sign in with email'}
+          </button>
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="w-full text-sm text-gray-500 hover:underline"
+          >
+            Forgot your password?
           </button>
         </form>
 

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { hasPendingInvite } from '../../../core/utils/pendingInvite'
+import ForgotPassword from './ForgotPassword'
 import Login from './Login'
 import Signup from './Signup'
 
 // Sign in or sign up, with a notice when the person arrived from an invite link
-export default function AuthScreen({ isConfigured, onGoogleSignIn, onPasswordSignIn, onSignUp }) {
+export default function AuthScreen({ isConfigured, onGoogleSignIn, onPasswordSignIn, onSignUp, onSendPasswordReset }) {
   const [mode, setMode] = useState('login')
 
   return (
@@ -14,7 +15,13 @@ export default function AuthScreen({ isConfigured, onGoogleSignIn, onPasswordSig
           You've been invited to a household. Sign in or create an account with the email the invite was sent to.
         </div>
       )}
-      {mode === 'signup' ? (
+      {mode === 'reset' ? (
+        <ForgotPassword
+          isConfigured={isConfigured}
+          onSendReset={onSendPasswordReset}
+          onBack={() => setMode('login')}
+        />
+      ) : mode === 'signup' ? (
         <Signup
           isConfigured={isConfigured}
           onSignUp={onSignUp}
@@ -26,6 +33,7 @@ export default function AuthScreen({ isConfigured, onGoogleSignIn, onPasswordSig
           onGoogleSignIn={onGoogleSignIn}
           onPasswordSignIn={onPasswordSignIn}
           onSwitchToSignup={() => setMode('signup')}
+          onForgotPassword={() => setMode('reset')}
         />
       )}
     </>

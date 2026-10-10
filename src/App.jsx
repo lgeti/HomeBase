@@ -9,6 +9,7 @@ import HouseholdErrorScreen from './components/HouseholdErrorScreen'
 import LoadingScreen from './components/LoadingScreen'
 import ProfileSetup from './components/ProfileSetup'
 import AuthScreen from './modules/Auth/pages/AuthScreen'
+import SetNewPassword from './modules/Auth/pages/SetNewPassword'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
 import CategoryView from './modules/Expenses/pages/CategoryView'
 import Dashboard from './modules/Expenses/pages/Dashboard'
@@ -22,6 +23,9 @@ export default function App() {
     signInWithGoogle,
     signInWithPassword,
     signUpWithPassword,
+    sendPasswordReset,
+    updatePassword,
+    isRecoveringPassword,
     signOut,
   } = useAuth()
   const authUserId = authUser?.id
@@ -69,7 +73,12 @@ export default function App() {
       .catch((error) => setApiError(error.message))
   }
 
-  if (authLoading || householdLoading) return <LoadingScreen />
+  if (authLoading) return <LoadingScreen />
+
+  // Came back from a password-reset email: choose a new password before anything else
+  if (authUser && isRecoveringPassword) return <SetNewPassword onSave={updatePassword} />
+
+  if (householdLoading) return <LoadingScreen />
 
   if (!authUser) {
     return (
@@ -78,6 +87,7 @@ export default function App() {
         onGoogleSignIn={signInWithGoogle}
         onPasswordSignIn={signInWithPassword}
         onSignUp={signUpWithPassword}
+        onSendPasswordReset={sendPasswordReset}
       />
     )
   }

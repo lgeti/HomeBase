@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { createInvitation, updateMyDisplayName } from '../../../core/api/expensesApi'
+import { createInvitation, removeMember, updateMyDisplayName } from '../../../core/api/expensesApi'
 import { buildInviteLink } from '../../../core/utils/pendingInvite'
+// The same rule the server enforces, so the Remove button only appears when removing is allowed
+import { canRemoveMember } from '../../../../server/src/authorization.js'
 
 const ROLE_LABELS = { owner: 'Owner', admin: 'Admin', member: 'Member' }
 const NEW_MEMBER = 'new'
@@ -23,9 +25,22 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
   const [error, setError] = useState('')
   const [createdInvite, setCreatedInvite] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [removeError, setRemoveError] = useState('')
   const [nameDraft, setNameDraft] = useState(null)
   const [nameError, setNameError] = useState('')
   const [isSavingName, setIsSavingName] = useState(false)
+
+  const handleRemove = async (member) => {
+    if (!window.confirm(`Remove ${member.display_name} from the household?`)) return
+
+    setRemoveError('')
+    try {
+      await removeMember(household.household_id, member.household_member_id)
+      await onHouseholdChange()
+    } catch (removeFailure) {
+      setRemoveError(removeFailure.message)
+    }
+  }
 
   const saveName = async (event) => {
     event.preventDefault()
@@ -111,6 +126,8 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
           <h2 className="text-2xl font-semibold text-gray-800">{household.name}</h2>
         </div>
 
+        {removeError && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{removeError}</div>}
+
         <section className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-100">
           {members.map((member) => {
             const isCurrentMember = member.household_member_id === currentMember?.household_member_id
@@ -166,9 +183,20 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     </button>
                   )}
                 </div>
-                <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
-                  {ROLE_LABELS[member.role] || member.role}
-                </span>
+                <div className="shrink-0 flex flex-col items-end gap-1">
+                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
+                    {ROLE_LABELS[member.role] || member.role}
+                  </span>
+                  {canRemoveMember(currentMember, member) && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(member)}
+                      className="text-xs font-semibold text-red-600"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
             )
           })}

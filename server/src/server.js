@@ -8,9 +8,16 @@ import invitationsRouter from './routes/invitations.js'
 
 const port = Number(process.env.PORT || 3000)
 
+// Websites allowed to call the API from a browser: the live app and local development.
+// Set CORS_ORIGINS (comma-separated) to override. Requests still need a valid sign-in token either way.
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://lgeti.github.io,http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
 const app = express()
 
-app.use(cors({ origin: true }))
+app.use(cors({ origin: allowedOrigins }))
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/health', (request, response) => {

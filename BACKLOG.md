@@ -14,5 +14,4 @@ Known issues and planned work. **Priority levels:** a higher number means more u
 - **No password reset.** There's no "forgot password" screen, so someone who signs up with email and forgets their password is stuck. Carried over from the v2 plan.
 - **Removing members has no screen.** The API supports it with role checks, but the Household screen has no button. Carried over from the v2 plan.
 - **Pending members count in splits and the payer list.** People who were added or invited but never joined show up as payers and share split expenses. Related to the split math item.
-- **No database access rules (RLS policies).** Row level security is on with no policies, so only the API can read data, and the API is the only security boundary. Policies would add a second layer. Carried over from the v2/v3 plans.
-- **The API accepts requests from any website** (`cors({ origin: true })`). Requests still need a valid sign-in token, but it could be limited to the GitHub Pages site and localhost.
+- **No database access rules (RLS policies): decided to skip for now (2026-10-10).** Row level security is on with no policies, so browsers cannot touch the database at all; only the API (with the secret key) can, and it checks every request. Policies would only add a second layer. Revisit if the browser ever needs direct database access, for example for live updates.

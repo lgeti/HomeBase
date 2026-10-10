@@ -41,3 +41,12 @@ export const formDataToExpense = (formData) => ({
   isRecurring: formData.isRecurring,
   recurringFrequency: formData.recurringFrequency,
 })
+
+// fetch() reports an unreachable API as a bare "Failed to fetch" (Chrome) or "Load failed" (Safari)
+export const friendlySaveError = (error) => {
+  const message = error?.message || ''
+  if (error?.name === 'TypeError' && /fetch|load failed|network/i.test(message)) {
+    return 'Could not reach the server. Check your connection and try again.'
+  }
+  return message || 'Could not save. Please try again.'
+}

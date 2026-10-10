@@ -183,7 +183,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     </button>
                   )}
                 </div>
-                <div className="shrink-0 flex flex-col items-end gap-1">
+                <div className="shrink-0 flex items-center gap-2">
                   <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
                     {ROLE_LABELS[member.role] || member.role}
                   </span>
@@ -191,7 +191,8 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     <button
                       type="button"
                       onClick={() => handleRemove(member)}
-                      className="text-xs font-semibold text-red-600"
+                      aria-label={`Remove ${member.display_name}`}
+                      className="min-h-8 rounded-full border border-red-200 px-3 text-xs font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 transition"
                     >
                       Remove
                     </button>

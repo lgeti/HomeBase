@@ -6,9 +6,10 @@ This document summarizes the constraints and behavior defined by the SQL scripts
 
 - `001_initial_schema.sql` creates the initial tables, relationships, indexes, categories, and RLS settings.
 - `002_multi_member_households.sql` adds authenticated ownership, membership roles/statuses, and invitations.
+- `003_recurring_occurrences.sql` adds `expenses.recurring_source_id` and the unique constraint that makes recurring generation duplicate-safe.
 - `999_reset_application_data.sql` deletes application data for development/testing while preserving the schema, categories, and Supabase Auth users.
 
-Run `002_multi_member_households.sql` after `001_initial_schema.sql`.
+Run the numbered scripts in order: `001`, `002`, `003`.
 
 ## Household restrictions
 
@@ -131,6 +132,8 @@ The database enforces these combinations:
 - When `is_recurring = false`, `recurring_frequency` and `next_due_date` must both be `NULL`.
 - When `is_recurring = true`, `recurring_frequency` must be `weekly`, `monthly`, or `yearly`, and `next_due_date` is required.
 
+The server calculates `next_due_date` (one period after `expense_date`, clamped to the end of the month). Whenever a household's expenses are loaded, the server creates every occurrence that is due by today as a normal expense with `recurring_source_id` pointing at the recurring expense, then moves `next_due_date` forward. The unique `(recurring_source_id, expense_date)` constraint means repeated or concurrent loads can never create the same occurrence twice. Deleting the recurring expense stops future occurrences; already-created ones stay.
+
 The application currently uses `deleted_at_utc` for soft deletion. Deleted expenses remain in the database but are excluded from normal active-expense queries.
 
 ## Categories
@@ -144,7 +147,7 @@ Each category requires:
 - `sort_order`
 - `is_active`
 
-The application normally reads only categories where `is_active = true`.
+The app does not read this table. The categories people see (names, emoji, colors) come from `src/config/categories.js`; the table only lists the ids that `expenses.category_id` may reference. `src/config/categories.test.js` fails if the two sets of ids differ.
 
 ## Invitation restrictions
 
@@ -205,7 +208,7 @@ Run the reset script only against a development or test project.
 
 1. The database currently permits ownerless households, but the application should not create them.
 2. `owner_user_id` and the owner's `household_members` row are separate pieces of data. The database does not automatically create or synchronize the membership row when `owner_user_id` changes.
-3. Creating a pending member row and creating an invitation are separate operations unless the backend explicitly performs both.
-4. A pending member may have `auth_user_id = NULL`; accepting an invitation should set the authenticated user's ID, mark the member active, and record acceptance.
+3. The invite endpoint does both steps in one request: it stores the invited email on a pending member (an existing one, or a new one it creates) and creates the invitation.
+4. A pending member may have `auth_user_id = NULL`; accepting an invitation sets the authenticated user's ID, marks the member active, and records acceptance. Acceptance is refused if the signed-in email differs from the invited email, or if the user already belongs to another household.
 5. The backend should derive ownership from the verified token, never from a client-provided user ID.
-6. Role values exist in the schema, but role-specific permissions still need to be enforced by backend checks and/or RLS policies.
+6. Role permissions are enforced by the backend (`server/src/authorization.js`): owners can invite admins or members and remove anyone except the owner; admins can invite and remove members; members can do neither. There are no RLS policies yet.

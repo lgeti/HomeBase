@@ -187,15 +187,19 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                   <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
                     {ROLE_LABELS[member.role] || member.role}
                   </span>
-                  {canRemoveMember(currentMember, member) && (
+                  {canRemoveMember(currentMember, member) ? (
                     <button
                       type="button"
                       onClick={() => handleRemove(member)}
                       aria-label={`Remove ${member.display_name}`}
-                      className="min-h-8 rounded-full border border-red-200 px-3 text-xs font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 transition"
+                      title={`Remove ${member.display_name}`}
+                      className="-mr-2 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 active:bg-red-50 active:text-red-600 transition"
                     >
-                      Remove
+                      ✕
                     </button>
+                  ) : canInvite && (
+                    // Same space as the remove icon, so role badges line up for owners and admins
+                    <span aria-hidden="true" className="-mr-2 h-8 w-8" />
                   )}
                 </div>
               </div>

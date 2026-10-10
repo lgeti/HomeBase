@@ -126,41 +126,41 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
     <div className="h-full overflow-y-auto pb-24">
       <div className="max-w-lg mx-auto p-4 space-y-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-spring-sage-deep font-semibold">Household</p>
-          <h2 className="text-2xl font-semibold text-gray-800">{household.name}</h2>
+          <p className="text-xs uppercase tracking-[0.2em] text-hb-primary font-semibold">Household</p>
+          <h2 className="text-2xl font-semibold text-hb-text">{household.name}</h2>
         </div>
 
-        {removeError && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{removeError}</div>}
+        {removeError && <div className="p-3 bg-hb-danger-bg text-hb-danger rounded-lg text-sm">{removeError}</div>}
 
-        <section className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-100">
+        <section className="bg-hb-surface rounded-xl border border-hb-border divide-y divide-hb-border">
           {members.map((member) => {
             const isCurrentMember = member.household_member_id === currentMember?.household_member_id
 
             if (isCurrentMember && nameDraft !== null) {
               return (
                 <form key={member.household_member_id} onSubmit={saveName} className="p-4 space-y-2">
-                  <label htmlFor="myName" className="block text-sm font-medium text-gray-700">Your name</label>
+                  <label htmlFor="myName" className="block text-sm font-medium text-hb-text2">Your name</label>
                   <input
                     id="myName"
                     type="text"
                     value={nameDraft}
                     onChange={(event) => setNameDraft(event.target.value)}
                     autoFocus
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
+                    className="w-full px-3 py-2.5 border border-hb-input rounded-lg focus:outline-none focus:ring-2 focus:ring-hb-primary"
                   />
-                  {nameError && <div className="p-2 bg-red-100 text-red-700 rounded-lg text-sm">{nameError}</div>}
+                  {nameError && <div className="p-2 bg-hb-danger-bg text-hb-danger rounded-lg text-sm">{nameError}</div>}
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => { setNameDraft(null); setNameError('') }}
-                      className="flex-1 rounded-lg border border-gray-200 py-2 text-sm font-semibold text-gray-600"
+                      className="flex-1 rounded-lg border border-hb-border py-2 text-sm font-semibold text-hb-text2"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={isSavingName}
-                      className="flex-1 rounded-lg bg-spring-sage-deep disabled:opacity-60 py-2 text-sm font-semibold text-white"
+                      className="flex-1 rounded-lg bg-hb-primary disabled:opacity-60 py-2 text-sm font-semibold text-hb-on-primary"
                     >
                       {isSavingName ? 'Saving...' : 'Save'}
                     </button>
@@ -171,15 +171,15 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
 
             if (member.household_member_id === confirmingRemoveId) {
               return (
-                <div key={member.household_member_id} className="flex items-center justify-between gap-3 p-4 bg-red-50/60">
-                  <p className="min-w-0 text-sm text-gray-800">
+                <div key={member.household_member_id} className="flex items-center justify-between gap-3 p-4 bg-hb-danger-bg/60">
+                  <p className="min-w-0 text-sm text-hb-text">
                     Remove <span className="font-medium">{member.display_name}</span> from the household?
                   </p>
                   <div className="shrink-0 flex gap-2">
                     <button
                       type="button"
                       onClick={() => setConfirmingRemoveId(null)}
-                      className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600"
+                      className="rounded-lg border border-hb-border bg-hb-surface px-3 py-1.5 text-sm font-semibold text-hb-text2"
                     >
                       Cancel
                     </button>
@@ -187,7 +187,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                       type="button"
                       onClick={() => handleRemove(member)}
                       disabled={isRemoving}
-                      className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                      className="rounded-lg bg-hb-danger-solid px-3 py-1.5 text-sm font-semibold text-hb-on-danger disabled:opacity-60"
                     >
                       {isRemoving ? 'Removing...' : 'Remove'}
                     </button>
@@ -199,23 +199,23 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
             return (
               <div key={member.household_member_id} className="flex items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
-                  <p className="font-medium text-gray-800 truncate">
+                  <p className="font-medium text-hb-text truncate">
                     {member.display_name}
-                    {isCurrentMember && <span className="text-gray-400 font-normal"> (you)</span>}
+                    {isCurrentMember && <span className="text-hb-text3 font-normal"> (you)</span>}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{memberStatus(member)}</p>
+                  <p className="text-xs text-hb-text2 truncate">{memberStatus(member)}</p>
                   {isCurrentMember && (
                     <button
                       type="button"
                       onClick={() => setNameDraft(member.display_name)}
-                      className="mt-1 text-xs font-semibold text-spring-sage-deep"
+                      className="mt-1 text-xs font-semibold text-hb-primary"
                     >
                       Change your name
                     </button>
                   )}
                 </div>
                 <div className="shrink-0 flex items-center gap-2">
-                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
+                  <span className="rounded-full bg-hb-surface2 px-2.5 py-1 text-xs text-hb-text2">
                     {ROLE_LABELS[member.role] || member.role}
                   </span>
                   {canRemoveMember(currentMember, member) ? (
@@ -224,7 +224,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                       onClick={() => { setRemoveError(''); setConfirmingRemoveId(member.household_member_id) }}
                       aria-label={`Remove ${member.display_name}`}
                       title={`Remove ${member.display_name}`}
-                      className="-mr-2 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 active:bg-red-50 active:text-red-600 transition"
+                      className="-mr-2 flex h-8 w-8 items-center justify-center rounded-full text-hb-text2 hover:bg-hb-danger-bg hover:text-hb-danger active:bg-hb-danger-bg active:text-hb-danger transition"
                     >
                       ✕
                     </button>
@@ -239,10 +239,10 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
         </section>
 
         {canInvite && (
-          <section className="bg-white rounded-xl border border-gray-100 p-4 space-y-4">
+          <section className="bg-hb-surface rounded-xl border border-hb-border p-4 space-y-4">
             <div>
-              <h3 className="font-semibold text-gray-800">Invite someone</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="font-semibold text-hb-text">Invite someone</h3>
+              <p className="text-sm text-hb-text2">
                 You'll get a link to send them. It works for 7 days, only for the email you enter.
               </p>
             </div>
@@ -250,14 +250,14 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
             <form onSubmit={handleInvite} className="space-y-3">
               {pendingMembers.length > 0 && (
                 <div>
-                  <label htmlFor="inviteTarget" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="inviteTarget" className="block text-sm font-medium text-hb-text2 mb-1">
                     Who are you inviting?
                   </label>
                   <select
                     id="inviteTarget"
                     value={inviteTarget}
                     onChange={(event) => setInviteTarget(event.target.value)}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
+                    className="w-full px-3 py-2.5 border border-hb-input rounded-lg bg-hb-surface focus:outline-none focus:ring-2 focus:ring-hb-primary"
                   >
                     {pendingMembers.map((member) => (
                       <option key={member.household_member_id} value={member.household_member_id}>
@@ -271,7 +271,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
 
               {inviteTarget === NEW_MEMBER && (
                 <div>
-                  <label htmlFor="inviteName" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="inviteName" className="block text-sm font-medium text-hb-text2 mb-1">
                     Their name
                   </label>
                   <input
@@ -280,13 +280,13 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     value={displayName}
                     onChange={(event) => setDisplayName(event.target.value)}
                     placeholder="e.g., Sam"
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
+                    className="w-full px-3 py-2.5 border border-hb-input rounded-lg focus:outline-none focus:ring-2 focus:ring-hb-primary"
                   />
                 </div>
               )}
 
               <div>
-                <label htmlFor="inviteEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="inviteEmail" className="block text-sm font-medium text-hb-text2 mb-1">
                   Their email
                 </label>
                 <input
@@ -295,24 +295,24 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="The email they sign in with"
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
+                  className="w-full px-3 py-2.5 border border-hb-input rounded-lg focus:outline-none focus:ring-2 focus:ring-hb-primary"
                 />
               </div>
 
-              {error && <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{error}</div>}
+              {error && <div className="p-3 bg-hb-danger-bg text-hb-danger rounded-lg text-sm">{error}</div>}
 
               <button
                 type="submit"
                 disabled={isSending}
-                className="w-full bg-spring-sage-deep hover:bg-opacity-90 disabled:opacity-60 text-white font-semibold py-3 rounded-lg transition"
+                className="w-full bg-hb-primary hover:bg-opacity-90 disabled:opacity-60 text-hb-on-primary font-semibold py-3 rounded-lg transition"
               >
                 {isSending ? 'Creating link...' : 'Create invite link'}
               </button>
             </form>
 
             {createdInvite && (
-              <div className="rounded-lg bg-spring-mint/40 p-3 space-y-2">
-                <p className="text-sm text-gray-700">
+              <div className="rounded-lg bg-hb-primary-tint p-3 space-y-2">
+                <p className="text-sm text-hb-text2">
                   Send this link to {createdInvite.name || 'them'}. They need to sign in as{' '}
                   <span className="font-medium">{createdInvite.email}</span>.
                 </p>
@@ -321,13 +321,13 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                   value={createdInvite.link}
                   onFocus={(event) => event.target.select()}
                   aria-label="Invite link"
-                  className="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg bg-white text-gray-600"
+                  className="w-full px-3 py-2 text-xs border border-hb-border rounded-lg bg-hb-surface text-hb-text2"
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={copyLink}
-                    className="flex-1 rounded-lg border border-spring-sage-deep py-2 text-sm font-semibold text-spring-sage-deep"
+                    className="flex-1 rounded-lg border border-hb-primary py-2 text-sm font-semibold text-hb-primary"
                   >
                     {copied ? 'Copied!' : 'Copy link'}
                   </button>
@@ -335,7 +335,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                     <button
                       type="button"
                       onClick={shareLink}
-                      className="flex-1 rounded-lg bg-spring-sage-deep py-2 text-sm font-semibold text-white"
+                      className="flex-1 rounded-lg bg-hb-primary py-2 text-sm font-semibold text-hb-on-primary"
                     >
                       Share
                     </button>
@@ -349,7 +349,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
         <button
           type="button"
           onClick={onSignOut}
-          className="w-full rounded-lg border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-600"
+          className="w-full rounded-lg border border-hb-border bg-hb-surface py-3 text-sm font-semibold text-hb-text2"
         >
           Sign out
         </button>

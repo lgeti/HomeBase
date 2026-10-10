@@ -114,16 +114,16 @@ export default function App() {
   const errorMessage = apiError || inviteError || expensesError
 
   return (
-    <div className="flex flex-col h-screen bg-warm-cream">
-      <header className="bg-white/95 backdrop-blur-sm shadow-sm px-4 py-3 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold text-gray-800">{household.name}</h1>
-        <p className="text-xs text-gray-500">
+    <div className="flex flex-col h-screen bg-hb-bg">
+      <header className="bg-hb-surface/95 backdrop-blur-sm shadow-sm px-4 py-3 sticky top-0 z-10">
+        <h1 className="text-lg font-semibold text-hb-text">{household.name}</h1>
+        <p className="text-xs text-hb-text2">
           {joinedMembers.map((member) => member.display_name).join(' · ')}
         </p>
       </header>
 
       {errorMessage && (
-        <div className="bg-red-50 border-b border-red-100 px-4 py-2 text-sm text-red-700">
+        <div className="bg-hb-danger-bg border-b border-hb-danger/30 px-4 py-2 text-sm text-hb-danger">
           {errorMessage}
         </div>
       )}

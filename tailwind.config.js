@@ -7,24 +7,32 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Category colors (emoji-based)
-        'cat-car': '#dc2626',      // red
-        'cat-subscriptions': '#a855f7', // purple
-        'cat-groceries': '#16a34a', // green
-        'cat-entertainment': '#eab308', // yellow
-        'cat-going-out': '#ea580c', // orange
-        'cat-utilities': '#0284c7', // blue
-        'cat-home': '#14b8a6',     // teal
-        'cat-other': '#6b7280',    // grey
-        // Cozy spring palette
-        'warm-cream': '#faf8f3',
-        'warm-beige': '#f5ede3',
-        'spring-sage': '#c4d4d0',
-        // Readable shade of sage for text, buttons with white text and focus rings (5.6:1 on white)
-        'spring-sage-deep': '#4f6e67',
-        'spring-mint': '#d4e8e4',
-        'spring-peach': '#f5c2a0',
-        'spring-lavender': '#d9c9e8',
+        // Theme colors, defined per light/dark mode in src/index.css
+        hb: {
+          'bg': 'rgb(var(--hb-bg) / <alpha-value>)',
+          'surface': 'rgb(var(--hb-surface) / <alpha-value>)',
+          'surface2': 'rgb(var(--hb-surface2) / <alpha-value>)',
+          'border': 'rgb(var(--hb-border) / <alpha-value>)',
+          'input': 'rgb(var(--hb-input) / <alpha-value>)',
+          'text': 'rgb(var(--hb-text) / <alpha-value>)',
+          'text2': 'rgb(var(--hb-text2) / <alpha-value>)',
+          'text3': 'rgb(var(--hb-text3) / <alpha-value>)',
+          'primary': 'rgb(var(--hb-primary) / <alpha-value>)',
+          'on-primary': 'rgb(var(--hb-on-primary) / <alpha-value>)',
+          'primary-tint': 'rgb(var(--hb-primary-tint) / <alpha-value>)',
+          'track': 'rgb(var(--hb-track) / <alpha-value>)',
+          'handle': 'rgb(var(--hb-handle) / <alpha-value>)',
+          'person-b': 'rgb(var(--hb-person-b) / <alpha-value>)',
+          'on-cat': 'rgb(var(--hb-on-cat) / <alpha-value>)',
+          'danger': 'rgb(var(--hb-danger) / <alpha-value>)',
+          'danger-bg': 'rgb(var(--hb-danger-bg) / <alpha-value>)',
+          'danger-solid': 'rgb(var(--hb-danger-solid) / <alpha-value>)',
+          'on-danger': 'rgb(var(--hb-on-danger) / <alpha-value>)',
+          'success': 'rgb(var(--hb-success) / <alpha-value>)',
+          'success-bg': 'rgb(var(--hb-success-bg) / <alpha-value>)',
+          'warning': 'rgb(var(--hb-warning) / <alpha-value>)',
+          'warning-bg': 'rgb(var(--hb-warning-bg) / <alpha-value>)',
+        },
       },
       fontFamily: {
         sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],

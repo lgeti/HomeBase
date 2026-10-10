@@ -33,15 +33,15 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-warm-cream via-warm-beige to-spring-mint px-4">
-      <main className="w-full max-w-sm bg-white rounded-2xl shadow-lg p-8 space-y-6">
+    <div className="flex items-center justify-center min-h-screen bg-hb-bg px-4">
+      <main className="w-full max-w-sm bg-hb-surface rounded-2xl shadow-lg p-8 space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-gray-800">Create your account</h1>
-          <p className="text-gray-600">Start a shared HomeBase household</p>
+          <h1 className="text-3xl font-bold text-hb-text">Create your account</h1>
+          <p className="text-hb-text2">Start a shared HomeBase household</p>
         </div>
 
-        {error && <p className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</p>}
-        {message && <p className="p-3 rounded-lg bg-green-50 text-green-700 text-sm">{message}</p>}
+        {error && <p className="p-3 rounded-lg bg-hb-danger-bg text-hb-danger text-sm">{error}</p>}
+        {message && <p className="p-3 rounded-lg bg-hb-success-bg text-hb-success text-sm">{message}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
@@ -50,7 +50,7 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
+            className="w-full px-4 py-3 border border-hb-input rounded-lg focus:outline-none focus:ring-2 focus:ring-hb-primary"
           />
           <input
             type="password"
@@ -59,7 +59,7 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
             placeholder="Password"
             minLength="6"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
+            className="w-full px-4 py-3 border border-hb-input rounded-lg focus:outline-none focus:ring-2 focus:ring-hb-primary"
           />
           <input
             type="password"
@@ -68,12 +68,12 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
             placeholder="Confirm password"
             minLength="6"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
+            className="w-full px-4 py-3 border border-hb-input rounded-lg focus:outline-none focus:ring-2 focus:ring-hb-primary"
           />
           <button
             type="submit"
             disabled={!isConfigured || isSubmitting}
-            className="w-full py-3 rounded-lg bg-spring-sage-deep text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
+            className="w-full py-3 rounded-lg bg-hb-primary text-hb-on-primary font-semibold hover:opacity-90 disabled:opacity-50 transition"
           >
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
@@ -82,7 +82,7 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
         <button
           type="button"
           onClick={onSwitchToLogin}
-          className="w-full text-sm text-spring-sage-deep hover:underline"
+          className="w-full text-sm text-hb-primary hover:underline"
         >
           Back to sign in
         </button>

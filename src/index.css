@@ -2,6 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Color themes from the "HomeBase Color Directions" design:
+   light = A · Sage & Clay, dark = C · Evening. The device's light/dark setting picks one. */
+@layer base {
+  :root {
+    color-scheme: light;
+    --hb-bg: 246 242 234;
+    --hb-surface: 255 255 255;
+    --hb-surface2: 239 233 222;
+    --hb-border: 233 226 213;
+    --hb-input: 217 207 191;
+    --hb-text: 35 32 27;
+    --hb-text2: 107 99 88;
+    --hb-text3: 142 133 120;
+    --hb-primary: 47 93 80;
+    --hb-on-primary: 255 255 255;
+    --hb-primary-tint: 225 235 229;
+    --hb-track: 239 233 222;
+    --hb-handle: 214 204 187;
+    --hb-person-b: 192 112 63;
+    --hb-on-cat: 255 255 255;
+    --hb-danger: 180 35 24;
+    --hb-danger-bg: 251 234 232;
+    --hb-danger-solid: 194 54 43;
+    --hb-on-danger: 255 255 255;
+    --hb-success: 47 107 58;
+    --hb-success-bg: 226 236 216;
+    --hb-warning: 122 90 14;
+    --hb-warning-bg: 243 232 202;
+    --cat-car: #A2413F;
+    --cat-car-tint: #F4E0DD;
+    --cat-subscriptions: #77558F;
+    --cat-subscriptions-tint: #EBE2F0;
+    --cat-groceries: #4E7A3A;
+    --cat-groceries-tint: #E2ECD8;
+    --cat-entertainment: #8F6A12;
+    --cat-entertainment-tint: #F3E8CA;
+    --cat-going-out: #B0592C;
+    --cat-going-out-tint: #F6E3D6;
+    --cat-utilities: #3D6788;
+    --cat-utilities-tint: #DDE7EF;
+    --cat-home: #2D7870;
+    --cat-home-tint: #D8EBE7;
+    --cat-other: #6F6960;
+    --cat-other-tint: #ECE7DF;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --hb-bg: 18 20 23;
+      --hb-surface: 27 30 35;
+      --hb-surface2: 22 25 29;
+      --hb-border: 42 47 55;
+      --hb-input: 58 64 74;
+      --hb-text: 236 237 239;
+      --hb-text2: 160 167 177;
+      --hb-text3: 127 135 146;
+      --hb-primary: 233 184 114;
+      --hb-on-primary: 28 20 7;
+      --hb-primary-tint: 45 38 24;
+      --hb-track: 42 47 55;
+      --hb-handle: 66 72 84;
+      --hb-person-b: 134 184 232;
+      --hb-on-cat: 18 20 23;
+      --hb-danger: 240 140 130;
+      --hb-danger-bg: 58 35 33;
+      --hb-danger-solid: 240 140 130;
+      --hb-on-danger: 18 20 23;
+      --hb-success: 141 203 134;
+      --hb-success-bg: 31 49 32;
+      --hb-warning: 237 203 102;
+      --hb-warning-bg: 54 48 26;
+      --cat-car: #F08C82;
+      --cat-car-tint: #3A2321;
+      --cat-subscriptions: #C3A1F0;
+      --cat-subscriptions-tint: #2C2440;
+      --cat-groceries: #8DCB86;
+      --cat-groceries-tint: #1F3120;
+      --cat-entertainment: #EDCB66;
+      --cat-entertainment-tint: #36301A;
+      --cat-going-out: #F2A36B;
+      --cat-going-out-tint: #3A2A1D;
+      --cat-utilities: #86B8E8;
+      --cat-utilities-tint: #1C2C3C;
+      --cat-home: #6CCFC0;
+      --cat-home-tint: #183331;
+      --cat-other: #A9B0BA;
+      --cat-other-tint: #2A2E35;
+    }
+  }
+
+  /* Checkboxes and radio buttons use the theme's primary color */
+  :root {
+    accent-color: rgb(var(--hb-primary));
+  }
+
+  input, select, textarea {
+    background-color: rgb(var(--hb-surface));
+    color: rgb(var(--hb-text));
+  }
+
+  ::placeholder {
+    color: rgb(var(--hb-text3));
+  }
+}
+
 * {
   -webkit-tap-highlight-color: transparent;
 }
@@ -10,8 +116,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: system-ui, -apple-system, sans-serif;
-  background-color: #faf8f3;
-  color: #1f2937;
+  background-color: rgb(var(--hb-bg));
+  color: rgb(var(--hb-text));
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

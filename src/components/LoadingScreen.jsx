@@ -10,12 +10,12 @@ export default function LoadingScreen() {
   }, [])
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-warm-cream via-warm-beige to-spring-mint">
+    <div className="flex items-center justify-center min-h-screen bg-hb-bg">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold text-gray-800">HomeBase</h1>
-        <p className="text-gray-600 mt-2">Loading...</p>
+        <h1 className="text-2xl font-semibold text-hb-text">HomeBase</h1>
+        <p className="text-hb-text2 mt-2">Loading...</p>
         {isSlow && (
-          <p className="text-sm text-gray-500 mt-3 max-w-xs mx-auto">
+          <p className="text-sm text-hb-text2 mt-3 max-w-xs mx-auto">
             Waking up the server. After a quiet period this can take up to a minute.
           </p>
         )}

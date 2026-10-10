@@ -51,7 +51,7 @@ export default function TransactionList({ transactions, onDelete, members }) {
                   {formatCurrency(transaction.amount)}
                 </p>
                 {transaction.splitType === 'split' && (
-                  <p className="text-xs text-gray-400">50/50</p>
+                  <p className="text-xs text-gray-400">Split</p>
                 )}
               </div>
               {/* Always visible on touch screens; mouse users see it on hover or keyboard focus */}

@@ -3,6 +3,9 @@ import { describe, it } from 'node:test'
 import {
   calculateBalance,
   formatDate,
+  getCategoryTotal,
+  getMonthCategoryBreakdown,
+  getMonthTotal,
   getMemberName,
   getMemberSummary,
   getMonthExpenses,
@@ -77,5 +80,49 @@ describe('payers are matched by member id', () => {
 
   it('reports who owes whom by name', () => {
     assert.deepEqual(calculateBalance(expenses, members, 2026, 9), { owes: 'Bor', owed: 'Ana', amount: 50 })
+  })
+})
+
+describe('split expenses', () => {
+  const members = [
+    { household_member_id: 'm-ana', display_name: 'Ana' },
+    { household_member_id: 'm-bor', display_name: 'Bor' },
+    { household_member_id: 'm-cene', display_name: 'Cene' },
+  ]
+  const expenses = [
+    { date: '2026-10-02', amount: 90, categoryId: 'groceries', paidByMemberId: 'm-ana', splitType: 'split' },
+    { date: '2026-10-03', amount: 30, categoryId: 'groceries', paidByMemberId: 'm-bor', splitType: 'one' },
+    { date: '2026-10-04', amount: 60, categoryId: 'home', paidByMemberId: 'm-bor', splitType: 'split' },
+  ]
+
+  it('counts the full amount in the month total', () => {
+    assert.equal(getMonthTotal(expenses, 2026, 9), 180)
+  })
+
+  it('counts the full amount in the category breakdown', () => {
+    assert.deepEqual(getMonthCategoryBreakdown(expenses, 2026, 9), [
+      { categoryId: 'groceries', total: 120 },
+      { categoryId: 'home', total: 60 },
+    ])
+  })
+
+  it('makes the month total equal the sum of the category totals', () => {
+    const sumOfCategories = getCategoryTotal(expenses, 'groceries') + getCategoryTotal(expenses, 'home')
+    assert.equal(getMonthTotal(expenses, 2026, 9), sumOfCategories)
+  })
+
+  it('shares a split expense equally between all members', () => {
+    const summary = getMemberSummary(expenses, members, 2026, 9)
+    // Each split costs everyone a third: 90 / 3 = 30 and 60 / 3 = 20
+    assert.deepEqual(summary['m-ana'], { name: 'Ana', paid: 90, owed: 50, net: 40 })
+    assert.deepEqual(summary['m-bor'], { name: 'Bor', paid: 90, owed: 80, net: 10 })
+    assert.deepEqual(summary['m-cene'], { name: 'Cene', paid: 0, owed: 50, net: -50 })
+  })
+
+  it('makes paid and owed add up to the month total', () => {
+    const summary = Object.values(getMemberSummary(expenses, members, 2026, 9))
+    const total = getMonthTotal(expenses, 2026, 9)
+    assert.equal(summary.reduce((sum, member) => sum + member.paid, 0), total)
+    assert.equal(summary.reduce((sum, member) => sum + member.owed, 0), total)
   })
 })

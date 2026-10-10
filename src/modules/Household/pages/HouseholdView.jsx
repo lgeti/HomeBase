@@ -26,19 +26,23 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
   const [createdInvite, setCreatedInvite] = useState(null)
   const [copied, setCopied] = useState(false)
   const [removeError, setRemoveError] = useState('')
+  const [confirmingRemoveId, setConfirmingRemoveId] = useState(null)
+  const [isRemoving, setIsRemoving] = useState(false)
   const [nameDraft, setNameDraft] = useState(null)
   const [nameError, setNameError] = useState('')
   const [isSavingName, setIsSavingName] = useState(false)
 
   const handleRemove = async (member) => {
-    if (!window.confirm(`Remove ${member.display_name} from the household?`)) return
-
     setRemoveError('')
+    setIsRemoving(true)
     try {
       await removeMember(household.household_id, member.household_member_id)
       await onHouseholdChange()
+      setConfirmingRemoveId(null)
     } catch (removeFailure) {
       setRemoveError(removeFailure.message)
+    } finally {
+      setIsRemoving(false)
     }
   }
 
@@ -165,6 +169,33 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
               )
             }
 
+            if (member.household_member_id === confirmingRemoveId) {
+              return (
+                <div key={member.household_member_id} className="flex items-center justify-between gap-3 p-4 bg-red-50/60">
+                  <p className="min-w-0 text-sm text-gray-800">
+                    Remove <span className="font-medium">{member.display_name}</span> from the household?
+                  </p>
+                  <div className="shrink-0 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingRemoveId(null)}
+                      className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(member)}
+                      disabled={isRemoving}
+                      className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+                    >
+                      {isRemoving ? 'Removing...' : 'Remove'}
+                    </button>
+                  </div>
+                </div>
+              )
+            }
+
             return (
               <div key={member.household_member_id} className="flex items-center justify-between gap-3 p-4">
                 <div className="min-w-0">
@@ -190,7 +221,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                   {canRemoveMember(currentMember, member) ? (
                     <button
                       type="button"
-                      onClick={() => handleRemove(member)}
+                      onClick={() => { setRemoveError(''); setConfirmingRemoveId(member.household_member_id) }}
                       aria-label={`Remove ${member.display_name}`}
                       title={`Remove ${member.display_name}`}
                       className="-mr-2 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600 active:bg-red-50 active:text-red-600 transition"

@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { getCategoryById } from '../config/categories'
 import { formatCurrency, formatDate, getMemberName } from '../core/utils/calculations'
 
 export default function TransactionList({ transactions, onDelete, members }) {
+  // Confirmed inside the row: native confirm() dialogs are blocked in some browsers
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
+
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12">
@@ -16,6 +20,39 @@ export default function TransactionList({ transactions, onDelete, members }) {
       {transactions.map((transaction) => {
         const category = getCategoryById(transaction.categoryId)
         const personLabel = `${getMemberName(members, transaction.paidByMemberId)} paid`
+
+        if (transaction.id === confirmingDeleteId) {
+          return (
+            <div
+              key={transaction.id}
+              className="flex items-center justify-between gap-3 bg-red-50 p-4 rounded-lg border border-red-100"
+            >
+              <p className="min-w-0 text-sm text-gray-800">
+                Delete <span className="font-medium">{transaction.description || category?.name}</span>
+                {' '}({formatCurrency(transaction.amount)})?
+              </p>
+              <div className="shrink-0 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDeleteId(null)}
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-semibold text-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmingDeleteId(null)
+                    onDelete(transaction.id)
+                  }}
+                  className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-semibold text-white"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          )
+        }
 
         return (
           <div
@@ -57,9 +94,7 @@ export default function TransactionList({ transactions, onDelete, members }) {
               {/* Always visible on touch screens; mouse users see it on hover or keyboard focus */}
               <button
                 type="button"
-                onClick={() => {
-                  if (window.confirm('Delete this expense?')) onDelete(transaction.id)
-                }}
+                onClick={() => setConfirmingDeleteId(transaction.id)}
                 className="p-2 -m-2 ml-0 text-gray-400 hover:text-red-500 focus:opacity-100 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                 title="Delete"
                 aria-label="Delete expense"

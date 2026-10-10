@@ -38,6 +38,9 @@ export const updateMyDisplayName = (householdId, displayName) =>
     body: JSON.stringify({ displayName }),
   })
 
+export const removeMember = (householdId, memberId) =>
+  apiRequest(`/api/households/${householdId}/members/${memberId}`, { method: 'DELETE' })
+
 export const acceptInvitation = (token) =>
   apiRequest(`/api/invitations/${encodeURIComponent(token)}/accept`, { method: 'POST' })
 

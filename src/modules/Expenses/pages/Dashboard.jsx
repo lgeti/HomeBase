@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import Icon, { CategoryIcon } from '../../../components/Icon'
 import { getCategoryById } from '../../../config/categories'
 import {
   calculateBalance,
@@ -56,51 +57,47 @@ export default function Dashboard({ expenses, members }) {
     })
   }
 
-  const balanceLabel = (() => {
-    const { owes, owed, amount } = monthData.balance
-    if (!owes || !owed || amount === 0) {
-      return 'Settled up this month'
-    }
-    return `${owes} owes ${owed} ${formatCurrency(amount)}`
-  })()
+  const { owes, owed, amount: balanceAmount } = monthData.balance
+  const isSettled = !owes || !owed || balanceAmount === 0
 
   return (
-    <div className="flex-1 overflow-y-auto pb-24 px-4 py-4 space-y-4 bg-hb-bg">
+    <div className="flex-1 overflow-y-auto pb-28 px-4 py-[18px] space-y-3 bg-hb-bg">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-hb-primary font-semibold">Summary</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-hb-primary font-bold">Summary</p>
           <h2 className="text-2xl font-semibold text-hb-text">{monthName}</h2>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => moveMonth(-1)}
-            className="w-10 h-10 rounded-full bg-hb-surface border border-hb-border text-hb-text2 shadow-sm active:scale-95"
-            aria-label="Previous month"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            onClick={() => moveMonth(1)}
-            className="w-10 h-10 rounded-full bg-hb-surface border border-hb-border text-hb-text2 shadow-sm active:scale-95"
-            aria-label="Next month"
-          >
-            ›
-          </button>
+          {[{ offset: -1, icon: 'left', label: 'Previous month' }, { offset: 1, icon: 'right', label: 'Next month' }].map((button) => (
+            <button
+              key={button.icon}
+              type="button"
+              onClick={() => moveMonth(button.offset)}
+              aria-label={button.label}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-hb-surface border border-hb-border text-hb-text active:scale-95 transition"
+            >
+              <Icon name={button.icon} size={18} />
+            </button>
+          ))}
         </div>
       </div>
 
-      <section className="rounded-3xl bg-hb-surface shadow-sm border border-hb-border p-5">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-sm text-hb-text2">This Month Total</p>
-            <p className="text-3xl font-semibold text-hb-text mt-1">{formatCurrency(monthData.total)}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.2em] text-hb-text3 font-semibold">Balance</p>
-            <p className="text-sm font-medium text-hb-text2 mt-1">{balanceLabel}</p>
-          </div>
+      <section className="flex items-end justify-between gap-4 rounded-[22px] bg-hb-hero px-5 py-[18px] text-hb-on-hero">
+        <div>
+          <p className="text-[13px] text-hb-on-hero/75">This month total</p>
+          <p className="text-[32px] font-bold tracking-tight mt-0.5">{formatCurrency(monthData.total)}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-[0.18em] font-bold text-hb-on-hero/75">Balance</p>
+          <p className="text-[13px] font-semibold mt-0.5">
+            {isSettled ? 'Settled up' : (
+              <>
+                {owes} owes {owed}
+                <br />
+                {formatCurrency(balanceAmount)}
+              </>
+            )}
+          </p>
         </div>
       </section>
 
@@ -108,46 +105,44 @@ export default function Dashboard({ expenses, members }) {
         {recentMonths.map((recentMonth, index) => (
           <article
             key={`${recentMonth.year}-${recentMonth.month}`}
-            className={`rounded-2xl p-3 border ${index === 0 ? 'bg-hb-primary-tint border-hb-primary/30' : 'bg-hb-surface border-hb-border'}`}
+            className={`rounded-2xl px-3 py-2.5 border ${index === 0 ? 'bg-hb-primary-tint border-hb-primary/30' : 'bg-hb-surface border-hb-border'}`}
           >
-            <p className="text-xs text-hb-text2 truncate">
-              {getMonthName(recentMonth.year, recentMonth.month)}
-            </p>
-            <p className="text-base font-semibold text-hb-text mt-1">
-              {formatCurrency(recentMonth.total)}
-            </p>
+            <p className="text-[11px] text-hb-text2 truncate">{getMonthName(recentMonth.year, recentMonth.month)}</p>
+            <p className="text-[15px] font-semibold text-hb-text mt-0.5">{formatCurrency(recentMonth.total)}</p>
           </article>
         ))}
       </section>
 
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <section className="grid grid-cols-2 gap-2">
         {members.map((member, index) => {
-          const memberName = member.display_name
           const memberSummary = monthData.memberSummary[member.household_member_id] || { paid: 0, net: 0 }
           const memberShare = totalPaid > 0 ? (memberSummary.paid / totalPaid) * 100 : 0
+          const avatar = index % 2 ? 'bg-hb-person-b text-hb-on-person-b' : 'bg-hb-primary text-hb-on-primary'
 
           return (
-            <article key={member.household_member_id} className="rounded-3xl bg-hb-surface p-4 border border-hb-border shadow-sm">
-              <p className="text-xs uppercase tracking-[0.2em] text-hb-text3 font-semibold">{memberName}</p>
-              <p className="text-2xl font-semibold text-hb-text mt-2">{formatCurrency(memberSummary.paid)}</p>
-              <div className="mt-3 h-2 rounded-full bg-hb-surface2 overflow-hidden">
+            <article key={member.household_member_id} className="rounded-[18px] bg-hb-surface p-3.5 border border-hb-border">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${avatar}`} aria-hidden="true">
+                  {member.display_name.charAt(0).toUpperCase()}
+                </span>
+                <p className="text-xs font-semibold text-hb-text2 truncate">{member.display_name}</p>
+              </div>
+              <p className="text-xl font-bold text-hb-text mt-2">{formatCurrency(memberSummary.paid)}</p>
+              <div className="mt-2 h-1.5 rounded-full bg-hb-track overflow-hidden">
                 <div className={`h-full rounded-full ${index % 2 ? 'bg-hb-person-b' : 'bg-hb-primary'}`} style={{ width: `${memberShare}%` }} />
               </div>
-              <p className="text-sm text-hb-text2 mt-2">
-                Paid {memberShare.toFixed(0)}% of tracked spending · Net {memberSummary.net >= 0 ? '+' : '-'}{formatCurrency(Math.abs(memberSummary.net))}
+              <p className="text-[11px] text-hb-text2 mt-1.5">
+                {memberShare.toFixed(0)}% of spending · Net {memberSummary.net >= 0 ? '+' : '−'}{formatCurrency(Math.abs(memberSummary.net))}
               </p>
             </article>
           )
         })}
       </section>
 
-      <section className="rounded-3xl bg-hb-surface p-5 border border-hb-border shadow-sm space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-hb-text3 font-semibold">Category Breakdown</p>
-            <h3 className="text-lg font-semibold text-hb-text">Where the month went</h3>
-          </div>
-          <p className="text-sm text-hb-text2">{monthData.categoryBreakdown.length} categories</p>
+      <section className="rounded-[22px] bg-hb-surface p-4 border border-hb-border space-y-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-hb-text2 font-bold">Category breakdown</p>
+          <h3 className="text-base font-semibold text-hb-text">Where the month went</h3>
         </div>
 
         {monthData.categoryBreakdown.length === 0 ? (
@@ -155,57 +150,28 @@ export default function Dashboard({ expenses, members }) {
             No transactions for this month yet.
           </div>
         ) : (
-          <div className="space-y-3">
-            {monthData.categoryBreakdown.map((entry) => {
-              const category = getCategoryById(entry.categoryId)
-              const width = monthData.total > 0 ? (entry.total / monthData.total) * 100 : 0
+          monthData.categoryBreakdown.map((entry) => {
+            const category = getCategoryById(entry.categoryId)
+            const width = monthData.total > 0 ? (entry.total / monthData.total) * 100 : 0
 
-              return (
-                <div key={entry.categoryId} className="space-y-1.5">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-base"
-                        style={{ backgroundColor: category?.tint }}
-                        aria-hidden="true"
-                      >
-                        {category?.emoji}
-                      </span>
-                      <span className="font-medium text-hb-text2 truncate">{category?.name || entry.categoryId}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-semibold text-hb-text">{formatCurrency(entry.total)}</span>
-                      <span className="text-hb-text3 ml-2">{width.toFixed(0)}%</span>
-                    </div>
-                  </div>
-                  <div className="h-3 rounded-full bg-hb-surface2 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${Math.max(width, 4)}%`,
-                        backgroundColor: category?.color || 'var(--cat-other)',
-                      }}
-                    />
-                  </div>
+            return (
+              <div key={entry.categoryId} className="space-y-1.5">
+                <div className="flex items-center gap-2.5">
+                  <CategoryIcon category={category} size={15} tile="h-[26px] w-[26px] rounded-lg" />
+                  <p className="flex-1 min-w-0 truncate text-[13px] font-semibold text-hb-text">{category?.name || entry.categoryId}</p>
+                  <p className="text-[13px] font-semibold text-hb-text">{formatCurrency(entry.total)}</p>
+                  <p className="w-9 text-right text-xs text-hb-text3">{width.toFixed(0)}%</p>
                 </div>
-              )
-            })}
-          </div>
+                <div className="h-2 rounded-full bg-hb-track overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${Math.max(width, 4)}%`, backgroundColor: category?.color || 'var(--cat-other)' }}
+                  />
+                </div>
+              </div>
+            )
+          })
         )}
-      </section>
-
-      <section className="rounded-3xl bg-hb-surface p-5 border border-hb-border shadow-sm">
-        <p className="text-xs uppercase tracking-[0.2em] text-hb-text3 font-semibold">Shared Balance</p>
-        <div className="mt-2 flex items-end justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-hb-text">Settlement</h3>
-            <p className="text-sm text-hb-text2 mt-1">{balanceLabel}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs text-hb-text3 uppercase tracking-[0.2em] font-semibold">Month total</p>
-            <p className="text-xl font-semibold text-hb-text">{formatCurrency(monthData.total)}</p>
-          </div>
-        </div>
       </section>
     </div>
   )

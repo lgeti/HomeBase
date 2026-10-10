@@ -30,6 +30,12 @@
     --hb-success-bg: 226 236 216;
     --hb-warning: 122 90 14;
     --hb-warning-bg: 243 232 202;
+    --hb-hero: 47 93 80;
+    --hb-on-hero: 255 255 255;
+    --hb-seg-on: 255 255 255;
+    --hb-sheet: 255 255 255;
+    --hb-field: 255 255 255;
+    --hb-on-person-b: 255 255 255;
     --cat-car: #A2413F;
     --cat-car-tint: #F4E0DD;
     --cat-subscriptions: #77558F;
@@ -74,6 +80,12 @@
       --hb-success-bg: 31 49 32;
       --hb-warning: 237 203 102;
       --hb-warning-bg: 54 48 26;
+      --hb-hero: 45 38 24;
+      --hb-on-hero: 246 221 181;
+      --hb-seg-on: 48 53 62;
+      --hb-sheet: 31 35 41;
+      --hb-field: 22 25 29;
+      --hb-on-person-b: 14 26 38;
       --cat-car: #F08C82;
       --cat-car-tint: #3A2321;
       --cat-subscriptions: #C3A1F0;
@@ -99,7 +111,7 @@
   }
 
   input, select, textarea {
-    background-color: rgb(var(--hb-surface));
+    background-color: rgb(var(--hb-field));
     color: rgb(var(--hb-text));
   }
 

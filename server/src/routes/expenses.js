@@ -37,6 +37,18 @@ router.post('/api/households/:householdId/expenses', requireAuth, requireHouseho
   const validationError = validateExpense(expense)
   if (validationError) return sendError(response, 400, validationError)
 
+  // Only members who have joined can pay for expenses
+  const { data: payer, error: payerError } = await supabase
+    .from('household_members')
+    .select('household_member_id')
+    .eq('household_id', request.params.householdId)
+    .eq('household_member_id', expense.paid_by_member_id)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (payerError) return sendError(response, 500, payerError.message)
+  if (!payer) return sendError(response, 400, 'The payer must be a member who has joined this household')
+
   const { data, error } = await supabase
     .from('expenses')
     .insert(expense)
@@ -53,6 +65,18 @@ router.patch('/api/households/:householdId/expenses/:expenseId', requireAuth, re
   delete updates.household_id
   const validationError = validateExpense({ ...updates, household_id: request.params.householdId })
   if (validationError) return sendError(response, 400, validationError)
+
+  // Only members who have joined can pay for expenses
+  const { data: payer, error: payerError } = await supabase
+    .from('household_members')
+    .select('household_member_id')
+    .eq('household_id', request.params.householdId)
+    .eq('household_member_id', updates.paid_by_member_id)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (payerError) return sendError(response, 500, payerError.message)
+  if (!payer) return sendError(response, 400, 'The payer must be a member who has joined this household')
 
   const { data, error } = await supabase
     .from('expenses')

@@ -50,11 +50,14 @@ export const getMonthCategoryBreakdown = (expenses, year, month) => {
 export const getMemberName = (members, memberId) =>
   members.find((member) => member.household_member_id === memberId)?.display_name || 'Removed member'
 
+// Members who have joined. People who were added or invited but have not joined yet do not pay or share expenses.
+export const getJoinedMembers = (members) => members.filter((member) => (member.status ?? 'active') === 'active')
+
 // Paid, owed and net amounts for the month, keyed by household_member_id.
-// A split expense is shared equally between all members; otherwise the payer owes all of it.
+// A split expense is shared equally between all joined members; otherwise the payer owes all of it.
 export const getMemberSummary = (expenses, members, year, month) => {
   const monthExpenses = getMonthExpenses(expenses, year, month)
-  const summary = Object.fromEntries(members.map((member) => [
+  const summary = Object.fromEntries(getJoinedMembers(members).map((member) => [
     member.household_member_id,
     { name: member.display_name, paid: 0, owed: 0, net: 0 },
   ]))

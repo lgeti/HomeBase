@@ -1,12 +1,11 @@
+// Totals always use the full amount: that is what the household spent. Whether an expense is split
+// only changes who owes whom (see getMemberSummary).
+const amountOf = (expense) => parseFloat(expense.amount || 0)
+
 export const getCategoryTotal = (expenses, categoryId) => {
   return expenses
     .filter((exp) => exp.categoryId === categoryId)
-    .reduce((sum, exp) => sum + parseFloat(exp.amount || 0), 0)
-}
-
-export const getEffectiveAmount = (expense) => {
-  const amount = parseFloat(expense.amount || 0)
-  return expense.splitType === 'split' ? amount / 2 : amount
+    .reduce((sum, exp) => sum + amountOf(exp), 0)
 }
 
 // Expense dates are 'YYYY-MM-DD' calendar dates. new Date('YYYY-MM-DD') would read them as UTC midnight,
@@ -31,16 +30,14 @@ export const getMonthExpenses = (expenses, year, month) => {
 
 export const getMonthTotal = (expenses, year, month) => {
   return getMonthExpenses(expenses, year, month)
-    .reduce((sum, exp) => {
-      return sum + getEffectiveAmount(exp)
-    }, 0)
+    .reduce((sum, exp) => sum + amountOf(exp), 0)
 }
 
 export const getMonthCategoryBreakdown = (expenses, year, month) => {
   const monthExpenses = getMonthExpenses(expenses, year, month)
   const totalsByCategory = monthExpenses.reduce((totals, expense) => {
     const currentTotal = totals.get(expense.categoryId) || 0
-    totals.set(expense.categoryId, currentTotal + getEffectiveAmount(expense))
+    totals.set(expense.categoryId, currentTotal + amountOf(expense))
     return totals
   }, new Map())
 
@@ -53,7 +50,8 @@ export const getMonthCategoryBreakdown = (expenses, year, month) => {
 export const getMemberName = (members, memberId) =>
   members.find((member) => member.household_member_id === memberId)?.display_name || 'Removed member'
 
-// Paid, owed and net amounts for the month, keyed by household_member_id
+// Paid, owed and net amounts for the month, keyed by household_member_id.
+// A split expense is shared equally between all members; otherwise the payer owes all of it.
 export const getMemberSummary = (expenses, members, year, month) => {
   const monthExpenses = getMonthExpenses(expenses, year, month)
   const summary = Object.fromEntries(members.map((member) => [
@@ -63,7 +61,7 @@ export const getMemberSummary = (expenses, members, year, month) => {
   const memberSummaries = Object.values(summary)
 
   monthExpenses.forEach((expense) => {
-    const amount = parseFloat(expense.amount || 0)
+    const amount = amountOf(expense)
     const payer = summary[expense.paidByMemberId]
 
     if (payer) {

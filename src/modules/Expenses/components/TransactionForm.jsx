@@ -222,7 +222,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
               onChange={handleChange}
               className="w-4 h-4"
             />
-            <span className="text-sm text-gray-700">Split 50/50</span>
+            <span className="text-sm text-gray-700">Split equally</span>
           </label>
         </div>
       </div>

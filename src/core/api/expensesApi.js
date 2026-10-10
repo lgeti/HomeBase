@@ -57,6 +57,15 @@ export const createExpense = async (householdId, expense) => {
   return mapExpense(createdExpense)
 }
 
+// Sends the full expense: the API validates it the same way as a new one
+export const updateExpense = async (householdId, expenseId, expense) => {
+  const updatedExpense = await apiRequest(`/api/households/${householdId}/expenses/${expenseId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(expense),
+  })
+  return mapExpense(updatedExpense)
+}
+
 export const deleteExpense = (householdId, expenseId) =>
   apiRequest(`/api/households/${householdId}/expenses/${expenseId}`, {
     method: 'DELETE',

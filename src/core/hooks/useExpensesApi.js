@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { createExpense, deleteExpense as deleteExpenseRequest, fetchExpenses } from '../api/expensesApi'
+import {
+  createExpense,
+  deleteExpense as deleteExpenseRequest,
+  fetchExpenses,
+  updateExpense as updateExpenseRequest,
+} from '../api/expensesApi'
 
 export const useExpensesApi = (household) => {
   const [expenses, setExpenses] = useState([])
@@ -37,6 +42,17 @@ export const useExpensesApi = (household) => {
     return createdExpense
   }
 
+  const updateExpense = async (expenseId, expense) => {
+    if (!householdId) throw new Error('No household is connected')
+
+    setError('')
+    const updatedExpense = await updateExpenseRequest(householdId, expenseId, expense)
+    setExpenses((currentExpenses) =>
+      currentExpenses.map((current) => (current.id === expenseId ? updatedExpense : current))
+    )
+    return updatedExpense
+  }
+
   const deleteExpense = async (expenseId) => {
     if (!householdId) throw new Error('No household is connected')
 
@@ -45,5 +61,5 @@ export const useExpensesApi = (household) => {
     setExpenses((currentExpenses) => currentExpenses.filter((expense) => expense.id !== expenseId))
   }
 
-  return { expenses, addExpense, deleteExpense, isLoading, error, reload }
+  return { expenses, addExpense, updateExpense, deleteExpense, isLoading, error, reload }
 }

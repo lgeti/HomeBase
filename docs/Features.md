@@ -6,6 +6,7 @@
 - Add an expense: amount, category, type (subcategory), description, date, who paid, and "paid it all" or "split equally"
 - The payer defaults to you; the date defaults to today (local date)
 - Current-month list per category, newest first, with tap-to-delete (always visible on phones, with a confirmation)
+- Tap an expense to edit it in the same sheet ("Edit Transaction", Save); unticking "Repeat this expense" stops a recurring expense. Edits to a recurring expense apply to future repeats; repeats already added stay, and changing its date or frequency never re-adds past ones. Automatically added repeats can be edited but not set to repeat
 - Recurring expenses (weekly, monthly, yearly): the server creates each due occurrence automatically, including missed ones, labelled "Added automatically"
 - Soft delete: deleted expenses stay in the database but are hidden
 

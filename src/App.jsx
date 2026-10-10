@@ -37,9 +37,11 @@ export default function App() {
     refreshHousehold,
     createHousehold,
   } = useHousehold(authUserId)
-  const { expenses, addExpense, deleteExpense, error: expensesError } = useExpensesApi(household)
+  const { expenses, addExpense, updateExpense, deleteExpense, error: expensesError } = useExpensesApi(household)
   const [apiError, setApiError] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
+  // The expense open in the sheet for editing, or null
+  const [editingExpense, setEditingExpense] = useState(null)
   const [activeView, setActiveView] = useState('categories')
   const [selectedCategoryId, setSelectedCategoryId] = useState('groceries')
 
@@ -71,6 +73,23 @@ export default function App() {
     addExpense(expense)
       .then(() => setShowAddForm(false))
       .catch((error) => setApiError(error.message))
+  }
+
+  const handleEditTransaction = (expense) => {
+    setApiError('')
+    updateExpense(editingExpense.id, expense)
+      .then(() => setEditingExpense(null))
+      .catch((error) => setApiError(error.message))
+  }
+
+  const openAddForm = () => {
+    setEditingExpense(null)
+    setShowAddForm(true)
+  }
+
+  const closeSheet = () => {
+    setShowAddForm(false)
+    setEditingExpense(null)
   }
 
   if (authLoading) return <LoadingScreen />
@@ -141,6 +160,7 @@ export default function App() {
         ) : (
           <CategoryView
             expenses={expenses}
+            onEditExpense={setEditingExpense}
             onDeleteExpense={deleteExpense}
             members={members}
             onCategoryChange={setSelectedCategoryId}
@@ -148,17 +168,19 @@ export default function App() {
         )}
       </div>
 
-      <AddTransactionSheetWrapper isOpen={showAddForm} onClose={() => setShowAddForm(false)}>
+      <AddTransactionSheetWrapper isOpen={showAddForm || Boolean(editingExpense)} onClose={closeSheet}>
         <TransactionForm
+          key={editingExpense?.id || 'new'}
+          expense={editingExpense}
           members={joinedMembers}
-          onSubmit={handleAddTransaction}
-          onCancel={() => setShowAddForm(false)}
+          onSubmit={editingExpense ? handleEditTransaction : handleAddTransaction}
+          onCancel={closeSheet}
           defaultCategoryId={selectedCategoryId}
           defaultPayerId={joinedMembers.find((member) => member.auth_user_id === authUserId)?.household_member_id}
         />
       </AddTransactionSheetWrapper>
 
-      <BottomNav activeView={activeView} onNavigate={setActiveView} onAdd={() => setShowAddForm(true)} />
+      <BottomNav activeView={activeView} onNavigate={setActiveView} onAdd={openAddForm} />
     </div>
   )
 }

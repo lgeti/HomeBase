@@ -53,3 +53,21 @@ export const dueOccurrences = ({ anchor, frequency, nextDueDate, today }) => {
 }
 
 export const todayUtc = () => toDateString(new Date())
+
+// next_due_date after an expense is edited. An unchanged schedule keeps its place. A changed one starts
+// one period after the (new) expense date like a new expense, unless repeats were already added: then it
+// skips to the first date after today, so past repeats are not added again on shifted dates.
+export const nextDueDateAfterEdit = ({ before, after, hasRepeats, today }) => {
+  if (!after.isRecurring) return null
+
+  const isUnchanged = before.isRecurring
+    && before.nextDueDate
+    && before.date === after.date
+    && before.frequency === after.frequency
+  if (isUnchanged) return before.nextDueDate
+
+  const firstDueDate = nextDueDateAfter(after.date, after.frequency)
+  if (!hasRepeats) return firstDueDate
+
+  return dueOccurrences({ anchor: after.date, frequency: after.frequency, nextDueDate: firstDueDate, today }).nextDueDate
+}

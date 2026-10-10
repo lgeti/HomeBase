@@ -1,76 +1,51 @@
 # HomeBase Current Features
 
-## Working Frontend
+## Expenses
 
-- React + Vite + Tailwind CSS
-- Mobile-first responsive layout
-- GitHub Pages deployment
-- Cozy spring/cabin visual theme
-- Category navigation with eight expense categories
-- Category-specific subcategories and colors
-- Current-month totals
-- Transaction list sorted newest first
-- Add transaction bottom sheet on mobile and modal on desktop
-- Amount, category, tag, description, date, payer, and split type fields
-- 50/50 split support
-- Validation for required transaction fields
-- Delete transactions
-- Dashboard with monthly totals and category breakdown
-- Person payment summary and balance calculation
-- Previous/next month dashboard navigation
-- Recurring transactions with weekly, monthly, and yearly frequency
-- Recurring transaction badges
-- Category preselection when adding from a category tab
+- Eight categories with emoji, colors and subcategories; adding from a category tab preselects it
+- Add an expense: amount, category, type (subcategory), description, date, who paid, and "paid it all" or "split"
+- The payer defaults to you; the date defaults to today (local date)
+- Current-month list per category, newest first, with tap-to-delete (always visible on phones, with a confirmation)
+- Recurring expenses (weekly, monthly, yearly): the server creates each due occurrence automatically, including missed ones, labelled "Added automatically"
+- Soft delete: deleted expenses stay in the database but are hidden
 
-## Authentication
+## Dashboard
 
-- Supabase Auth client configured
-- Google sign-in
-- Email/password sign-in
-- Email/password sign-up
-- Password confirmation during sign-up
-- Session restoration after refresh
-- Sign out
-- Login and sign-up screens
-- PKCE OAuth flow
+- Month navigation with the monthly total and the two previous months
+- Category breakdown
+- What each member paid, their share, and who owes whom this month
 
-## Backend And Data
+## Households and members
 
-- Node.js/Express backend deployed on Render
-- Supabase PostgreSQL database
-- Supabase category seed data
-- Household creation endpoint
-- Household member lookup endpoint
-- Category lookup endpoint
-- Expense list endpoint
-- Expense creation endpoint
-- Expense update endpoint
-- Soft-delete expense endpoint
-- Frontend API client with Supabase access-token forwarding
-- API-backed expense loading, creation, and deletion
-- Production build and GitHub Pages deployment script
+- Create a household when you first sign in
+- Household screen: members with role (owner, admin, member) and status (joined, invited, not invited yet)
+- Owners and admins create invite links for an email address; links work for 7 days and only for that email
+- Opening an invite link before signing in keeps it through sign-in, sign-up and email confirmation, then joins the household
+- Everyone can change their own display name (unique within the household)
+- One household per person: accepting an invite is refused if you already belong to another household
 
-## Current Limitations
+## Sign-in
 
-- Household setup still collects only two initial names.
-- Household members are not yet linked to Supabase Auth users.
-- Invitations and shareable household links are not implemented.
-- Render API routes do not yet enforce bearer-token authorization.
-- Row Level Security policies for user membership are not complete.
-- Existing localStorage profiles and expenses are not fully migrated.
-- Dashboard balance logic still assumes two people.
-- CORS is not yet restricted to the production frontend origin.
-- Password reset and email-management screens are not implemented.
+- Supabase Auth with Google or email and password (PKCE flow)
+- Sign-up with password confirmation; sessions survive a refresh
+- Sign out from the Household screen
+- While the API is waking up (Render free plan), the loading screen explains the wait after 3 seconds
 
-## Current Architecture
+## Security
+
+- Every API route except the health check requires a valid Supabase sign-in token
+- Household routes require active membership in that household
+- Role rules for inviting and removing members are enforced by the server (`server/src/authorization.js`)
+- The database blocks direct browser access (RLS on, no policies); only the API's server key can read and write
+
+## Architecture
 
 ```text
-React frontend on GitHub Pages
+React app on GitHub Pages
         |
-        | Supabase Auth session and API requests
+        | Supabase sign-in token on every request
         v
-Node.js/Express API on Render
-        |
-        v
-Supabase Auth and PostgreSQL
+Express API on Render  ---->  Supabase Auth and PostgreSQL
 ```
+
+Known gaps and planned work are tracked in `BACKLOG.md`.

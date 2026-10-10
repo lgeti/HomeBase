@@ -38,13 +38,11 @@ The visual system should remain warm, polished, and restrained. Use color for ca
 
 ## Recommended Technical Direction
 
-The current repository is a React + Vite + Tailwind client with localStorage persistence. That is appropriate for validating the interaction model, but it is not sufficient for authentication, bank connectivity, or strict data isolation.
+The current repository is a React + Vite + Tailwind client on GitHub Pages, an Express API on Render, and Supabase for authentication and PostgreSQL. All data is stored in the database and scoped to the authenticated household by the API; the browser no longer stores expenses locally.
 
 The next production architecture should use a server-backed application with a relational database. The core domain should be organized around `users`, `households`, `household_members`, `transactions`, `categories`, `budgets`, `bank_connections`, `bank_accounts`, and `sync_runs`. Imported transactions should retain both normalized fields for HomeBase and the provider's external identifiers for reconciliation.
 
 Enable Banking should be implemented behind a server-side integration boundary. The browser should begin a consent flow and receive only a short-lived, application-controlled state value. The server should create the provider session, handle the callback, exchange or store provider credentials according to the provider's contract, fetch accounts and transactions, and write normalized records scoped to the authenticated household. Payment initiation is outside the current product scope; the initial bank integration should request account-information access only.
-
-A practical migration path is to keep the current localStorage schema readable, add an explicit “Import this device data” action after authentication, upload the local records through a validated endpoint, and then make the database the source of truth. Do not silently merge local and remote records without showing the user what will be imported.
 
 ## Definition of Done for the Next Major Milestone
 

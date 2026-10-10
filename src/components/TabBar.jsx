@@ -1,26 +1,29 @@
 import { CATEGORIES } from '../config/categories'
+import { CategoryIcon } from './Icon'
 
 export default function TabBar({ activeTab, onTabChange }) {
   const tabs = ['All', ...CATEGORIES.map((cat) => cat.name)]
 
   return (
-    <div className="flex overflow-x-auto gap-2 px-4 py-3 bg-hb-surface border-b border-hb-border sticky top-14 md:top-16 scrollbar-hide">
+    <div className="flex overflow-x-auto gap-2 px-4 pt-2.5 pb-3.5 bg-hb-surface border-b border-hb-border sticky top-14 md:top-16 scrollbar-hide">
       {tabs.map((tab) => {
         const isActive = activeTab === tab
         const category = CATEGORIES.find((cat) => cat.name === tab)
+        const colors = !isActive
+          ? 'bg-hb-surface2 text-hb-text2 hover:bg-hb-border'
+          : category ? 'text-hb-on-cat' : 'bg-hb-primary text-hb-on-primary'
 
         return (
           <button
             key={tab}
+            type="button"
             onClick={() => onTabChange(tab)}
-            className={`px-4 py-2 rounded-full whitespace-nowrap font-medium text-sm transition ${
-              isActive
-                ? (category ? 'text-hb-on-cat' : 'bg-hb-primary text-hb-on-primary')
-                : 'text-hb-text2 bg-hb-surface2 hover:bg-hb-border'
-            }`}
-            style={isActive && category ? { backgroundColor: category.color } : {}}
+            aria-pressed={isActive}
+            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold transition ${colors}`}
+            style={isActive && category ? { backgroundColor: category.color } : undefined}
           >
-            <span className="mr-1">{category?.emoji || ''}</span>
+            {/* On the active tab the icon takes the text color, so it stays visible on the category color */}
+            {category && (isActive ? <CategoryIcon category={{ ...category, color: 'currentColor' }} size={16} /> : <CategoryIcon category={category} size={16} />)}
             {tab}
           </button>
         )

@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 import {
   calculateBalance,
   formatDate,
+  formatShortDate,
   getCategoryTotal,
   getJoinedMembers,
   getMonthCategoryBreakdown,
@@ -144,5 +145,15 @@ describe('only joined members share expenses', () => {
     const summary = getMemberSummary(expenses, members, 2026, 9)
     assert.deepEqual(Object.keys(summary), ['m-ana', 'm-bor'])
     assert.equal(summary['m-bor'].owed, 50)
+  })
+})
+
+describe('formatShortDate', () => {
+  it('leaves out the year for this year', () => {
+    assert.equal(formatShortDate('2026-10-09', new Date(2026, 9, 10)), '9 Oct')
+  })
+
+  it('keeps the year for other years', () => {
+    assert.equal(formatShortDate('2025-12-31', new Date(2026, 0, 2)), '31 Dec 2025')
   })
 })

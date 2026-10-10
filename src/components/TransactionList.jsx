@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { getCategoryById } from '../config/categories'
-import { formatCurrency, formatDate, getMemberName } from '../core/utils/calculations'
+import { formatCurrency, formatShortDate, getMemberName } from '../core/utils/calculations'
+import Icon, { CategoryIcon } from './Icon'
+
+const FREQUENCY_LABELS = { weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly' }
 
 export default function TransactionList({ transactions, onDelete, members }) {
   // Confirmed inside the row: native confirm() dialogs are blocked in some browsers
@@ -9,23 +12,26 @@ export default function TransactionList({ transactions, onDelete, members }) {
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-hb-text3 text-sm">No transactions yet</p>
+        <p className="text-hb-text2 text-sm">No transactions yet</p>
         <p className="text-hb-text3 text-xs mt-1">Add one to get started →</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {transactions.map((transaction) => {
         const category = getCategoryById(transaction.categoryId)
-        const personLabel = `${getMemberName(members, transaction.paidByMemberId)} paid`
+        // "Supermarket · Ana paid · 9 Oct"
+        const meta = [transaction.tag, `${getMemberName(members, transaction.paidByMemberId)} paid`, formatShortDate(transaction.date)]
+          .filter(Boolean)
+          .join(' · ')
 
         if (transaction.id === confirmingDeleteId) {
           return (
             <div
               key={transaction.id}
-              className="flex items-center justify-between gap-3 bg-hb-danger-bg p-4 rounded-lg border border-hb-danger/30"
+              className="flex items-center justify-between gap-3 bg-hb-danger-bg px-3.5 py-3 rounded-2xl border border-hb-danger/30"
             >
               <p className="min-w-0 text-sm text-hb-text">
                 Delete <span className="font-medium">{transaction.description || category?.name}</span>
@@ -57,57 +63,44 @@ export default function TransactionList({ transactions, onDelete, members }) {
         return (
           <div
             key={transaction.id}
-            className="flex items-center justify-between bg-hb-surface p-4 rounded-lg border border-hb-border hover:shadow-sm transition group"
+            className="group flex items-center gap-3 bg-hb-surface px-3.5 py-3 rounded-2xl border border-hb-border"
           >
-            <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
-                style={{ backgroundColor: category?.tint }}
-                aria-hidden="true"
-              >
-                {category?.emoji}
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-hb-text truncate">
-                  {transaction.description || category?.name}
+            <CategoryIcon category={category} size={20} tile="h-10 w-10 rounded-xl" />
+
+            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+              <p className="text-[15px] font-semibold text-hb-text truncate">
+                {transaction.description || category?.name}
+              </p>
+              <p className="text-xs text-hb-text2 truncate">{meta}</p>
+              {transaction.isRecurring && (
+                <p className="flex items-center gap-1 text-[11px] font-semibold text-hb-primary">
+                  <Icon name="repeat" size={12} strokeWidth={2.2} />
+                  {FREQUENCY_LABELS[transaction.recurringFrequency] || 'Monthly'}
                 </p>
-                {transaction.tag && (
-                  <p className="text-xs text-hb-text3">{transaction.tag}</p>
-                )}
-                <p className="text-xs text-hb-text2 mt-0.5">
-                  {personLabel} • {formatDate(transaction.date)}
+              )}
+              {transaction.isAutoAdded && (
+                <p className="flex items-center gap-1 text-[11px] text-hb-text2">
+                  <Icon name="repeat" size={12} strokeWidth={2.2} />
+                  Added automatically
                 </p>
-                {transaction.isRecurring && (
-                  <p className="text-[11px] text-hb-primary mt-1">
-                    🔁 {transaction.recurringFrequency || 'monthly'}
-                  </p>
-                )}
-                {transaction.isAutoAdded && (
-                  <p className="text-[11px] text-hb-text3 mt-1">🔁 Added automatically</p>
-                )}
-              </div>
+              )}
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="font-semibold text-hb-text">
-                  {formatCurrency(transaction.amount)}
-                </p>
-                {transaction.splitType === 'split' && (
-                  <p className="text-xs text-hb-text3">Split</p>
-                )}
-              </div>
-              {/* Always visible on touch screens; mouse users see it on hover or keyboard focus */}
-              <button
-                type="button"
-                onClick={() => setConfirmingDeleteId(transaction.id)}
-                className="p-2 -m-2 ml-0 text-hb-text3 hover:text-hb-danger focus:opacity-100 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
-                title="Delete"
-                aria-label="Delete expense"
-              >
-                ✕
-              </button>
+            <div className="text-right flex flex-col gap-0.5">
+              <p className="text-[15px] font-semibold text-hb-text">{formatCurrency(transaction.amount)}</p>
+              {transaction.splitType === 'split' && <p className="text-[11px] text-hb-text3">Split</p>}
             </div>
+
+            {/* Always visible on touch screens; mouse users see it on hover or keyboard focus */}
+            <button
+              type="button"
+              onClick={() => setConfirmingDeleteId(transaction.id)}
+              className="-mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-hb-text3 hover:bg-hb-danger-bg hover:text-hb-danger focus:opacity-100 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+              title="Delete"
+              aria-label="Delete expense"
+            >
+              <Icon name="close" size={16} />
+            </button>
           </div>
         )
       })}

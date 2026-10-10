@@ -32,6 +32,12 @@ export default {
           'success-bg': 'rgb(var(--hb-success-bg) / <alpha-value>)',
           'warning': 'rgb(var(--hb-warning) / <alpha-value>)',
           'warning-bg': 'rgb(var(--hb-warning-bg) / <alpha-value>)',
+          'hero': 'rgb(var(--hb-hero) / <alpha-value>)',
+          'on-hero': 'rgb(var(--hb-on-hero) / <alpha-value>)',
+          'seg-on': 'rgb(var(--hb-seg-on) / <alpha-value>)',
+          'sheet': 'rgb(var(--hb-sheet) / <alpha-value>)',
+          'field': 'rgb(var(--hb-field) / <alpha-value>)',
+          'on-person-b': 'rgb(var(--hb-on-person-b) / <alpha-value>)',
         },
       },
       fontFamily: {

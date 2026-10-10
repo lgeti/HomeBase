@@ -46,8 +46,8 @@ export default function CategoryView({ expenses, onDeleteExpense, members, onCat
       <div className="flex-1 overflow-y-auto pb-4">
         <div className="max-w-lg mx-auto p-4">
           {/* Monthly Total */}
-          <div className="bg-hb-surface rounded-xl p-4 mb-4 border border-hb-border">
-            <p className="text-xs text-hb-text2 uppercase tracking-wide mb-1">
+          <div className="bg-hb-surface rounded-[18px] px-[18px] py-4 mb-3 border border-hb-border">
+            <p className="text-[11px] font-semibold text-hb-text2 uppercase tracking-[0.12em] mb-1">
               {activeTab === 'All' ? 'This Month Total' : `${activeTab} This Month`}
             </p>
             <p className="text-3xl font-bold text-hb-text">{formatCurrency(monthTotal)}</p>

@@ -117,6 +117,15 @@ export const formatDate = (dateString) => {
   })
 }
 
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// "9 Oct" for this year, "9 Oct 2025" otherwise
+export const formatShortDate = (dateString, today = new Date()) => {
+  const date = parseLocalDate(dateString)
+  const dayMonth = `${date.getDate()} ${SHORT_MONTHS[date.getMonth()]}`
+  return date.getFullYear() === today.getFullYear() ? dayMonth : `${dayMonth} ${date.getFullYear()}`
+}
+
 export const getMonthName = (year, month) => {
   return new Date(year, month).toLocaleDateString('en-US', {
     year: 'numeric',

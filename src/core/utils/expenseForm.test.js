@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { formDataToExpense, initialFormData } from './expenseForm.js'
+import { formDataToExpense, friendlySaveError, initialFormData } from './expenseForm.js'
 
 const expense = {
   id: 'e1',
@@ -67,5 +67,20 @@ describe('formDataToExpense', () => {
   it('stops repeating when the box is unticked', () => {
     const form = { ...initialFormData({ expense }), isRecurring: false }
     assert.equal(formDataToExpense(form).isRecurring, false)
+  })
+})
+
+describe('friendlySaveError', () => {
+  it('explains an unreachable server', () => {
+    assert.match(friendlySaveError(new TypeError('Failed to fetch')), /Could not reach the server/)
+    assert.match(friendlySaveError(new TypeError('Load failed')), /Could not reach the server/)
+  })
+
+  it('passes API messages through', () => {
+    assert.equal(friendlySaveError(new Error('Expense not found')), 'Expense not found')
+  })
+
+  it('falls back when there is no message', () => {
+    assert.equal(friendlySaveError(new Error('')), 'Could not save. Please try again.')
   })
 })

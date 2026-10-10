@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Icon, { CategoryIcon } from '../../../components/Icon'
 import { CATEGORIES } from '../../../config/categories'
 import { getMemberName } from '../../../core/utils/calculations'
-import { formDataToExpense, initialFormData } from '../../../core/utils/expenseForm'
+import { formDataToExpense, friendlySaveError, initialFormData } from '../../../core/utils/expenseForm'
 
 // Pass `expense` to edit it; without one the form adds a new expense
 export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries', defaultPayerId, expense }) {
@@ -12,6 +12,9 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
     initialFormData({ expense, categoryId: defaultCategoryId, payerId: defaultPayer })
   )
   const [errors, setErrors] = useState({})
+  // A failed save, shown in the sheet: the app's error banner is hidden behind it
+  const [submitError, setSubmitError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     if (!isEditing) setFormData((prev) => ({ ...prev, categoryId: defaultCategoryId }))
@@ -50,13 +53,21 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (!validateForm()) return
+    if (isSaving || !validateForm()) return
 
-    onSubmit(formDataToExpense(formData))
-    if (!isEditing) setFormData(initialFormData({ categoryId: defaultCategoryId, payerId: defaultPayer }))
+    setSubmitError('')
+    setIsSaving(true)
+    try {
+      await onSubmit(formDataToExpense(formData))
+      if (!isEditing) setFormData(initialFormData({ categoryId: defaultCategoryId, payerId: defaultPayer }))
+    } catch (submitFailure) {
+      setSubmitError(friendlySaveError(submitFailure))
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const label = 'block text-[13px] font-semibold text-hb-text2 mb-1.5'
@@ -235,20 +246,28 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
         </div>
       )}
 
-      <div className="sticky bottom-0 grid grid-cols-2 gap-2.5 bg-hb-sheet pt-1">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-[14px] border border-hb-input bg-hb-sheet py-3.5 text-[15px] font-semibold text-hb-text hover:bg-hb-surface2 transition"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="rounded-[14px] bg-hb-primary py-3.5 text-[15px] font-semibold text-hb-on-primary hover:opacity-90 transition"
-        >
-          {isEditing ? 'Save' : 'Add'}
-        </button>
+      <div className="sticky bottom-0 flex flex-col gap-2 bg-hb-sheet pt-1">
+        {submitError && (
+          <p role="alert" className="rounded-xl border border-hb-danger/30 bg-hb-danger-bg px-3 py-2 text-sm text-hb-danger">
+            {submitError}
+          </p>
+        )}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-[14px] border border-hb-input bg-hb-sheet py-3.5 text-[15px] font-semibold text-hb-text hover:bg-hb-surface2 transition"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded-[14px] bg-hb-primary py-3.5 text-[15px] font-semibold text-hb-on-primary hover:opacity-90 disabled:opacity-60 transition"
+          >
+            {isSaving ? 'Saving…' : isEditing ? 'Save' : 'Add'}
+          </button>
+        </div>
       </div>
     </form>
   )

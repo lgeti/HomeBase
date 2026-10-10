@@ -60,26 +60,21 @@ export default function App() {
     }
   }
 
-  const handleAddTransaction = (expense) => {
+  // Both throw on failure so the sheet can show the error where the person is looking
+  const handleAddTransaction = async (expense) => {
     const isHouseholdMember = getJoinedMembers(household?.members || []).some(
       (member) => member.household_member_id === expense.paidByMemberId
     )
 
-    if (!isHouseholdMember) {
-      setApiError('The selected payer is not connected to this household')
-      return
-    }
+    if (!isHouseholdMember) throw new Error('The selected payer is not connected to this household')
 
-    addExpense(expense)
-      .then(() => setShowAddForm(false))
-      .catch((error) => setApiError(error.message))
+    await addExpense(expense)
+    setShowAddForm(false)
   }
 
-  const handleEditTransaction = (expense) => {
-    setApiError('')
-    updateExpense(editingExpense.id, expense)
-      .then(() => setEditingExpense(null))
-      .catch((error) => setApiError(error.message))
+  const handleEditTransaction = async (expense) => {
+    await updateExpense(editingExpense.id, expense)
+    setEditingExpense(null)
   }
 
   const openAddForm = () => {

@@ -54,7 +54,7 @@ export default function Login({ isConfigured, onGoogleSignIn, onPasswordSignIn, 
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Email"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
           />
           <input
             type="password"
@@ -63,12 +63,12 @@ export default function Login({ isConfigured, onGoogleSignIn, onPasswordSignIn, 
             placeholder="Password"
             minLength="6"
             required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
           />
           <button
             type="submit"
             disabled={!isConfigured || isSigningIn}
-            className="w-full py-3 rounded-lg bg-spring-sage text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
+            className="w-full py-3 rounded-lg bg-spring-sage-deep text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
           >
             {isSigningIn ? 'Signing in...' : 'Sign in with email'}
           </button>
@@ -99,7 +99,7 @@ export default function Login({ isConfigured, onGoogleSignIn, onPasswordSignIn, 
         <button
           type="button"
           onClick={onSwitchToSignup}
-          className="w-full text-sm text-spring-sage hover:underline"
+          className="w-full text-sm text-spring-sage-deep hover:underline"
         >
           Create a new account
         </button>

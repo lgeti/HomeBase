@@ -35,7 +35,7 @@ export default function TransactionList({ transactions, onDelete, members }) {
                   {personLabel} • {formatDate(transaction.date)}
                 </p>
                 {transaction.isRecurring && (
-                  <p className="text-[11px] text-spring-sage mt-1">
+                  <p className="text-[11px] text-spring-sage-deep mt-1">
                     🔁 {transaction.recurringFrequency || 'monthly'}
                   </p>
                 )}

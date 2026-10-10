@@ -43,19 +43,19 @@ export default function ForgotPassword({ isConfigured, onSendReset, onBack }) {
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Email"
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
             />
             <button
               type="submit"
               disabled={!isConfigured || isSending}
-              className="w-full py-3 rounded-lg bg-spring-sage text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
+              className="w-full py-3 rounded-lg bg-spring-sage-deep text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
             >
               {isSending ? 'Sending...' : 'Send reset link'}
             </button>
           </form>
         )}
 
-        <button type="button" onClick={onBack} className="w-full text-sm text-spring-sage hover:underline">
+        <button type="button" onClick={onBack} className="w-full text-sm text-spring-sage-deep hover:underline">
           Back to sign in
         </button>
       </main>

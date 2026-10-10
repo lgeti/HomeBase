@@ -68,7 +68,7 @@ export default function Dashboard({ expenses, members }) {
     <div className="flex-1 overflow-y-auto pb-24 px-4 py-4 space-y-4 bg-gradient-to-b from-warm-cream via-white to-spring-mint/30">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-spring-sage font-semibold">Summary</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-spring-sage-deep font-semibold">Summary</p>
           <h2 className="text-2xl font-semibold text-gray-800">{monthName}</h2>
         </div>
         <div className="flex items-center gap-2">

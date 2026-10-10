@@ -42,7 +42,7 @@ export default function SetNewPassword({ onSave }) {
             minLength="6"
             required
             autoComplete="new-password"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
           />
           <input
             type="password"
@@ -52,12 +52,12 @@ export default function SetNewPassword({ onSave }) {
             minLength="6"
             required
             autoComplete="new-password"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-spring-sage-deep"
           />
           <button
             type="submit"
             disabled={isSaving}
-            className="w-full py-3 rounded-lg bg-spring-sage text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
+            className="w-full py-3 rounded-lg bg-spring-sage-deep text-white font-semibold hover:opacity-90 disabled:opacity-50 transition"
           >
             {isSaving ? 'Saving...' : 'Save new password'}
           </button>

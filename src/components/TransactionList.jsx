@@ -5,7 +5,7 @@ import Icon, { CategoryIcon } from './Icon'
 
 const FREQUENCY_LABELS = { weekly: 'Weekly', monthly: 'Monthly', yearly: 'Yearly' }
 
-export default function TransactionList({ transactions, onDelete, members }) {
+export default function TransactionList({ transactions, onEdit, onDelete, members }) {
   // Confirmed inside the row: native confirm() dialogs are blocked in some browsers
   const [confirmingDeleteId, setConfirmingDeleteId] = useState(null)
 
@@ -65,31 +65,39 @@ export default function TransactionList({ transactions, onDelete, members }) {
             key={transaction.id}
             className="group flex items-center gap-3 bg-hb-surface px-3.5 py-3 rounded-2xl border border-hb-border"
           >
-            <CategoryIcon category={category} size={20} tile="h-10 w-10 rounded-xl" />
+            {/* Tapping the row opens it for editing; the delete button stays outside it */}
+            <button
+              type="button"
+              onClick={() => onEdit(transaction)}
+              className="flex flex-1 min-w-0 items-center gap-3 text-left rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-hb-primary"
+              aria-label={`Edit ${transaction.description || category?.name}, ${formatCurrency(transaction.amount)}`}
+            >
+              <CategoryIcon category={category} size={20} tile="h-10 w-10 rounded-xl" />
 
-            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-              <p className="text-[15px] font-semibold text-hb-text truncate">
-                {transaction.description || category?.name}
-              </p>
-              <p className="text-xs text-hb-text2 truncate">{meta}</p>
-              {transaction.isRecurring && (
-                <p className="flex items-center gap-1 text-[11px] font-semibold text-hb-primary">
-                  <Icon name="repeat" size={12} strokeWidth={2.2} />
-                  {FREQUENCY_LABELS[transaction.recurringFrequency] || 'Monthly'}
+              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+                <p className="text-[15px] font-semibold text-hb-text truncate">
+                  {transaction.description || category?.name}
                 </p>
-              )}
-              {transaction.isAutoAdded && (
-                <p className="flex items-center gap-1 text-[11px] text-hb-text2">
-                  <Icon name="repeat" size={12} strokeWidth={2.2} />
-                  Added automatically
-                </p>
-              )}
-            </div>
+                <p className="text-xs text-hb-text2 truncate">{meta}</p>
+                {transaction.isRecurring && (
+                  <p className="flex items-center gap-1 text-[11px] font-semibold text-hb-primary">
+                    <Icon name="repeat" size={12} strokeWidth={2.2} />
+                    {FREQUENCY_LABELS[transaction.recurringFrequency] || 'Monthly'}
+                  </p>
+                )}
+                {transaction.isAutoAdded && (
+                  <p className="flex items-center gap-1 text-[11px] text-hb-text2">
+                    <Icon name="repeat" size={12} strokeWidth={2.2} />
+                    Added automatically
+                  </p>
+                )}
+              </div>
 
-            <div className="text-right flex flex-col gap-0.5">
-              <p className="text-[15px] font-semibold text-hb-text">{formatCurrency(transaction.amount)}</p>
-              {transaction.splitType === 'split' && <p className="text-[11px] text-hb-text3">Split</p>}
-            </div>
+              <div className="text-right flex flex-col gap-0.5">
+                <p className="text-[15px] font-semibold text-hb-text">{formatCurrency(transaction.amount)}</p>
+                {transaction.splitType === 'split' && <p className="text-[11px] text-hb-text3">Split</p>}
+              </div>
+            </button>
 
             {/* Always visible on touch screens; mouse users see it on hover or keyboard focus */}
             <button

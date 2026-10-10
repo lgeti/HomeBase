@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { addPeriods, dueOccurrences, nextDueDateAfter } from '../src/recurring.js'
+import { addPeriods, dueOccurrences, nextDueDateAfter, nextDueDateAfterEdit } from '../src/recurring.js'
 
 describe('addPeriods', () => {
   it('adds weeks', () => {
@@ -60,5 +60,39 @@ describe('dueOccurrences', () => {
     const result = dueOccurrences({ anchor: '2000-01-01', frequency: 'weekly', nextDueDate: '2000-01-08', today: '2026-10-09' })
     assert.equal(result.dates.length, 400)
     assert.equal(result.nextDueDate, addPeriods('2000-01-01', 'weekly', 401))
+  })
+})
+
+describe('nextDueDateAfterEdit', () => {
+  const before = { isRecurring: true, date: '2026-01-15', frequency: 'monthly', nextDueDate: '2026-10-15' }
+  const today = '2026-10-11'
+
+  it('keeps the schedule when the date and frequency are unchanged', () => {
+    const after = { isRecurring: true, date: '2026-01-15', frequency: 'monthly' }
+    assert.equal(nextDueDateAfterEdit({ before, after, hasRepeats: true, today }), '2026-10-15')
+  })
+
+  it('stops the schedule when the expense no longer repeats', () => {
+    const after = { isRecurring: false, date: '2026-01-15', frequency: undefined }
+    assert.equal(nextDueDateAfterEdit({ before, after, hasRepeats: true, today }), null)
+  })
+
+  it('skips past dates when a schedule with repeats changes', () => {
+    const after = { isRecurring: true, date: '2026-01-20', frequency: 'monthly' }
+    assert.equal(nextDueDateAfterEdit({ before, after, hasRepeats: true, today }), '2026-10-20')
+    const weekly = { isRecurring: true, date: '2026-01-15', frequency: 'weekly' }
+    assert.equal(nextDueDateAfterEdit({ before, after: weekly, hasRepeats: true, today }), '2026-10-15')
+  })
+
+  it('starts like a new expense when nothing was repeated yet', () => {
+    const plain = { isRecurring: false, date: '2026-08-01', frequency: undefined, nextDueDate: null }
+    const after = { isRecurring: true, date: '2026-08-01', frequency: 'monthly' }
+    assert.equal(nextDueDateAfterEdit({ before: plain, after, hasRepeats: false, today }), '2026-09-01')
+  })
+
+  it('does not re-add old repeats when a stopped expense repeats again', () => {
+    const stopped = { isRecurring: false, date: '2026-01-15', frequency: undefined, nextDueDate: null }
+    const after = { isRecurring: true, date: '2026-01-15', frequency: 'monthly' }
+    assert.equal(nextDueDateAfterEdit({ before: stopped, after, hasRepeats: true, today }), '2026-10-15')
   })
 })

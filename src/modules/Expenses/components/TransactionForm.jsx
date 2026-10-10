@@ -1,26 +1,21 @@
 import { useEffect, useState } from 'react'
 import Icon, { CategoryIcon } from '../../../components/Icon'
 import { CATEGORIES } from '../../../config/categories'
-import { getMemberName, todayDateString } from '../../../core/utils/calculations'
+import { getMemberName } from '../../../core/utils/calculations'
+import { formDataToExpense, initialFormData } from '../../../core/utils/expenseForm'
 
-export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries', defaultPayerId }) {
+// Pass `expense` to edit it; without one the form adds a new expense
+export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries', defaultPayerId, expense }) {
+  const isEditing = Boolean(expense)
   const defaultPayer = defaultPayerId || members[0]?.household_member_id || ''
-  const [formData, setFormData] = useState({
-    amount: '',
-    categoryId: defaultCategoryId,
-    tag: '',
-    description: '',
-    date: todayDateString(),
-    paidByMemberId: defaultPayer,
-    splitType: 'one',
-    isRecurring: false,
-    recurringFrequency: 'monthly',
-  })
+  const [formData, setFormData] = useState(() =>
+    initialFormData({ expense, categoryId: defaultCategoryId, payerId: defaultPayer })
+  )
   const [errors, setErrors] = useState({})
 
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, categoryId: defaultCategoryId }))
-  }, [defaultCategoryId])
+    if (!isEditing) setFormData((prev) => ({ ...prev, categoryId: defaultCategoryId }))
+  }, [defaultCategoryId, isEditing])
 
   const selectedCategory = CATEGORIES.find((cat) => cat.id === formData.categoryId)
 
@@ -60,30 +55,8 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
 
     if (!validateForm()) return
 
-    const expense = {
-      categoryId: formData.categoryId,
-      amount: parseFloat(formData.amount),
-      tag: formData.tag || undefined,
-      description: formData.description || undefined,
-      date: formData.date,
-      paidByMemberId: formData.paidByMemberId,
-      splitType: formData.splitType,
-      isRecurring: formData.isRecurring,
-      recurringFrequency: formData.recurringFrequency,
-    }
-
-    onSubmit(expense)
-    setFormData({
-      amount: '',
-      categoryId: defaultCategoryId,
-      tag: '',
-      description: '',
-      date: todayDateString(),
-      paidByMemberId: defaultPayer,
-      splitType: 'one',
-      isRecurring: false,
-      recurringFrequency: 'monthly',
-    })
+    onSubmit(formDataToExpense(formData))
+    if (!isEditing) setFormData(initialFormData({ categoryId: defaultCategoryId, payerId: defaultPayer }))
   }
 
   const label = 'block text-[13px] font-semibold text-hb-text2 mb-1.5'
@@ -94,7 +67,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-      <h2 className="text-xl font-semibold text-hb-text">Add Transaction</h2>
+      <h2 className="text-xl font-semibold text-hb-text">{isEditing ? 'Edit Transaction' : 'Add Transaction'}</h2>
 
       <div>
         <label htmlFor="amount" className={label}>Amount</label>
@@ -219,38 +192,48 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
         </div>
       </div>
 
-      <div className="rounded-[14px] bg-hb-primary-tint px-3.5 py-3">
-        <div className="flex items-center justify-between gap-3">
-          <label htmlFor="isRecurring" className="flex items-center gap-2 text-sm font-semibold text-hb-primary">
-            <Icon name="repeat" size={16} />
-            Repeat this expense
-          </label>
-          <input
-            id="isRecurring"
-            type="checkbox"
-            name="isRecurring"
-            checked={formData.isRecurring}
-            onChange={(e) => choose('isRecurring', e.target.checked)}
-            className="h-5 w-5"
-          />
-        </div>
-        {formData.isRecurring && (
-          <div className="mt-3">
-            <label htmlFor="recurringFrequency" className={label}>How often?</label>
-            <select
-              id="recurringFrequency"
-              name="recurringFrequency"
-              value={formData.recurringFrequency}
-              onChange={handleChange}
-              className={field}
-            >
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
+      {/* An automatically added repeat belongs to its original, which owns the schedule */}
+      {!expense?.isAutoAdded && (
+        <div className="rounded-[14px] bg-hb-primary-tint px-3.5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="isRecurring" className="flex items-center gap-2 text-sm font-semibold text-hb-primary">
+              <Icon name="repeat" size={16} />
+              Repeat this expense
+            </label>
+            <input
+              id="isRecurring"
+              type="checkbox"
+              name="isRecurring"
+              checked={formData.isRecurring}
+              onChange={(e) => choose('isRecurring', e.target.checked)}
+              className="h-5 w-5"
+            />
           </div>
-        )}
-      </div>
+          {formData.isRecurring && (
+            <div className="mt-3">
+              <label htmlFor="recurringFrequency" className={label}>How often?</label>
+              <select
+                id="recurringFrequency"
+                name="recurringFrequency"
+                value={formData.recurringFrequency}
+                onChange={handleChange}
+                className={field}
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          )}
+          {isEditing && expense.isRecurring && (
+            <p className="mt-2 text-xs text-hb-text2">
+              {formData.isRecurring
+                ? 'Changes apply to future repeats. Ones already added stay as they are.'
+                : 'It will stop repeating. Ones already added stay.'}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="sticky bottom-0 grid grid-cols-2 gap-2.5 bg-hb-sheet pt-1">
         <button
@@ -264,7 +247,7 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
           type="submit"
           className="rounded-[14px] bg-hb-primary py-3.5 text-[15px] font-semibold text-hb-on-primary hover:opacity-90 transition"
         >
-          Add
+          {isEditing ? 'Save' : 'Add'}
         </button>
       </div>
     </form>

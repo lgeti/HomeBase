@@ -11,6 +11,10 @@ export const FREQUENCIES = [
 
 export const FREQUENCY_LABELS = { once: 'One time', daily: 'Every day', weekly: 'Every week', monthly: 'Every month' }
 
+// "Every week · Fixed day"
+export const scheduleLabel = (chore) =>
+  chore.fixedSchedule && chore.frequency !== 'once' ? `${FREQUENCY_LABELS[chore.frequency]} · Fixed day` : FREQUENCY_LABELS[chore.frequency]
+
 // Overdue, due today, and upcoming, each soonest first
 export const groupChores = (chores, today) => {
   const sorted = [...chores].sort((a, b) => a.dueOn.localeCompare(b.dueOn))
@@ -45,6 +49,7 @@ export const lastDoneLabel = (chore, members, today) =>
 export const initialChoreForm = (chore, today) => ({
   name: chore?.name ?? '',
   frequency: chore?.frequency ?? 'weekly',
+  fixedSchedule: chore?.fixedSchedule ?? false,
   dueOn: chore?.dueOn ?? today,
   assigneeMemberId: chore?.assigneeMemberId ?? '',
   note: chore?.note ?? '',
@@ -54,6 +59,8 @@ export const initialChoreForm = (chore, today) => ({
 export const choreFormToBody = (form) => ({
   name: form.name.trim(),
   frequency: form.frequency,
+  // Only a repeating chore has a schedule to keep
+  fixedSchedule: form.frequency !== 'once' && form.fixedSchedule,
   dueOn: form.dueOn,
   assigneeMemberId: form.assigneeMemberId || null,
   note: form.note.trim(),

@@ -13,10 +13,14 @@ const addDays = (dateString, days) => {
 
 export const isRealDate = (value) => isDateString(value) && addDays(value, 0) === value
 
-// The next due date after a chore is done: the first date on its schedule after both the date it
-// was due and the day it was done. Done early or late, the chore keeps its weekday or day of month.
-export const nextDueOn = ({ startsOn, frequency, dueOn, doneOn }) => {
+// The next due date after a chore is done.
+// Usually one period after the day it was done: vacuumed on the 11th, weekly, next on the 18th.
+// With a fixed schedule (bin day) it is the first date on its schedule after both the date it was
+// due and the day it was done, so it keeps its weekday or day of month, done early or late.
+export const nextDueOn = ({ startsOn, frequency, fixedSchedule, dueOn, doneOn }) => {
   if (frequency === 'once') return null
+  if (!fixedSchedule) return frequency === 'daily' ? addDays(doneOn, 1) : addPeriods(doneOn, frequency, 1)
+
   const after = dueOn > doneOn ? dueOn : doneOn
   if (frequency === 'daily') return addDays(after, 1)
 
@@ -31,18 +35,23 @@ export const nextDueOn = ({ startsOn, frequency, dueOn, doneOn }) => {
 }
 
 // Builds the columns for a chore from a request body. For an update, `existing` supplies every
-// field the body leaves out. A new due date or frequency restarts the schedule from that date.
+// field the body leaves out. A new due date, frequency or schedule type restarts the schedule from that date.
 export const normalizeChore = (body, existing = {}) => {
   const has = (key) => Object.hasOwn(body, key)
   const frequency = has('frequency') ? body.frequency : existing.frequency
   const dueOn = has('dueOn') ? trimmed(body.dueOn) : existing.due_on
-  const restartsSchedule = !existing.starts_on || dueOn !== existing.due_on || frequency !== existing.frequency
+  const fixedSchedule = has('fixedSchedule') ? Boolean(body.fixedSchedule) : Boolean(existing.fixed_schedule)
+  const restartsSchedule = !existing.starts_on
+    || dueOn !== existing.due_on
+    || frequency !== existing.frequency
+    || fixedSchedule !== Boolean(existing.fixed_schedule)
 
   return {
     name: has('name') ? trimmed(body.name) : existing.name,
     note: has('note') ? optionalText(body.note) : existing.note ?? null,
     assignee_member_id: has('assigneeMemberId') ? body.assigneeMemberId || null : existing.assignee_member_id ?? null,
     frequency,
+    fixed_schedule: fixedSchedule,
     due_on: dueOn,
     starts_on: restartsSchedule ? dueOn : existing.starts_on,
   }

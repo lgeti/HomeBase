@@ -6,6 +6,7 @@ const mapChore = (chore) => ({
   note: chore.note || undefined,
   assigneeMemberId: chore.assignee_member_id || undefined,
   frequency: chore.frequency,
+  fixedSchedule: Boolean(chore.fixed_schedule),
   dueOn: chore.due_on,
   lastDoneByMemberId: chore.last_done_by_member_id || undefined,
   lastDoneOn: chore.last_done_on || undefined,

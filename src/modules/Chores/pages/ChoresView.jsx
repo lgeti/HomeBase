@@ -2,11 +2,11 @@ import { useState } from 'react'
 import Icon from '../../../components/Icon'
 import { getMemberName, todayDateString } from '../../../core/utils/calculations'
 import { friendlySaveError } from '../../../core/utils/expenseForm'
-import { dueLabel, FREQUENCY_LABELS, groupChores, lastDoneLabel } from '../chores'
+import { dueLabel, groupChores, lastDoneLabel, scheduleLabel } from '../chores'
 
 function ChoreRow({ chore, members, today, isBusy, onDone, onEdit }) {
   const isOverdue = chore.dueOn < today
-  const meta = [FREQUENCY_LABELS[chore.frequency], chore.assigneeMemberId ? getMemberName(members, chore.assigneeMemberId) : 'Anyone']
+  const meta = [scheduleLabel(chore), chore.assigneeMemberId ? getMemberName(members, chore.assigneeMemberId) : 'Anyone']
     .join(' · ')
   const lastDone = lastDoneLabel(chore, members, today)
 

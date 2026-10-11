@@ -159,7 +159,13 @@ router.post(`${base}/:choreId/done`, requireAuth, requireHouseholdMember, async 
 
   if (completionError) return sendError(response, 400, completionError.message)
 
-  const nextDue = nextDueOn({ startsOn: chore.starts_on, frequency: chore.frequency, dueOn: chore.due_on, doneOn })
+  const nextDue = nextDueOn({
+    startsOn: chore.starts_on,
+    frequency: chore.frequency,
+    fixedSchedule: chore.fixed_schedule,
+    dueOn: chore.due_on,
+    doneOn,
+  })
   const changes = nextDue ? { due_on: nextDue } : { completed_at_utc: new Date().toISOString() }
 
   // Only moves the chore if nobody else marked it done at the same moment

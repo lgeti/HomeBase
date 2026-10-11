@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Icon from '../../../components/Icon'
 import { todayDateString } from '../../../core/utils/calculations'
 import { addDays } from '../../../core/utils/dates'
 import { friendlySaveError } from '../../../core/utils/expenseForm'
@@ -96,6 +97,29 @@ export default function ChoreForm({ chore, members, onSubmit, onDelete, onCancel
           ))}
         </div>
       </div>
+
+      {form.frequency !== 'once' && (
+        <div className="rounded-[14px] bg-hb-primary-tint px-3.5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="fixedSchedule" className="flex items-center gap-2 text-sm font-semibold text-hb-primary">
+              <Icon name="repeat" size={16} />
+              Fixed day
+            </label>
+            <input
+              id="fixedSchedule"
+              type="checkbox"
+              checked={form.fixedSchedule}
+              onChange={(event) => choose('fixedSchedule', event.target.checked)}
+              className="h-5 w-5"
+            />
+          </div>
+          <p className="mt-1 text-xs text-hb-text2">
+            {form.fixedSchedule
+              ? 'Stays on the same day, like bin day, even when done early or late.'
+              : 'The next time counts from the day it is done.'}
+          </p>
+        </div>
+      )}
 
       <div>
         <label htmlFor="choreDue" className={label}>{form.frequency === 'once' || isEditing ? 'Due' : 'First time'}</label>

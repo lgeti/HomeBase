@@ -49,8 +49,9 @@
 - Chores that happen once, daily, weekly or monthly, each for one member or for anyone, with an optional note
 - Grouped into Overdue, Today and Upcoming, soonest first; each row says when it is due and who last did it
 - Tap the circle when it's done: it records who did it and moves the chore to its next date, or finishes a one-time chore; "Undo" right after reverses it
-- Repeating chores keep their schedule: a weekly Monday chore done on Wednesday is next due the following Monday, and missed weeks are skipped rather than piling up; monthly chores on the 31st stay at month end
-- Tap a chore to edit or delete it (with a confirmation); a new date or frequency restarts the schedule from that date
+- By default the next date counts from the day it was done: a weekly chore due on the 15th but done on the 11th is next due on the 18th
+- "Fixed day" keeps a repeating chore on its day, like bin day: a weekly Monday chore done on Wednesday is next due the following Monday, missed weeks are skipped rather than piling up, and monthly chores on the 31st stay at month end
+- Tap a chore to edit or delete it (with a confirmation); a new date, frequency or Fixed day setting restarts the schedule from that date
 - Only members who have joined can be given a chore
 
 ## Households and members

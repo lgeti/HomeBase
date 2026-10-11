@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { choreFormToBody, dueLabel, groupChores, initialChoreForm, lastDoneLabel } from './chores.js'
+import { choreFormToBody, dueLabel, groupChores, initialChoreForm, lastDoneLabel, scheduleLabel } from './chores.js'
 
 const today = '2026-10-11' // a Sunday
 const chore = (id, dueOn, extra = {}) => ({ id, name: id, dueOn, frequency: 'weekly', ...extra })
@@ -39,11 +39,29 @@ describe('lastDoneLabel', () => {
 
 describe('chore form', () => {
   it('starts a new chore as weekly from today, for anyone', () => {
-    assert.deepEqual(initialChoreForm(undefined, today), { name: '', frequency: 'weekly', dueOn: today, assigneeMemberId: '', note: '' })
+    assert.deepEqual(initialChoreForm(undefined, today), {
+      name: '', frequency: 'weekly', fixedSchedule: false, dueOn: today, assigneeMemberId: '', note: '',
+    })
   })
 
   it('sends "anyone" as null and trims text', () => {
     const form = { ...initialChoreForm(chore('Bins ', '2026-10-12', { assigneeMemberId: 'm1' }), today), assigneeMemberId: '' }
-    assert.deepEqual(choreFormToBody(form), { name: 'Bins', frequency: 'weekly', dueOn: '2026-10-12', assigneeMemberId: null, note: '' })
+    assert.deepEqual(choreFormToBody(form), {
+      name: 'Bins', frequency: 'weekly', fixedSchedule: false, dueOn: '2026-10-12', assigneeMemberId: null, note: '',
+    })
+  })
+
+  it('only keeps a fixed day for repeating chores', () => {
+    const form = initialChoreForm(chore('Bins', '2026-10-12', { fixedSchedule: true }), today)
+    assert.equal(choreFormToBody(form).fixedSchedule, true)
+    assert.equal(choreFormToBody({ ...form, frequency: 'once' }).fixedSchedule, false)
+  })
+})
+
+describe('scheduleLabel', () => {
+  it('mentions a fixed day', () => {
+    assert.equal(scheduleLabel(chore('a', today)), 'Every week')
+    assert.equal(scheduleLabel(chore('a', today, { fixedSchedule: true })), 'Every week · Fixed day')
+    assert.equal(scheduleLabel(chore('a', today, { frequency: 'once', fixedSchedule: true })), 'One time')
   })
 })

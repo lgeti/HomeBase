@@ -52,6 +52,40 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - Logging an expense when a shopping item is ticked off
 - Live updates; the other person's changes appear after a refresh, as with expenses today
 
+## Planned: shopping imports and fridge recipes (agreed 2026-10-11)
+
+### Import into a shopping list from a link
+
+- In a list, **Import from link** takes either a shared list link or a single product link. The items are added to the list you are in, and you see them before they are saved.
+- **IKEA shared lists** (the IKEA app's "share favourites"): the link itself holds every item number and quantity, for example `.../favourites/receive-share/10401484:1,20620061:1,...`. For each item, the API reads the public product page `ikea.com/<country>/<lang>/p/-<item number>/` and takes the name, price and photo (`og:title`, `og:image`, and the product's structured data). Checked on 2026-10-11 with a real 10-item share link: name, photo and price (€12.99) all came through.
+- **Single product links** (IKEA, Temu, AliExpress, any shop): the API reads the page's name, photo and price where the shop provides them. Some shops (Temu, AliExpress) may block this; the item is then added with the link and you type the name. HomeBase does not try to get around a shop's blocking.
+- Items get a small photo when one was found. Importing the same product again into a list adds to its quantity instead of a duplicate.
+- The API only fetches `https` pages, with a short timeout and a size limit, and never from private or local network addresses.
+
+### Later: screenshot import
+
+- Read items from screenshots (for example a Temu cart) with AI. Not needed now.
+
+### Recipes from the fridge
+
+- A **Recipes** tab inside Fridge.
+- **Our own recipes:** save recipes with a name, ingredients, steps and an optional link. HomeBase shows which ones the fridge can make, and what is missing.
+- **AI suggestions:** a "Suggest something" button sends the fridge contents (names and expiry dates only, no names of people) to an AI model and shows a few dishes, in English. A suggestion you like can be saved as one of our recipes.
+- **Ranking**, highest first:
+  - Recipes that use items expiring soon (the fridge's "Use soon")
+  - Fewer missing ingredients
+  - Favourites
+  - Lower when cooked recently ("Cooked it" records the date)
+- **Missing ingredients → shopping list:** one tap adds what is missing to a list you pick.
+- Recipes and suggestions are in English. Matching fridge items to ingredients needs to be forgiving ("half a pack of ham" should count as ham); AI can help with this too.
+
+### AI provider and cost (to decide before building suggestions)
+
+- The model is called from the API server only, with the key in Render's environment settings, never in the app.
+- Anthropic's API is pay-as-you-go; a Claude subscription does not cover an app's API use. A small model (Claude Haiku) costs well under a cent per suggestion, so a household's use should cost cents a month. A monthly spending limit can be set in the Anthropic console.
+- Free alternative: some providers (for example Google's Gemini API) have a free tier with rate limits; free tiers may use the requests to train their models.
+- The provider sits behind one small server module, so it can be switched later.
+
 ## Not yet prioritized
 
 - **The API sleeps when idle.** Render's free plan stops the API after about 15 idle minutes, and the next visit waits about 20 seconds (measured: 22 s cold, 0.13 s warm). The app shows a "waking up" message after 3 seconds. Fixes if it becomes a problem: Render's paid plan, or a scheduled ping that keeps it awake.

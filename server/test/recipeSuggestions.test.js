@@ -61,6 +61,18 @@ describe('parseSuggestions', () => {
     ])
   })
 
+  it('maps "uses" back to the fridge names, dropping copied quantities and notes', () => {
+    const answer = {
+      suggestions: [{
+        name: 'Quiche cups',
+        ingredients: ['eggs'],
+        steps: '',
+        usesFromFridge: ['Half a pack of ham - expires in 1 day, use soon', 'eggs (6)', 'Eggs', 'Butter (2 sticks)'],
+      }],
+    }
+    assert.deepEqual(parseSuggestions(answer, ['Half a pack of ham', 'Eggs'])[0].usesFromFridge, ['Half a pack of ham', 'Eggs', 'Butter'])
+  })
+
   it('copes with an answer of the wrong shape', () => {
     assert.deepEqual(parseSuggestions(null), [])
     assert.deepEqual(parseSuggestions({ suggestions: 'nope' }), [])

@@ -53,12 +53,25 @@ ${describeFridge(fridgeItems, today)}
 Suggest ${SUGGESTION_COUNT} different, realistic recipes that use what is in the fridge, especially the items marked "use soon" or "expired".
 - Prefer recipes that need few extra ingredients; assume salt, pepper, oil and water are at home.
 - List each ingredient on its own with an amount, e.g. "3 eggs" or "50 g ham".
-- "usesFromFridge" lists the fridge items (as written above) the recipe uses.
+- "usesFromFridge" lists the names of the fridge items the recipe uses, without quantities or notes.
 - "steps" is short: 3 to 6 numbered steps, separated by newlines.${savedRecipeNames.length ? `
 - Do not repeat these recipes the household already has: ${savedRecipeNames.map((name) => clean(name, 120)).join('; ')}.` : ''}`
 
+// The fridge items a suggestion says it uses, as the household wrote them. The model sometimes copies the
+// quantity or "use soon" note along, so names are matched back to the fridge; anything else is tidied up.
+const fridgeNamesUsed = (used, fridgeNames) => {
+  const names = []
+  for (const entry of used) {
+    const text = entry.toLowerCase()
+    const known = fridgeNames.find((name) => name && text.includes(name.toLowerCase()))
+    const name = known || entry.replace(/\s+-\s+.*$/, '').replace(/\s*\([^)]*\)/g, '').trim()
+    if (name && !names.includes(name)) names.push(name)
+  }
+  return names
+}
+
 // Keeps only well-formed suggestions, trimmed to the same limits as saved recipes
-export const parseSuggestions = (answer) => {
+export const parseSuggestions = (answer, fridgeNames = []) => {
   const list = Array.isArray(answer?.suggestions) ? answer.suggestions : []
   return list
     .map((suggestion) => ({
@@ -68,10 +81,10 @@ export const parseSuggestions = (answer) => {
         .filter(Boolean)
         .slice(0, 50),
       steps: typeof suggestion?.steps === 'string' ? suggestion.steps.trim().slice(0, 5000) : '',
-      usesFromFridge: (Array.isArray(suggestion?.usesFromFridge) ? suggestion.usesFromFridge : [])
-        .map((name) => clean(name, 120))
-        .filter(Boolean)
-        .slice(0, 20),
+      usesFromFridge: fridgeNamesUsed(
+        (Array.isArray(suggestion?.usesFromFridge) ? suggestion.usesFromFridge : []).map((name) => clean(name, 200)).filter(Boolean),
+        fridgeNames.map((name) => clean(name, 120)),
+      ).slice(0, 20),
     }))
     .filter((suggestion) => suggestion.name && suggestion.ingredients.length > 0)
     .slice(0, SUGGESTION_COUNT)

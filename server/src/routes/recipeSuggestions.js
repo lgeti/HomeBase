@@ -43,7 +43,7 @@ router.post('/api/households/:householdId/recipe-suggestions', requireAuth, requ
       prompt: buildSuggestionPrompt({ fridgeItems, savedRecipeNames: recipes.map((recipe) => recipe.name), today }),
       schema: SUGGESTION_SCHEMA,
     })
-    const suggestions = parseSuggestions(answer)
+    const suggestions = parseSuggestions(answer, fridgeItems.map((item) => item.name))
     if (suggestions.length === 0) return sendError(response, 502, 'No suggestions came back; try again')
     response.json({ suggestions })
   } catch (error) {

@@ -7,6 +7,8 @@ import {
   deleteShoppingList,
   fetchShoppingItems,
   fetchShoppingLists,
+  importShoppingItems,
+  previewShoppingImport,
   renameShoppingList,
   updateShoppingItem,
 } from '../api/shoppingApi'
@@ -70,6 +72,20 @@ export const useShoppingApi = (household) => {
     return item
   }
 
+  const previewImport = (listId, url) => previewShoppingImport(householdId, listId, url)
+
+  // Imported items are new, or existing ones with a higher quantity
+  const importItems = async (listId, chosen) => {
+    const result = await importShoppingItems(householdId, listId, chosen)
+    setItems((current) => {
+      const updated = new Map(result.items.map((item) => [item.id, item]))
+      const kept = current.map((item) => updated.get(item.id) ?? item)
+      const known = new Set(current.map((item) => item.id))
+      return [...kept, ...result.items.filter((item) => !known.has(item.id))]
+    })
+    return result
+  }
+
   // For an item another section created, such as the fridge's "Used up"
   const showNewItem = (item) => setItems((current) => [...current, item])
 
@@ -113,6 +129,8 @@ export const useShoppingApi = (household) => {
     removeList,
     addItem,
     showNewItem,
+    previewImport,
+    importItems,
     updateItem,
     setItemStatus,
     removeItem,

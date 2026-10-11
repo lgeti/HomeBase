@@ -8,6 +8,7 @@ import fridgeRouter from './routes/fridge.js'
 import householdsRouter from './routes/households.js'
 import invitationsRouter from './routes/invitations.js'
 import shoppingRouter from './routes/shopping.js'
+import shoppingImportRouter from './routes/shoppingImport.js'
 
 const port = Number(process.env.PORT || 3000)
 
@@ -31,6 +32,7 @@ app.use(householdsRouter)
 app.use(invitationsRouter)
 app.use(expensesRouter)
 app.use(shoppingRouter)
+app.use(shoppingImportRouter)
 app.use(fridgeRouter)
 app.use(choresRouter)
 

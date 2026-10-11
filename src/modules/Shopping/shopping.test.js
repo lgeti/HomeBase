@@ -6,6 +6,7 @@ import {
   initialItemForm,
   itemFormToBody,
   linkHost,
+  looksLikeLink,
   resolveActiveListId,
   toggledStatus,
 } from './shopping.js'
@@ -82,5 +83,18 @@ describe('item form', () => {
 
   it('sends an empty price so editing can clear it', () => {
     assert.equal(itemFormToBody(initialItemForm({ listId: 'x' })).price, '')
+  })
+})
+
+describe('looksLikeLink', () => {
+  it('spots pasted links', () => {
+    assert.equal(looksLikeLink('https://www.ikea.com/si/sl/favourites/receive-share/10401484:1'), true)
+    assert.equal(looksLikeLink('temu.com/uk/socks-g-123.html'), true)
+  })
+
+  it('leaves item names alone', () => {
+    assert.equal(looksLikeLink('Milk'), false)
+    assert.equal(looksLikeLink('2 l milk'), false)
+    assert.equal(looksLikeLink('Dr. Oetker pizza'), false)
   })
 })

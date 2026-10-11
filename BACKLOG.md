@@ -66,7 +66,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 
 - Read items from screenshots (for example a Temu cart) with AI. Not needed now.
 
-### Recipes from the fridge
+### Recipes from the fridge (own recipes built; AI suggestions still to do)
 
 - A **Recipes** tab inside Fridge.
 - **Our own recipes:** save recipes with a name, ingredients, steps and an optional link. HomeBase shows which ones the fridge can make, and what is missing.

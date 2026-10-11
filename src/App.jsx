@@ -4,6 +4,7 @@ import { useChoresApi } from './core/hooks/useChoresApi'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { useFridgeApi } from './core/hooks/useFridgeApi'
 import { useHousehold } from './core/hooks/useHousehold'
+import { useRecipesApi } from './core/hooks/useRecipesApi'
 import { useShoppingApi } from './core/hooks/useShoppingApi'
 import { getJoinedMembers } from './core/utils/calculations'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
@@ -19,7 +20,9 @@ import SetNewPassword from './modules/Auth/pages/SetNewPassword'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
 import MoneyView from './modules/Expenses/pages/MoneyView'
 import FridgeItemForm from './modules/Fridge/components/FridgeItemForm'
+import RecipeForm from './modules/Fridge/components/RecipeForm'
 import FridgeView from './modules/Fridge/pages/FridgeView'
+import RecipesView from './modules/Fridge/pages/RecipesView'
 import HouseholdView from './modules/Household/pages/HouseholdView'
 import ImportForm from './modules/Shopping/components/ImportForm'
 import ShoppingItemForm from './modules/Shopping/components/ShoppingItemForm'
@@ -52,11 +55,13 @@ export default function App() {
   const shopping = useShoppingApi(household)
   const fridge = useFridgeApi(household)
   const chores = useChoresApi(household)
+  const recipes = useRecipesApi(household)
   const [apiError, setApiError] = useState('')
-  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'chore' | 'import', record } with the record being edited, or null
+  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'recipe' | 'chore' | 'import', record } with the record being edited, or null
   const [sheet, setSheet] = useState(null)
   const [activeView, setActiveView] = useState('money')
   const [moneyTab, setMoneyTab] = useState('expenses')
+  const [fridgeTab, setFridgeTab] = useState('items')
   const [selectedCategoryId, setSelectedCategoryId] = useState('groceries')
   const [chosenListId, setChosenListId] = useState(null)
 
@@ -126,6 +131,20 @@ export default function App() {
     if (shoppingItem) shopping.showNewItem(shoppingItem)
   }
 
+  const handleSaveRecipe = async (body) => {
+    if (sheet.record) {
+      await recipes.editRecipe(sheet.record.id, body)
+    } else {
+      await recipes.addRecipe(body)
+    }
+    setSheet(null)
+  }
+
+  const handleDeleteRecipe = async () => {
+    await recipes.removeRecipe(sheet.record.id)
+    setSheet(null)
+  }
+
   const handleSaveChore = async (body) => {
     if (sheet.record) {
       await chores.editChore(sheet.record.id, body)
@@ -143,7 +162,7 @@ export default function App() {
   // The + button adds whatever fits the section
   const openAddSheet = () => {
     const type = activeView === 'fridge'
-      ? 'fridge'
+      ? fridgeTab === 'recipes' ? 'recipe' : 'fridge'
       : activeView === 'chores'
         ? 'chore'
         : activeView === 'shopping' && shopping.lists.length > 0 ? 'item' : 'expense'
@@ -252,6 +271,21 @@ export default function App() {
           />
         ) : activeView === 'fridge' ? (
           <FridgeView
+            tab={fridgeTab}
+            onTabChange={setFridgeTab}
+            recipesView={(
+              <RecipesView
+                recipes={recipes.recipes}
+                fridgeItems={fridge.items}
+                lists={shopping.lists}
+                isLoading={recipes.isLoading}
+                error={recipes.error}
+                onFavourite={(recipe) => recipes.editRecipe(recipe.id, { isFavourite: !recipe.isFavourite })}
+                onCooked={(recipe, cookedOn) => recipes.markCooked(recipe.id, cookedOn)}
+                onAddMissing={(listId, missing) => shopping.importItems(listId, missing.map((name) => ({ name })))}
+                onEditRecipe={(recipe) => setSheet({ type: 'recipe', record: recipe })}
+              />
+            )}
             items={fridge.items}
             lists={shopping.lists}
             isLoading={fridge.isLoading}
@@ -285,7 +319,15 @@ export default function App() {
       </div>
 
       <AddTransactionSheetWrapper isOpen={Boolean(sheet)} onClose={closeSheet}>
-        {sheet?.type === 'import' ? (
+        {sheet?.type === 'recipe' ? (
+          <RecipeForm
+            key={sheet.record?.id || 'new-recipe'}
+            recipe={sheet.record}
+            onSubmit={handleSaveRecipe}
+            onDelete={handleDeleteRecipe}
+            onCancel={closeSheet}
+          />
+        ) : sheet?.type === 'import' ? (
           <ImportForm
             key={`${sheet.record.listId}-${sheet.record.url}`}
             listName={shopping.lists.find((list) => list.id === sheet.record.listId)?.name}

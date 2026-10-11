@@ -48,6 +48,15 @@
 - Tap an item to edit or delete it (delete is for mistakes, with a confirmation)
 - Removed items stay in the database but are hidden; the database records whether each was used up or deleted
 
+## Recipes (Fridge → Recipes)
+
+- The household's own recipes: name, ingredients (one per line), steps, an optional link, and a favourite star
+- Ranked against what is in the fridge, best first: recipes that use food expiring soon (already expired a little more), then fewer missing ingredients, favourites higher, and lower if cooked in the last week
+- Matching is forgiving: "50 g ham" finds "half a pack of ham", "tomatoes" finds "Cherry tomatoes"; salt, pepper, oil and water always count as at home
+- Each recipe shows "You have 2 of 3", which fridge items it would use up, and what is missing; tap it for the ingredients (ticked or not), steps and link
+- "Add missing to list" puts the missing ingredients on a shopping list you pick; "Cooked it" records today
+- + on the Recipes tab adds a recipe; Edit changes or deletes one (with a confirmation)
+
 ## Chores
 
 - Chores that happen once, daily, weekly or monthly, each for one member or for anyone, with an optional note

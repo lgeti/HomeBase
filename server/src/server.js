@@ -7,6 +7,7 @@ import expensesRouter from './routes/expenses.js'
 import fridgeRouter from './routes/fridge.js'
 import householdsRouter from './routes/households.js'
 import invitationsRouter from './routes/invitations.js'
+import recipesRouter from './routes/recipes.js'
 import shoppingRouter from './routes/shopping.js'
 import shoppingImportRouter from './routes/shoppingImport.js'
 
@@ -35,6 +36,7 @@ app.use(shoppingRouter)
 app.use(shoppingImportRouter)
 app.use(fridgeRouter)
 app.use(choresRouter)
+app.use(recipesRouter)
 
 app.use((request, response) => {
   sendError(response, 404, 'Route not found')

@@ -103,7 +103,13 @@ function FridgeRow({ item, today, onEdit, onUsedUp }) {
   )
 }
 
-export default function FridgeView({ items, lists, isLoading, error, onQuickAdd, onEditItem, onUsedUp }) {
+const TABS = [
+  { id: 'items', label: 'In the fridge' },
+  { id: 'recipes', label: 'Recipes' },
+]
+
+// The fridge's contents, or (on the Recipes tab) `recipesView`
+export default function FridgeView({ tab, onTabChange, recipesView, items, lists, isLoading, error, onQuickAdd, onEditItem, onUsedUp }) {
   const [usedUpId, setUsedUpId] = useState(null)
   const [quickName, setQuickName] = useState('')
   const [quickError, setQuickError] = useState('')
@@ -147,55 +153,79 @@ export default function FridgeView({ items, lists, isLoading, error, onQuickAdd,
           </p>
         </div>
 
-        {error && <p className="rounded-xl bg-hb-danger-bg px-3 py-2 text-sm text-hb-danger">{error}</p>}
+        <div role="tablist" aria-label="Fridge" className="grid grid-cols-2 gap-1 rounded-[14px] bg-hb-surface2 p-1">
+          {TABS.map((option) => {
+            const isOn = tab === option.id
+            return (
+              <button
+                key={option.id}
+                type="button"
+                role="tab"
+                aria-selected={isOn}
+                onClick={() => onTabChange(option.id)}
+                className={`rounded-[10px] py-2 text-sm transition ${
+                  isOn ? 'bg-hb-seg-on text-hb-text font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.12)]' : 'text-hb-text2 font-medium'
+                }`}
+              >
+                {option.label}
+              </button>
+            )
+          })}
+        </div>
 
-        <form onSubmit={quickAdd} className="flex gap-2">
-          <label htmlFor="fridgeQuickAdd" className="sr-only">Add to the fridge</label>
-          <input
-            id="fridgeQuickAdd"
-            type="text"
-            value={quickName}
-            onChange={(event) => {
-              setQuickName(event.target.value)
-              setQuickError('')
-            }}
-            maxLength={120}
-            placeholder="Add to the fridge…"
-            className="min-w-0 flex-1 rounded-xl border border-hb-input bg-hb-field px-3 py-[11px] text-sm text-hb-text focus:outline-none focus:ring-2 focus:ring-hb-primary"
-          />
-          <button
-            type="submit"
-            disabled={!quickName.trim()}
-            aria-label="Add to the fridge"
-            className="flex w-11 shrink-0 items-center justify-center rounded-xl bg-hb-primary text-hb-on-primary disabled:opacity-40"
-          >
-            <Icon name="plus" size={20} />
-          </button>
-        </form>
-        {quickError && <p role="alert" className="text-xs text-hb-danger">{quickError}</p>}
-
-        {isLoading && items.length === 0 ? (
-          <p className="py-8 text-center text-sm text-hb-text2">Loading…</p>
-        ) : items.length === 0 ? (
-          <div className="py-10 text-center">
-            <p className="text-sm text-hb-text2">Nothing in the fridge yet</p>
-            <p className="mt-1 text-xs text-hb-text3">Type above, or tap + to add an expiry date</p>
-          </div>
-        ) : (
+        {tab === 'recipes' ? recipesView : (
           <>
-            {useSoon.length > 0 && (
-              <section className="space-y-2">
-                <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hb-warning">Use soon</h3>
-                {useSoon.map(renderItem)}
-              </section>
-            )}
-            {rest.length > 0 && (
-              <section className="space-y-2 pt-1">
+            {error && <p className="rounded-xl bg-hb-danger-bg px-3 py-2 text-sm text-hb-danger">{error}</p>}
+
+            <form onSubmit={quickAdd} className="flex gap-2">
+              <label htmlFor="fridgeQuickAdd" className="sr-only">Add to the fridge</label>
+              <input
+                id="fridgeQuickAdd"
+                type="text"
+                value={quickName}
+                onChange={(event) => {
+                  setQuickName(event.target.value)
+                  setQuickError('')
+                }}
+                maxLength={120}
+                placeholder="Add to the fridge…"
+                className="min-w-0 flex-1 rounded-xl border border-hb-input bg-hb-field px-3 py-[11px] text-sm text-hb-text focus:outline-none focus:ring-2 focus:ring-hb-primary"
+              />
+              <button
+                type="submit"
+                disabled={!quickName.trim()}
+                aria-label="Add to the fridge"
+                className="flex w-11 shrink-0 items-center justify-center rounded-xl bg-hb-primary text-hb-on-primary disabled:opacity-40"
+              >
+                <Icon name="plus" size={20} />
+              </button>
+            </form>
+            {quickError && <p role="alert" className="text-xs text-hb-danger">{quickError}</p>}
+
+            {isLoading && items.length === 0 ? (
+              <p className="py-8 text-center text-sm text-hb-text2">Loading…</p>
+            ) : items.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-sm text-hb-text2">Nothing in the fridge yet</p>
+                <p className="mt-1 text-xs text-hb-text3">Type above, or tap + to add an expiry date</p>
+              </div>
+            ) : (
+              <>
                 {useSoon.length > 0 && (
-                  <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hb-text2">Everything else</h3>
+                  <section className="space-y-2">
+                    <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hb-warning">Use soon</h3>
+                    {useSoon.map(renderItem)}
+                  </section>
                 )}
-                {rest.map(renderItem)}
-              </section>
+                {rest.length > 0 && (
+                  <section className="space-y-2 pt-1">
+                    {useSoon.length > 0 && (
+                      <h3 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-hb-text2">Everything else</h3>
+                    )}
+                    {rest.map(renderItem)}
+                  </section>
+                )}
+              </>
             )}
           </>
         )}

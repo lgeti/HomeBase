@@ -16,6 +16,14 @@ const PATHS = {
   left: 'M15 18l-6-6 6-6',
   right: 'M9 18l6-6-6-6',
   close: 'M18 6L6 18M6 6l12 12',
+  wallet: 'M4 7h14.5a1.5 1.5 0 0 1 1.5 1.5v10a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5zM4 7l11.5-3.5V7M16 13.5h.01',
+  cart: 'M3 4h2.2l2.3 10.5h10.2L20 7.5H6M9 20a1.3 1.3 0 1 0 0-2.6a1.3 1.3 0 1 0 0 2.6M17 20a1.3 1.3 0 1 0 0-2.6a1.3 1.3 0 1 0 0 2.6',
+  fridge: 'M6.5 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1zM5.5 10h13M9 6v1.5M9 13v3',
+  chores: 'M9 3.5h6v3H9zM9 5H6.5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H15M9 14l2 2 4-4',
+  check: 'M5 12.5l4.5 4.5L19 7.5',
+  link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  more: 'M5 12h.01M12 12h.01M19 12h.01',
+  tag: 'M3.5 12.5V4.5a1 1 0 0 1 1-1h8l8 8a1.4 1.4 0 0 1 0 2l-7 7a1.4 1.4 0 0 1-2 0zM8 8h.01',
 }
 
 // Decorative by default; pass a label when the icon is the only content that explains something

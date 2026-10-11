@@ -1,5 +1,13 @@
 # HomeBase Current Features
 
+## Navigation
+
+- Bottom bar: Money, Shopping, + (add), Fridge, Chores
+- Money holds the expense list and the dashboard as two tabs
+- + adds an expense, or an item when you are in Shopping
+- Household is the button in the header; tapping it again goes back
+- Fridge and Chores show a "Coming soon" page for now (planned in `BACKLOG.md`)
+
 ## Expenses
 
 - Eight categories with emoji, colors and subcategories; adding from a category tab preselects it
@@ -16,6 +24,17 @@
 - Category breakdown
 - What each member paid, their share, and who owes whom this month
 - Totals always count the full amount; a split expense is shared equally between members who have joined
+
+## Shopping
+
+- One tab per list; a household starts with a "Groceries" list
+- "+ New list" creates a list (for example Temu, IKEA or Marketplace); lists can be renamed and deleted from the ⋯ menu, with an in-app confirmation; names are unique within a household
+- Quick add: type a name at the top of a list and press Enter
+- + opens the full item sheet: buying or selling, name, list, quantity, price, link and note; tap an item to edit, move or delete it
+- Tick an item when it's bought; a selling item is "Listed" until you tap "Mark sold"
+- Bought and sold items move to a "Done" group that can be cleared (with a confirmation)
+- Items show who added them; links open in a new tab and only web addresses are accepted
+- Deleted lists and items stay in the database but are hidden
 
 ## Households and members
 

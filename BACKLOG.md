@@ -12,7 +12,7 @@ Known issues and planned work. **Priority levels:** a higher number means more u
 
 Three new sections next to Money. Everything is shared by the household, like expenses.
 
-### Navigation
+### Navigation (built)
 
 The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 
@@ -20,7 +20,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - **＋** adds whatever fits the section you are in: an expense, a shopping item, a fridge item or a chore.
 - **Household** moves to a button in the header.
 
-### Shopping
+### Shopping (built; see docs/Features.md)
 
 - One section with a tab per list, for example Groceries, Market, Temu, Amazon, Vinted, Facebook Marketplace or IKEA. It starts with a single "Groceries" list.
 - **+ New list** creates a list with a name. Lists can be renamed and deleted (with an in-app confirmation).

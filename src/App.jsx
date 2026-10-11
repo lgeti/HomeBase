@@ -233,7 +233,6 @@ export default function App() {
           <FridgeView
             items={fridge.items}
             lists={shopping.lists}
-            members={members}
             isLoading={fridge.isLoading}
             error={fridge.error}
             onQuickAdd={fridge.addItem}

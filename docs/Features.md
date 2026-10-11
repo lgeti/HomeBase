@@ -38,7 +38,7 @@
 
 ## Fridge
 
-- What's in the fridge: name, quantity, optional expiry date and note, and who added it
+- What's in the fridge: name, quantity, optional expiry date and note
 - Quick add at the top; + opens the full sheet with quick expiry buttons (Today, 3 days, 1 week, 2 weeks)
 - "Use soon" at the top: expired items (in red) and items expiring within 3 days, soonest first; then everything else, dated items first
 - "Used up" removes an item and can put it on a shopping list you pick; "Just remove" only removes it

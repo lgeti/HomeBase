@@ -34,6 +34,12 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - Items expiring in the next few days show as "Use soon", and expired ones are flagged.
 - **Used up** removes the item, and can add it to a shopping list you pick.
 
+### Later: who owns a fridge item
+
+- An optional owner on a fridge item ("Ana's yogurt"), set when adding or editing.
+- A household setting, **off by default**, that the owner or an admin can turn on. While it's off, the fridge shows no names at all.
+- The database already records who added each item (`added_by_member_id`); it is not shown anywhere.
+
 ### Chores
 
 - Its own section, with chores that repeat (daily, weekly, monthly) or happen once.

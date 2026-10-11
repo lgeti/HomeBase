@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Icon from '../../../components/Icon'
-import { getMemberName, todayDateString } from '../../../core/utils/calculations'
+import { todayDateString } from '../../../core/utils/calculations'
 import { friendlySaveError } from '../../../core/utils/expenseForm'
 import { expiryLabel, freshness, groupFridgeItems } from '../fridge'
 
@@ -75,12 +75,9 @@ function UsedUpPanel({ item, lists, onConfirm, onCancel }) {
   )
 }
 
-function FridgeRow({ item, members, today, onEdit, onUsedUp }) {
+function FridgeRow({ item, today, onEdit, onUsedUp }) {
   const state = freshness(item, today)
   const label = expiryLabel(item, today)
-  const meta = [item.quantity, item.addedByMemberId ? `Added by ${getMemberName(members, item.addedByMemberId)}` : null]
-    .filter(Boolean)
-    .join(' · ')
 
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-hb-border bg-hb-surface px-3.5 py-3">
@@ -92,7 +89,7 @@ function FridgeRow({ item, members, today, onEdit, onUsedUp }) {
       >
         <p className="text-[15px] font-semibold text-hb-text truncate">{item.name}</p>
         {label && <p className={`text-xs ${EXPIRY_COLORS[state]}`}>{label}</p>}
-        {meta && <p className="text-xs text-hb-text2 truncate">{meta}</p>}
+        {item.quantity && <p className="text-xs text-hb-text2 truncate">{item.quantity}</p>}
         {item.note && <p className="text-xs text-hb-text3 truncate">{item.note}</p>}
       </button>
       <button
@@ -106,7 +103,7 @@ function FridgeRow({ item, members, today, onEdit, onUsedUp }) {
   )
 }
 
-export default function FridgeView({ items, lists, members, isLoading, error, onQuickAdd, onEditItem, onUsedUp }) {
+export default function FridgeView({ items, lists, isLoading, error, onQuickAdd, onEditItem, onUsedUp }) {
   const [usedUpId, setUsedUpId] = useState(null)
   const [quickName, setQuickName] = useState('')
   const [quickError, setQuickError] = useState('')
@@ -136,7 +133,7 @@ export default function FridgeView({ items, lists, members, isLoading, error, on
     item.id === usedUpId ? (
       <UsedUpPanel key={item.id} item={item} lists={lists} onConfirm={confirmUsedUp} onCancel={() => setUsedUpId(null)} />
     ) : (
-      <FridgeRow key={item.id} item={item} members={members} today={today} onEdit={onEditItem} onUsedUp={(chosen) => setUsedUpId(chosen.id)} />
+      <FridgeRow key={item.id} item={item} today={today} onEdit={onEditItem} onUsedUp={(chosen) => setUsedUpId(chosen.id)} />
     )
 
   return (

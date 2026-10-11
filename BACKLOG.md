@@ -86,6 +86,28 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - Free alternative: some providers (for example Google's Gemini API) have a free tier with rate limits; free tiers may use the requests to train their models.
 - The provider sits behind one small server module, so it can be switched later.
 
+## Planned: scan a receipt (idea 2026-10-11)
+
+One of the main features: one photo of a receipt adds the expense and fills the fridge.
+
+- When adding an expense, **Scan receipt** takes a photo or uploads one.
+- The API sends the image to an AI model with vision, which reads the shop, date, total and each line item. This uses the same AI provider as recipe suggestions (Google Gemini, see above).
+- **Review before saving.** Nothing is saved until you confirm:
+  - The expense, filled in: total, date, shop, category (for example Groceries). Editable.
+  - The line items, each with a tick for **Add to fridge**. Food is ticked by default. Non-food (cleaning, bathroom) is not, and goes to the inventory once that exists.
+  - Short receipt names ("MLEKO 1L 3.2%") are turned into readable ones ("Milk 1 L"), with the quantity.
+- Fridge items from a receipt have no expiry date; you can add one afterwards.
+- Optional: items on the Groceries list that match what was bought can be ticked off in the same step.
+- The photo is not kept by default. Keeping it with the expense can come later.
+- If the photo can't be read, you get the normal expense form and nothing is lost.
+
+## Later: household inventory
+
+- A list of what the household owns beyond the fridge, grouped as **Appliances**, **Bathroom** and **Cleaning**, with your own groups possible.
+- Appliances: purchase date, price and warranty end; a scanned receipt could be attached as proof of purchase.
+- Bathroom and cleaning supplies: quantity, and **Running low** adds them to a shopping list.
+- Receipt scanning sends non-food items here.
+
 ## Not yet prioritized
 
 - **The API sleeps when idle.** Render's free plan stops the API after about 15 idle minutes, and the next visit waits about 20 seconds (measured: 22 s cold, 0.13 s warm). The app shows a "waking up" message after 3 seconds. Fixes if it becomes a problem: Render's paid plan, or a scheduled ping that keeps it awake.

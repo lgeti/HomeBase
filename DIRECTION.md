@@ -34,7 +34,7 @@ The visual system should remain warm, polished, and restrained. Use color for ca
 | 4. Bank connection | Users can connect a bank account safely | Add a server-side Enable Banking OAuth/consent flow, Gorenjska Banka selection, callback handling, secure connection records, and a connection status UI |
 | 5. Transaction synchronization | Imported bank data becomes useful and safe | Add account discovery, transaction normalization, stable external IDs, duplicate detection, pending-to-posted reconciliation, manual review, and sync history |
 | 6. Shared household collaboration | Both people see the same current information | Add real-time or near-real-time refresh, conflict handling, activity history, and household member management |
-| 7. Modular home base | Finance is the first module, not the last | Add chores, shopping lists, meal planning, and document storage only after core finance data and synchronization are dependable |
+| 7. Modular home base | Finance is the first module, not the last | Shopping lists, a fridge inventory and chores are planned (2026-10-11; see `BACKLOG.md`). Meal planning and document storage later |
 
 ## Recommended Technical Direction
 

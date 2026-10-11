@@ -4,9 +4,8 @@
 
 - Bottom bar: Money, Shopping, + (add), Fridge, Chores
 - Money holds the expense list and the dashboard as two tabs
-- + adds what fits the section: an expense, a shopping item, or a fridge item
+- + adds what fits the section: an expense, a shopping item, a fridge item, or a chore
 - Household is the button in the header; tapping it again goes back
-- Chores shows a "Coming soon" page for now (planned in `BACKLOG.md`)
 
 ## Expenses
 
@@ -44,6 +43,15 @@
 - "Used up" removes an item and can put it on a shopping list you pick; "Just remove" only removes it
 - Tap an item to edit or delete it (delete is for mistakes, with a confirmation)
 - Removed items stay in the database but are hidden; the database records whether each was used up or deleted
+
+## Chores
+
+- Chores that happen once, daily, weekly or monthly, each for one member or for anyone, with an optional note
+- Grouped into Overdue, Today and Upcoming, soonest first; each row says when it is due and who last did it
+- Tap the circle when it's done: it records who did it and moves the chore to its next date, or finishes a one-time chore; "Undo" right after reverses it
+- Repeating chores keep their schedule: a weekly Monday chore done on Wednesday is next due the following Monday, and missed weeks are skipped rather than piling up; monthly chores on the 31st stay at month end
+- Tap a chore to edit or delete it (with a confirmation); a new date or frequency restarts the schedule from that date
+- Only members who have joined can be given a chore
 
 ## Households and members
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './core/auth/useAuth'
+import { useChoresApi } from './core/hooks/useChoresApi'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { useFridgeApi } from './core/hooks/useFridgeApi'
 import { useHousehold } from './core/hooks/useHousehold'
@@ -7,12 +8,13 @@ import { useShoppingApi } from './core/hooks/useShoppingApi'
 import { getJoinedMembers } from './core/utils/calculations'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import BottomNav from './components/BottomNav'
-import ComingSoon from './components/ComingSoon'
 import HouseholdErrorScreen from './components/HouseholdErrorScreen'
 import Icon from './components/Icon'
 import LoadingScreen from './components/LoadingScreen'
 import ProfileSetup from './components/ProfileSetup'
 import AuthScreen from './modules/Auth/pages/AuthScreen'
+import ChoreForm from './modules/Chores/components/ChoreForm'
+import ChoresView from './modules/Chores/pages/ChoresView'
 import SetNewPassword from './modules/Auth/pages/SetNewPassword'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
 import MoneyView from './modules/Expenses/pages/MoneyView'
@@ -48,8 +50,9 @@ export default function App() {
   const { expenses, addExpense, updateExpense, deleteExpense, error: expensesError } = useExpensesApi(household)
   const shopping = useShoppingApi(household)
   const fridge = useFridgeApi(household)
+  const chores = useChoresApi(household)
   const [apiError, setApiError] = useState('')
-  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge', record } with the record being edited, or null
+  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'chore', record } with the record being edited, or null
   const [sheet, setSheet] = useState(null)
   const [activeView, setActiveView] = useState('money')
   const [moneyTab, setMoneyTab] = useState('expenses')
@@ -122,11 +125,27 @@ export default function App() {
     if (shoppingItem) shopping.showNewItem(shoppingItem)
   }
 
-  // The + button adds whatever fits the section; Chores adds an expense until it exists
+  const handleSaveChore = async (body) => {
+    if (sheet.record) {
+      await chores.editChore(sheet.record.id, body)
+    } else {
+      await chores.addChore(body)
+    }
+    setSheet(null)
+  }
+
+  const handleDeleteChore = async () => {
+    await chores.removeChore(sheet.record.id)
+    setSheet(null)
+  }
+
+  // The + button adds whatever fits the section
   const openAddSheet = () => {
     const type = activeView === 'fridge'
       ? 'fridge'
-      : activeView === 'shopping' && shopping.lists.length > 0 ? 'item' : 'expense'
+      : activeView === 'chores'
+        ? 'chore'
+        : activeView === 'shopping' && shopping.lists.length > 0 ? 'item' : 'expense'
     setSheet({ type, record: null })
   }
 
@@ -240,10 +259,14 @@ export default function App() {
             onUsedUp={handleUsedUp}
           />
         ) : activeView === 'chores' ? (
-          <ComingSoon
-            icon="chores"
-            title="Chores"
-            description="Repeating chores and who does them, grouped into overdue, today and upcoming."
+          <ChoresView
+            chores={chores.chores}
+            members={members}
+            isLoading={chores.isLoading}
+            error={chores.error}
+            onDone={chores.markDone}
+            onUndo={chores.undoDone}
+            onEditChore={(chore) => setSheet({ type: 'chore', record: chore })}
           />
         ) : (
           <MoneyView
@@ -260,7 +283,16 @@ export default function App() {
       </div>
 
       <AddTransactionSheetWrapper isOpen={Boolean(sheet)} onClose={closeSheet}>
-        {sheet?.type === 'fridge' ? (
+        {sheet?.type === 'chore' ? (
+          <ChoreForm
+            key={sheet.record?.id || 'new-chore'}
+            chore={sheet.record}
+            members={joinedMembers}
+            onSubmit={handleSaveChore}
+            onDelete={handleDeleteChore}
+            onCancel={closeSheet}
+          />
+        ) : sheet?.type === 'fridge' ? (
           <FridgeItemForm
             key={sheet.record?.id || 'new-fridge-item'}
             item={sheet.record}

@@ -2,6 +2,7 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import { sendError } from './http.js'
+import choresRouter from './routes/chores.js'
 import expensesRouter from './routes/expenses.js'
 import fridgeRouter from './routes/fridge.js'
 import householdsRouter from './routes/households.js'
@@ -31,6 +32,7 @@ app.use(invitationsRouter)
 app.use(expensesRouter)
 app.use(shoppingRouter)
 app.use(fridgeRouter)
+app.use(choresRouter)
 
 app.use((request, response) => {
   sendError(response, 404, 'Route not found')

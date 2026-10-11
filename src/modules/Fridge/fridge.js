@@ -1,15 +1,11 @@
 // Fridge helpers: how fresh an item is and how the list is grouped. `today` is a local 'YYYY-MM-DD'.
 import { formatShortDate, parseLocalDate } from '../../core/utils/calculations.js'
+import { addDays, daysUntil } from '../../core/utils/dates.js'
+
+export { addDays, daysUntil }
 
 // Items expiring within this many days show under "Use soon"
 export const USE_SOON_DAYS = 3
-
-const toUtcDay = (dateString) => {
-  const [year, month, day] = dateString.split('-').map(Number)
-  return Date.UTC(year, month - 1, day)
-}
-
-export const daysUntil = (dateString, today) => Math.round((toUtcDay(dateString) - toUtcDay(today)) / 86400000)
 
 // 'expired', 'soon', 'ok', or 'none' when the item has no expiry date
 export const freshness = (item, today) => {
@@ -57,6 +53,3 @@ export const fridgeFormToBody = (form) => ({
   expiresOn: form.expiresOn,
   note: form.note.trim(),
 })
-
-// The date `days` after `today`, for the quick expiry buttons
-export const addDays = (today, days) => new Date(toUtcDay(today) + days * 86400000).toISOString().slice(0, 10)

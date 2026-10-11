@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { createRecipe, deleteRecipe, fetchRecipes, markRecipeCooked, updateRecipe } from '../api/recipesApi'
+import { createRecipe, deleteRecipe, fetchRecipes, fetchRecipeSuggestions, markRecipeCooked, updateRecipe } from '../api/recipesApi'
 
 export const useRecipesApi = (household) => {
   const [recipes, setRecipes] = useState([])
@@ -48,5 +48,7 @@ export const useRecipesApi = (household) => {
     setRecipes((current) => current.filter((recipe) => recipe.id !== recipeId))
   }
 
-  return { recipes, isLoading, error, reload, addRecipe, editRecipe, markCooked, removeRecipe }
+  const suggest = (today) => fetchRecipeSuggestions(householdId, today)
+
+  return { recipes, isLoading, error, reload, addRecipe, editRecipe, markCooked, removeRecipe, suggest }
 }

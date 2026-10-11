@@ -3,6 +3,7 @@ import Icon from '../../../components/Icon'
 import { todayDateString } from '../../../core/utils/calculations'
 import { friendlySaveError } from '../../../core/utils/expenseForm'
 import { linkHost } from '../../Shopping/shopping'
+import RecipeSuggestions from '../components/RecipeSuggestions'
 import { expiryLabel } from '../fridge'
 import { cookedLabel, haveLabel, rankRecipes } from '../recipes'
 
@@ -174,7 +175,7 @@ function RecipeCard({ result, lists, today, isOpen, onToggleOpen, onFavourite, o
   )
 }
 
-export default function RecipesView({ recipes, fridgeItems, lists, isLoading, error, onFavourite, onCooked, onAddMissing, onEditRecipe }) {
+export default function RecipesView({ recipes, fridgeItems, lists, isLoading, error, onFavourite, onCooked, onAddMissing, onEditRecipe, onSuggest, onSaveSuggestion }) {
   const [openId, setOpenId] = useState(null)
   const today = todayDateString()
   const ranked = rankRecipes(recipes, fridgeItems, today)
@@ -190,12 +191,14 @@ export default function RecipesView({ recipes, fridgeItems, lists, isLoading, er
 
       {error && <p className="rounded-xl bg-hb-danger-bg px-3 py-2 text-sm text-hb-danger">{error}</p>}
 
+      <RecipeSuggestions fridgeItems={fridgeItems} today={today} onSuggest={onSuggest} onSave={onSaveSuggestion} />
+
       {isLoading && recipes.length === 0 ? (
         <p className="py-8 text-center text-sm text-hb-text2">Loading…</p>
       ) : recipes.length === 0 ? (
         <div className="py-10 text-center">
           <p className="text-sm text-hb-text2">No recipes yet</p>
-          <p className="mt-1 text-xs text-hb-text3">Tap + to add one you like; it will rank against the fridge</p>
+          <p className="mt-1 text-xs text-hb-text3">Tap + to add one you like, or save a suggestion</p>
         </div>
       ) : (
         <div className="space-y-2">

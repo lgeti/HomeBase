@@ -27,12 +27,18 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - Every list works the same way. An item has a name, an optional link, price, quantity and note, and shows who added it. Tick an item when it's bought; ticked items move to a "Done" group that can be cleared.
 - **Selling:** any item can be marked "Selling" instead of "Buying", mainly for Facebook Marketplace and Vinted. A selling item has an asking price and a status of *Listed* or *Sold* instead of a tick.
 
-### Fridge
+### Fridge (built; see docs/Features.md)
 
 - Its own section, built around what's in the fridge rather than what to buy.
 - An item has a name, quantity, an optional expiry date and a note, and shows who added it.
 - Items expiring in the next few days show as "Use soon", and expired ones are flagged.
 - **Used up** removes the item, and can add it to a shopping list you pick.
+
+### Later: who owns a fridge item
+
+- An optional owner on a fridge item ("Ana's yogurt"), set when adding or editing.
+- A household setting, **off by default**, that the owner or an admin can turn on. While it's off, the fridge shows no names at all.
+- The database already records who added each item (`added_by_member_id`); it is not shown anywhere.
 
 ### Chores
 

@@ -1,0 +1,62 @@
+// Fridge helpers: how fresh an item is and how the list is grouped. `today` is a local 'YYYY-MM-DD'.
+import { formatShortDate, parseLocalDate } from '../../core/utils/calculations.js'
+
+// Items expiring within this many days show under "Use soon"
+export const USE_SOON_DAYS = 3
+
+const toUtcDay = (dateString) => {
+  const [year, month, day] = dateString.split('-').map(Number)
+  return Date.UTC(year, month - 1, day)
+}
+
+export const daysUntil = (dateString, today) => Math.round((toUtcDay(dateString) - toUtcDay(today)) / 86400000)
+
+// 'expired', 'soon', 'ok', or 'none' when the item has no expiry date
+export const freshness = (item, today) => {
+  if (!item.expiresOn) return 'none'
+  const days = daysUntil(item.expiresOn, today)
+  if (days < 0) return 'expired'
+  if (days <= USE_SOON_DAYS) return 'soon'
+  return 'ok'
+}
+
+export const expiryLabel = (item, today) => {
+  if (!item.expiresOn) return null
+  const days = daysUntil(item.expiresOn, today)
+  if (days < -1) return `Expired ${-days} days ago`
+  if (days === -1) return 'Expired yesterday'
+  if (days === 0) return 'Expires today'
+  if (days === 1) return 'Expires tomorrow'
+  if (days <= USE_SOON_DAYS) return `Expires in ${days} days`
+  return `Expires ${formatShortDate(item.expiresOn, parseLocalDate(today))}`
+}
+
+// "Use soon" (expired and expiring, soonest first) and everything else (dated first, then undated)
+export const groupFridgeItems = (items, today) => {
+  const byDate = [...items].sort((a, b) => {
+    if (a.expiresOn && b.expiresOn) return a.expiresOn.localeCompare(b.expiresOn)
+    if (a.expiresOn) return -1
+    if (b.expiresOn) return 1
+    return 0
+  })
+  const isUrgent = (item) => ['expired', 'soon'].includes(freshness(item, today))
+  return { useSoon: byDate.filter(isUrgent), rest: byDate.filter((item) => !isUrgent(item)) }
+}
+
+export const initialFridgeForm = (item) => ({
+  name: item?.name ?? '',
+  quantity: item?.quantity ?? '',
+  expiresOn: item?.expiresOn ?? '',
+  note: item?.note ?? '',
+})
+
+// Empty optional fields are sent empty so editing can clear them
+export const fridgeFormToBody = (form) => ({
+  name: form.name.trim(),
+  quantity: form.quantity.trim(),
+  expiresOn: form.expiresOn,
+  note: form.note.trim(),
+})
+
+// The date `days` after `today`, for the quick expiry buttons
+export const addDays = (today, days) => new Date(toUtcDay(today) + days * 86400000).toISOString().slice(0, 10)

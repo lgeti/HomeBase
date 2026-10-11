@@ -4,9 +4,9 @@
 
 - Bottom bar: Money, Shopping, + (add), Fridge, Chores
 - Money holds the expense list and the dashboard as two tabs
-- + adds an expense, or an item when you are in Shopping
+- + adds what fits the section: an expense, a shopping item, or a fridge item
 - Household is the button in the header; tapping it again goes back
-- Fridge and Chores show a "Coming soon" page for now (planned in `BACKLOG.md`)
+- Chores shows a "Coming soon" page for now (planned in `BACKLOG.md`)
 
 ## Expenses
 
@@ -35,6 +35,15 @@
 - Bought and sold items move to a "Done" group that can be cleared (with a confirmation)
 - Items show who added them; links open in a new tab and only web addresses are accepted
 - Deleted lists and items stay in the database but are hidden
+
+## Fridge
+
+- What's in the fridge: name, quantity, optional expiry date and note
+- Quick add at the top; + opens the full sheet with quick expiry buttons (Today, 3 days, 1 week, 2 weeks)
+- "Use soon" at the top: expired items (in red) and items expiring within 3 days, soonest first; then everything else, dated items first
+- "Used up" removes an item and can put it on a shopping list you pick; "Just remove" only removes it
+- Tap an item to edit or delete it (delete is for mistakes, with a confirmation)
+- Removed items stay in the database but are hidden; the database records whether each was used up or deleted
 
 ## Households and members
 

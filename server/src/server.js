@@ -3,6 +3,7 @@ import cors from 'cors'
 import express from 'express'
 import { sendError } from './http.js'
 import expensesRouter from './routes/expenses.js'
+import fridgeRouter from './routes/fridge.js'
 import householdsRouter from './routes/households.js'
 import invitationsRouter from './routes/invitations.js'
 import shoppingRouter from './routes/shopping.js'
@@ -29,6 +30,7 @@ app.use(householdsRouter)
 app.use(invitationsRouter)
 app.use(expensesRouter)
 app.use(shoppingRouter)
+app.use(fridgeRouter)
 
 app.use((request, response) => {
   sendError(response, 404, 'Route not found')

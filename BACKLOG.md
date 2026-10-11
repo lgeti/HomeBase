@@ -40,7 +40,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - A household setting, **off by default**, that the owner or an admin can turn on. While it's off, the fridge shows no names at all.
 - The database already records who added each item (`added_by_member_id`); it is not shown anywhere.
 
-### Chores
+### Chores (built; see docs/Features.md)
 
 - Its own section, with chores that repeat (daily, weekly, monthly) or happen once.
 - Each chore has an assignee. "Done" records who did it and when, then schedules the next time.

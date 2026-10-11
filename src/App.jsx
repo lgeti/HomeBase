@@ -21,6 +21,7 @@ import MoneyView from './modules/Expenses/pages/MoneyView'
 import FridgeItemForm from './modules/Fridge/components/FridgeItemForm'
 import FridgeView from './modules/Fridge/pages/FridgeView'
 import HouseholdView from './modules/Household/pages/HouseholdView'
+import ImportForm from './modules/Shopping/components/ImportForm'
 import ShoppingItemForm from './modules/Shopping/components/ShoppingItemForm'
 import ShoppingView from './modules/Shopping/pages/ShoppingView'
 import { resolveActiveListId, toggledStatus } from './modules/Shopping/shopping'
@@ -52,7 +53,7 @@ export default function App() {
   const fridge = useFridgeApi(household)
   const chores = useChoresApi(household)
   const [apiError, setApiError] = useState('')
-  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'chore', record } with the record being edited, or null
+  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'chore' | 'import', record } with the record being edited, or null
   const [sheet, setSheet] = useState(null)
   const [activeView, setActiveView] = useState('money')
   const [moneyTab, setMoneyTab] = useState('expenses')
@@ -247,6 +248,7 @@ export default function App() {
             onToggleItem={(item) => shopping.setItemStatus(item, toggledStatus(item))}
             onEditItem={(item) => setSheet({ type: 'item', record: item })}
             onClearDone={shopping.clearDone}
+            onImportLink={(url) => setSheet({ type: 'import', record: { listId: activeListId, url } })}
           />
         ) : activeView === 'fridge' ? (
           <FridgeView
@@ -283,7 +285,19 @@ export default function App() {
       </div>
 
       <AddTransactionSheetWrapper isOpen={Boolean(sheet)} onClose={closeSheet}>
-        {sheet?.type === 'chore' ? (
+        {sheet?.type === 'import' ? (
+          <ImportForm
+            key={`${sheet.record.listId}-${sheet.record.url}`}
+            listName={shopping.lists.find((list) => list.id === sheet.record.listId)?.name}
+            initialUrl={sheet.record.url}
+            onPreview={(url) => shopping.previewImport(sheet.record.listId, url)}
+            onImport={async (items) => {
+              await shopping.importItems(sheet.record.listId, items)
+              setSheet(null)
+            }}
+            onCancel={closeSheet}
+          />
+        ) : sheet?.type === 'chore' ? (
           <ChoreForm
             key={sheet.record?.id || 'new-chore'}
             chore={sheet.record}

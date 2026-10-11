@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Icon from '../../../components/Icon'
 import { formatCurrency, getMemberName } from '../../../core/utils/calculations'
 import { friendlySaveError } from '../../../core/utils/expenseForm'
-import { countOpenItems, groupListItems, isDone, linkHost } from '../shopping'
+import { countOpenItems, groupListItems, isDone, linkHost, looksLikeLink } from '../shopping'
 
 // Creating and renaming a list share this small inline form
 function ListNameForm({ initialName = '', submitLabel, onSubmit, onCancel }) {
@@ -92,6 +92,16 @@ function ItemRow({ item, members, onToggle, onEdit }) {
         </button>
       )}
 
+      {item.imageUrl && (
+        <img
+          src={item.imageUrl}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          className={`h-11 w-11 shrink-0 rounded-lg bg-white object-contain ${done ? 'opacity-50' : ''}`}
+        />
+      )}
+
       <button
         type="button"
         onClick={() => onEdit(item)}
@@ -142,6 +152,7 @@ export default function ShoppingView({
   onToggleItem,
   onEditItem,
   onClearDone,
+  onImportLink,
 }) {
   // One inline panel at a time: 'new', 'rename', 'menu', 'delete' or 'clear'
   const [panel, setPanel] = useState(null)
@@ -174,6 +185,11 @@ export default function ShoppingView({
     if (!name || !activeListId) return
     setQuickError('')
     setQuickName('')
+    // A pasted link imports instead of becoming an item called "https://..."
+    if (looksLikeLink(name)) {
+      onImportLink(name)
+      return
+    }
     try {
       await onQuickAdd({ listId: activeListId, name })
     } catch (failure) {
@@ -320,13 +336,22 @@ export default function ShoppingView({
                 >
                   <Icon name="plus" size={20} />
                 </button>
+                <button
+                  type="button"
+                  onClick={() => onImportLink('')}
+                  aria-label="Import from link"
+                  title="Import from link"
+                  className="flex w-11 shrink-0 items-center justify-center rounded-xl border border-hb-input bg-hb-surface text-hb-text2 hover:text-hb-primary"
+                >
+                  <Icon name="link" size={18} />
+                </button>
               </form>
               {quickError && <p role="alert" className="text-xs text-hb-danger">{quickError}</p>}
 
               {open.length === 0 && done.length === 0 ? (
                 <div className="py-10 text-center">
                   <p className="text-sm text-hb-text2">Nothing on this list yet</p>
-                  <p className="mt-1 text-xs text-hb-text3">Type above, or tap + for price, link and selling</p>
+                  <p className="mt-1 text-xs text-hb-text3">Type above, paste a shop link, or tap + for price and selling</p>
                 </div>
               ) : (
                 <div className="space-y-2">

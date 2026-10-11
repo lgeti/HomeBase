@@ -17,6 +17,9 @@ export const groupListItems = (items, listId) => {
   }
 }
 
+// Pasted text that is a web address rather than an item name
+export const looksLikeLink = (text) => /^(https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(\/\S*)?$/i.test(text.trim()) && !/\s/.test(text.trim())
+
 export const countOpenItems = (items, listId) => groupListItems(items, listId).open.length
 
 // The list to show: the chosen one while it exists, otherwise the first

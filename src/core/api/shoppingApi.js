@@ -14,6 +14,7 @@ export const mapShoppingItem = (item) => ({
   quantity: item.quantity || undefined,
   price: item.price === null ? undefined : Number(item.price),
   link: item.link || undefined,
+  imageUrl: item.image_url || undefined,
   note: item.note || undefined,
   addedByMemberId: item.added_by_member_id || undefined,
   doneByMemberId: item.done_by_member_id || undefined,
@@ -47,3 +48,13 @@ export const updateShoppingItem = async (householdId, itemId, changes) =>
 
 export const deleteShoppingItem = (householdId, itemId) =>
   apiRequest(`${itemsPath(householdId)}/${itemId}`, { method: 'DELETE' })
+
+// What a link would add, without saving: { kind: 'list' | 'product', items: [{ name, quantity, price, link, imageUrl, sourceKey, found }] }
+export const previewShoppingImport = (householdId, listId, url) =>
+  apiRequest(`${listsPath(householdId)}/${listId}/import-preview`, { method: 'POST', body: JSON.stringify({ url }) })
+
+// Saves the chosen preview items; returns every item that was added or had its quantity raised
+export const importShoppingItems = async (householdId, listId, items) => {
+  const result = await apiRequest(`${listsPath(householdId)}/${listId}/import`, { method: 'POST', body: JSON.stringify({ items }) })
+  return { ...result, items: result.items.map(mapShoppingItem) }
+}

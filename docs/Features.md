@@ -33,6 +33,10 @@
 - Tick an item when it's bought; a selling item is "Listed" until you tap "Mark sold"
 - Bought and sold items move to a "Done" group that can be cleared (with a confirmation)
 - Items show who added them; links open in a new tab and only web addresses are accepted
+- **Import from link** (the link button next to quick add, or paste a link into quick add): a shared IKEA favourites list imports every item with its name, price, photo and quantity; any other shop's product link imports one item. You see the items first and choose which to add
+- When a shop does not let HomeBase read its page (Temu, for example), the item keeps the link and a name guessed from it, which you can change before adding
+- Importing a product that is already open on the list adds to its quantity instead of a duplicate
+- The API only reads public https pages, with a time and size limit, and never private network addresses
 - Deleted lists and items stay in the database but are hidden
 
 ## Fridge

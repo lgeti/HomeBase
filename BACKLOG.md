@@ -54,7 +54,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 
 ## Planned: shopping imports and fridge recipes (agreed 2026-10-11)
 
-### Import into a shopping list from a link
+### Import into a shopping list from a link (built; see docs/Features.md)
 
 - In a list, **Import from link** takes either a shared list link or a single product link. The items are added to the list you are in, and you see them before they are saved.
 - **IKEA shared lists** (the IKEA app's "share favourites"): the link itself holds every item number and quantity, for example `.../favourites/receive-share/10401484:1,20620061:1,...`. For each item, the API reads the public product page `ikea.com/<country>/<lang>/p/-<item number>/` and takes the name, price and photo (`og:title`, `og:image`, and the product's structured data). Checked on 2026-10-11 with a real 10-item share link: name, photo and price (€12.99) all came through.

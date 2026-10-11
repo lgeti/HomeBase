@@ -70,6 +70,9 @@ export const useShoppingApi = (household) => {
     return item
   }
 
+  // For an item another section created, such as the fridge's "Used up"
+  const showNewItem = (item) => setItems((current) => [...current, item])
+
   const updateItem = async (itemId, changes) => {
     const item = await updateShoppingItem(householdId, itemId, changes)
     replaceItem(item)
@@ -109,6 +112,7 @@ export const useShoppingApi = (household) => {
     renameList,
     removeList,
     addItem,
+    showNewItem,
     updateItem,
     setItemStatus,
     removeItem,

@@ -5,7 +5,7 @@ const mapList = (list) => ({
   name: list.name,
 })
 
-const mapItem = (item) => ({
+export const mapShoppingItem = (item) => ({
   id: item.item_id,
   listId: item.list_id,
   name: item.name,
@@ -36,14 +36,14 @@ export const deleteShoppingList = (householdId, listId) =>
 export const clearDoneShoppingItems = (householdId, listId) =>
   apiRequest(`${listsPath(householdId)}/${listId}/clear-done`, { method: 'POST' })
 
-export const fetchShoppingItems = async (householdId) => (await apiRequest(itemsPath(householdId))).map(mapItem)
+export const fetchShoppingItems = async (householdId) => (await apiRequest(itemsPath(householdId))).map(mapShoppingItem)
 
 export const createShoppingItem = async (householdId, item) =>
-  mapItem(await apiRequest(itemsPath(householdId), { method: 'POST', body: JSON.stringify(item) }))
+  mapShoppingItem(await apiRequest(itemsPath(householdId), { method: 'POST', body: JSON.stringify(item) }))
 
 // Send only the fields that change, for example { status: 'bought' }
 export const updateShoppingItem = async (householdId, itemId, changes) =>
-  mapItem(await apiRequest(`${itemsPath(householdId)}/${itemId}`, { method: 'PATCH', body: JSON.stringify(changes) }))
+  mapShoppingItem(await apiRequest(`${itemsPath(householdId)}/${itemId}`, { method: 'PATCH', body: JSON.stringify(changes) }))
 
 export const deleteShoppingItem = (householdId, itemId) =>
   apiRequest(`${itemsPath(householdId)}/${itemId}`, { method: 'DELETE' })

@@ -86,7 +86,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - Free alternative: some providers (for example Google's Gemini API) have a free tier with rate limits; free tiers may use the requests to train their models.
 - The provider sits behind one small server module, so it can be switched later.
 
-## Planned: scan a receipt (idea 2026-10-11)
+## Planned: scan a receipt (built; see docs/Features.md)
 
 One of the main features: one photo of a receipt adds the expense and fills the fridge.
 

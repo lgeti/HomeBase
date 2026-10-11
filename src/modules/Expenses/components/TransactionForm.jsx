@@ -1,11 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Icon, { CategoryIcon } from '../../../components/Icon'
 import { CATEGORIES } from '../../../config/categories'
-import { getMemberName } from '../../../core/utils/calculations'
+import { getMemberName, todayDateString } from '../../../core/utils/calculations'
 import { formDataToExpense, friendlySaveError, initialFormData } from '../../../core/utils/expenseForm'
+import { shrinkPhoto } from '../../../core/utils/image'
+import { boughtShoppingItems, formWithReceipt, fridgeItemsFrom, reviewItems } from '../receipt'
+import ReceiptReview from './ReceiptReview'
 
-// Pass `expense` to edit it; without one the form adds a new expense
-export default function TransactionForm({ members, onSubmit, onCancel, defaultCategoryId = 'groceries', defaultPayerId, expense }) {
+// Pass `expense` to edit it; without one the form adds a new expense.
+// With `onScanReceipt`, a new expense can be filled in from a receipt photo; onSubmit then also gets
+// { fridgeItems, boughtItems } for the receipt lines to add to the fridge and the shopping items to tick off.
+export default function TransactionForm({
+  members,
+  onSubmit,
+  onCancel,
+  defaultCategoryId = 'groceries',
+  defaultPayerId,
+  expense,
+  onScanReceipt,
+  shoppingItems = [],
+}) {
   const isEditing = Boolean(expense)
   const defaultPayer = defaultPayerId || members[0]?.household_member_id || ''
   const [formData, setFormData] = useState(() =>
@@ -15,6 +29,33 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
   // A failed save, shown in the sheet: the app's error banner is hidden behind it
   const [submitError, setSubmitError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  // Receipt lines under review, and which matching shopping items to tick off
+  const [receiptItems, setReceiptItems] = useState(null)
+  const [tickedIds, setTickedIds] = useState([])
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanError, setScanError] = useState('')
+  const photoInput = useRef(null)
+  const matches = receiptItems ? boughtShoppingItems(receiptItems, shoppingItems) : []
+
+  // A failed scan leaves the form as it was, so the expense can still be typed in
+  const scan = async (file) => {
+    if (!file) return
+    setScanError('')
+    setIsScanning(true)
+    try {
+      const receipt = await onScanReceipt(await shrinkPhoto(file), todayDateString())
+      const items = reviewItems(receipt.items)
+      setFormData((prev) => formWithReceipt(prev, receipt))
+      setErrors({})
+      setReceiptItems(items)
+      setTickedIds(boughtShoppingItems(items, shoppingItems).map((item) => item.id))
+    } catch (failure) {
+      setScanError(friendlySaveError(failure))
+    } finally {
+      setIsScanning(false)
+      if (photoInput.current) photoInput.current.value = ''
+    }
+  }
 
   useEffect(() => {
     if (!isEditing) setFormData((prev) => ({ ...prev, categoryId: defaultCategoryId }))
@@ -61,8 +102,14 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
     setSubmitError('')
     setIsSaving(true)
     try {
-      await onSubmit(formDataToExpense(formData))
-      if (!isEditing) setFormData(initialFormData({ categoryId: defaultCategoryId, payerId: defaultPayer }))
+      const fromReceipt = receiptItems
+        ? { fridgeItems: fridgeItemsFrom(receiptItems), boughtItems: matches.filter((item) => tickedIds.includes(item.id)) }
+        : undefined
+      await onSubmit(formDataToExpense(formData), fromReceipt)
+      if (!isEditing) {
+        setFormData(initialFormData({ categoryId: defaultCategoryId, payerId: defaultPayer }))
+        setReceiptItems(null)
+      }
     } catch (submitFailure) {
       setSubmitError(friendlySaveError(submitFailure))
     } finally {
@@ -79,6 +126,31 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
       <h2 className="text-xl font-semibold text-hb-text">{isEditing ? 'Edit Transaction' : 'Add Transaction'}</h2>
+
+      {!isEditing && onScanReceipt && (
+        <div>
+          <input
+            ref={photoInput}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={(event) => scan(event.target.files?.[0])}
+            className="sr-only"
+            id="receiptPhoto"
+          />
+          <label
+            htmlFor="receiptPhoto"
+            aria-disabled={isScanning}
+            className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-hb-primary/40 bg-hb-primary-tint py-2.5 text-sm font-semibold text-hb-primary ${
+              isScanning ? 'pointer-events-none opacity-60' : ''
+            }`}
+          >
+            <Icon name="receipt" size={16} />
+            {isScanning ? 'Reading the receipt…' : receiptItems ? 'Scan a different receipt' : 'Scan receipt'}
+          </label>
+          {scanError && <p role="alert" className="mt-1.5 text-xs text-hb-danger">{scanError}</p>}
+        </div>
+      )}
 
       <div>
         <label htmlFor="amount" className={label}>Amount</label>
@@ -244,6 +316,16 @@ export default function TransactionForm({ members, onSubmit, onCancel, defaultCa
             </p>
           )}
         </div>
+      )}
+
+      {receiptItems && receiptItems.length > 0 && (
+        <ReceiptReview
+          items={receiptItems}
+          onItemsChange={setReceiptItems}
+          matches={matches}
+          tickedIds={tickedIds}
+          onTickedChange={setTickedIds}
+        />
       )}
 
       <div className="sticky bottom-0 flex flex-col gap-2 bg-hb-sheet pt-1">

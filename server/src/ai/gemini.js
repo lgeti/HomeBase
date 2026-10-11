@@ -14,9 +14,10 @@ export class AiError extends Error {
 
 export const isAiConfigured = () => Boolean(process.env.GEMINI_API_KEY)
 
-// Asks the model for JSON matching `schema` (an OpenAPI-style schema) and returns it parsed
-export const generateJson = async ({ prompt, schema, temperature = 0.8 }) => {
-  if (!isAiConfigured()) throw new AiError('Recipe suggestions are not set up yet (no AI key on the server)', 503)
+// Asks the model for JSON matching `schema` (an OpenAPI-style schema) and returns it parsed.
+// `images` ([{ mimeType, data }] with base64 data) are sent along for the model to read.
+export const generateJson = async ({ prompt, schema, images = [], temperature = 0.8 }) => {
+  if (!isAiConfigured()) throw new AiError('AI features are not set up yet (no AI key on the server)', 503)
 
   const model = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'
   const request = () => fetch(`${API_URL}/${encodeURIComponent(model)}:generateContent`, {
@@ -24,7 +25,7 @@ export const generateJson = async ({ prompt, schema, temperature = 0.8 }) => {
     signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
     body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      contents: [{ role: 'user', parts: [...images.map((image) => ({ inlineData: image })), { text: prompt }] }],
       generationConfig: { temperature, responseMimeType: 'application/json', responseSchema: schema },
     }),
   })
@@ -41,12 +42,12 @@ export const generateJson = async ({ prompt, schema, temperature = 0.8 }) => {
     throw new AiError('The AI service did not answer; try again in a moment')
   }
 
-  if (response.status === 429) throw new AiError('Too many suggestions for now; try again in a minute', 429)
+  if (response.status === 429) throw new AiError('Too many AI requests for now; try again in a minute', 429)
   if (response.status === 503) throw new AiError('The AI service is busy right now; try again in a minute', 503)
   if (!response.ok) {
     const detail = await response.text().catch(() => '')
     console.error(`Gemini request failed (${response.status}):`, detail.slice(0, 500))
-    throw new AiError('The AI service could not make suggestions right now')
+    throw new AiError('The AI service could not answer right now')
   }
 
   const data = await response.json()

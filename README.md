@@ -51,8 +51,8 @@ You need **Node.js 22 or newer**. Local development uses a separate Supabase pro
 ## Tests
 
 ```bash
-npm test                  # web app (calculations, dates, categories)
-npm test --prefix server  # API (permissions, recurring dates)
+npm test                  # web app (calculations, dates, forms, shopping lists)
+npm test --prefix server  # API (permissions, recurring dates, shopping rules)
 ```
 
 CI runs both, plus a production build, on every pull request.

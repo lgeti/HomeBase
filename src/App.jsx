@@ -2,18 +2,23 @@ import { useState, useEffect } from 'react'
 import { useAuth } from './core/auth/useAuth'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { useHousehold } from './core/hooks/useHousehold'
+import { useShoppingApi } from './core/hooks/useShoppingApi'
 import { getJoinedMembers } from './core/utils/calculations'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import BottomNav from './components/BottomNav'
+import ComingSoon from './components/ComingSoon'
 import HouseholdErrorScreen from './components/HouseholdErrorScreen'
+import Icon from './components/Icon'
 import LoadingScreen from './components/LoadingScreen'
 import ProfileSetup from './components/ProfileSetup'
 import AuthScreen from './modules/Auth/pages/AuthScreen'
 import SetNewPassword from './modules/Auth/pages/SetNewPassword'
 import TransactionForm from './modules/Expenses/components/TransactionForm'
-import CategoryView from './modules/Expenses/pages/CategoryView'
-import Dashboard from './modules/Expenses/pages/Dashboard'
+import MoneyView from './modules/Expenses/pages/MoneyView'
 import HouseholdView from './modules/Household/pages/HouseholdView'
+import ShoppingItemForm from './modules/Shopping/components/ShoppingItemForm'
+import ShoppingView from './modules/Shopping/pages/ShoppingView'
+import { resolveActiveListId, toggledStatus } from './modules/Shopping/shopping'
 
 export default function App() {
   const {
@@ -38,12 +43,14 @@ export default function App() {
     createHousehold,
   } = useHousehold(authUserId)
   const { expenses, addExpense, updateExpense, deleteExpense, error: expensesError } = useExpensesApi(household)
+  const shopping = useShoppingApi(household)
   const [apiError, setApiError] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
-  // The expense open in the sheet for editing, or null
-  const [editingExpense, setEditingExpense] = useState(null)
-  const [activeView, setActiveView] = useState('categories')
+  // What the bottom sheet shows: { type: 'expense' | 'item', record } with the record being edited, or null
+  const [sheet, setSheet] = useState(null)
+  const [activeView, setActiveView] = useState('money')
+  const [moneyTab, setMoneyTab] = useState('expenses')
   const [selectedCategoryId, setSelectedCategoryId] = useState('groceries')
+  const [chosenListId, setChosenListId] = useState(null)
 
   // Errors belong to the previous account once someone else signs in
   useEffect(() => {
@@ -60,7 +67,7 @@ export default function App() {
     }
   }
 
-  // Both throw on failure so the sheet can show the error where the person is looking
+  // These throw on failure so the sheet can show the error where the person is looking
   const handleAddTransaction = async (expense) => {
     const isHouseholdMember = getJoinedMembers(household?.members || []).some(
       (member) => member.household_member_id === expense.paidByMemberId
@@ -69,23 +76,36 @@ export default function App() {
     if (!isHouseholdMember) throw new Error('The selected payer is not connected to this household')
 
     await addExpense(expense)
-    setShowAddForm(false)
+    setSheet(null)
   }
 
   const handleEditTransaction = async (expense) => {
-    await updateExpense(editingExpense.id, expense)
-    setEditingExpense(null)
+    await updateExpense(sheet.record.id, expense)
+    setSheet(null)
   }
 
-  const openAddForm = () => {
-    setEditingExpense(null)
-    setShowAddForm(true)
+  const handleSaveItem = async (body) => {
+    if (sheet.record) {
+      await shopping.updateItem(sheet.record.id, body)
+    } else {
+      await shopping.addItem(body)
+      setChosenListId(body.listId)
+    }
+    setSheet(null)
   }
 
-  const closeSheet = () => {
-    setShowAddForm(false)
-    setEditingExpense(null)
+  const handleDeleteItem = async () => {
+    await shopping.removeItem(sheet.record.id)
+    setSheet(null)
   }
+
+  // The + button adds whatever fits the section; Fridge and Chores add expenses until they exist
+  const openAddSheet = () => {
+    const canAddItem = activeView === 'shopping' && shopping.lists.length > 0
+    setSheet({ type: canAddItem ? 'item' : 'expense', record: null })
+  }
+
+  const closeSheet = () => setSheet(null)
 
   if (authLoading) return <LoadingScreen />
 
@@ -126,14 +146,31 @@ export default function App() {
   const members = household.members || []
   const joinedMembers = getJoinedMembers(members)
   const errorMessage = apiError || inviteError || expensesError
+  const activeListId = resolveActiveListId(shopping.lists, chosenListId)
+  const isHouseholdOpen = activeView === 'household'
 
   return (
     <div className="flex flex-col h-screen bg-hb-bg">
-      <header className="bg-hb-surface/95 backdrop-blur-sm shadow-sm px-4 py-3 sticky top-0 z-10">
-        <h1 className="text-lg font-semibold text-hb-text">{household.name}</h1>
-        <p className="text-xs text-hb-text2">
-          {joinedMembers.map((member) => member.display_name).join(' · ')}
-        </p>
+      <header className="bg-hb-surface/95 backdrop-blur-sm shadow-sm px-4 py-3 sticky top-0 z-10 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-semibold text-hb-text">{household.name}</h1>
+          <p className="truncate text-xs text-hb-text2">
+            {joinedMembers.map((member) => member.display_name).join(' · ')}
+          </p>
+        </div>
+        {/* Household moved here to make room for the sections in the bottom bar; tapping it again goes back */}
+        <button
+          type="button"
+          onClick={() => setActiveView(isHouseholdOpen ? 'money' : 'household')}
+          aria-pressed={isHouseholdOpen}
+          aria-label="Household"
+          title="Household"
+          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition ${
+            isHouseholdOpen ? 'border-hb-primary bg-hb-primary-tint text-hb-primary' : 'border-hb-border bg-hb-surface text-hb-text2'
+          }`}
+        >
+          <Icon name="users" size={20} />
+        </button>
       </header>
 
       {errorMessage && (
@@ -150,32 +187,74 @@ export default function App() {
             onHouseholdChange={refreshHousehold}
             onSignOut={signOut}
           />
-        ) : activeView === 'dashboard' ? (
-          <Dashboard expenses={expenses} members={joinedMembers} />
-        ) : (
-          <CategoryView
-            expenses={expenses}
-            onEditExpense={setEditingExpense}
-            onDeleteExpense={deleteExpense}
+        ) : activeView === 'shopping' ? (
+          <ShoppingView
+            lists={shopping.lists}
+            items={shopping.items}
             members={members}
+            activeListId={activeListId}
+            isLoading={shopping.isLoading}
+            error={shopping.error}
+            onSelectList={setChosenListId}
+            onAddList={shopping.addList}
+            onRenameList={shopping.renameList}
+            onDeleteList={shopping.removeList}
+            onQuickAdd={shopping.addItem}
+            onToggleItem={(item) => shopping.setItemStatus(item, toggledStatus(item))}
+            onEditItem={(item) => setSheet({ type: 'item', record: item })}
+            onClearDone={shopping.clearDone}
+          />
+        ) : activeView === 'fridge' ? (
+          <ComingSoon
+            icon="fridge"
+            title="Fridge"
+            description="What is in the fridge, what to use soon, and one tap to put it back on a shopping list."
+          />
+        ) : activeView === 'chores' ? (
+          <ComingSoon
+            icon="chores"
+            title="Chores"
+            description="Repeating chores and who does them, grouped into overdue, today and upcoming."
+          />
+        ) : (
+          <MoneyView
+            tab={moneyTab}
+            onTabChange={setMoneyTab}
+            expenses={expenses}
+            members={members}
+            joinedMembers={joinedMembers}
+            onEditExpense={(expense) => setSheet({ type: 'expense', record: expense })}
+            onDeleteExpense={deleteExpense}
             onCategoryChange={setSelectedCategoryId}
           />
         )}
       </div>
 
-      <AddTransactionSheetWrapper isOpen={showAddForm || Boolean(editingExpense)} onClose={closeSheet}>
-        <TransactionForm
-          key={editingExpense?.id || 'new'}
-          expense={editingExpense}
-          members={joinedMembers}
-          onSubmit={editingExpense ? handleEditTransaction : handleAddTransaction}
-          onCancel={closeSheet}
-          defaultCategoryId={selectedCategoryId}
-          defaultPayerId={joinedMembers.find((member) => member.auth_user_id === authUserId)?.household_member_id}
-        />
+      <AddTransactionSheetWrapper isOpen={Boolean(sheet)} onClose={closeSheet}>
+        {sheet?.type === 'item' ? (
+          <ShoppingItemForm
+            key={sheet.record?.id || 'new-item'}
+            lists={shopping.lists}
+            listId={activeListId}
+            item={sheet.record}
+            onSubmit={handleSaveItem}
+            onDelete={handleDeleteItem}
+            onCancel={closeSheet}
+          />
+        ) : sheet?.type === 'expense' ? (
+          <TransactionForm
+            key={sheet.record?.id || 'new'}
+            expense={sheet.record}
+            members={joinedMembers}
+            onSubmit={sheet.record ? handleEditTransaction : handleAddTransaction}
+            onCancel={closeSheet}
+            defaultCategoryId={selectedCategoryId}
+            defaultPayerId={joinedMembers.find((member) => member.auth_user_id === authUserId)?.household_member_id}
+          />
+        ) : null}
       </AddTransactionSheetWrapper>
 
-      <BottomNav activeView={activeView} onNavigate={setActiveView} onAdd={openAddForm} />
+      <BottomNav activeView={activeView} onNavigate={setActiveView} onAdd={openAddSheet} />
     </div>
   )
 }

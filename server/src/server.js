@@ -5,6 +5,7 @@ import { sendError } from './http.js'
 import expensesRouter from './routes/expenses.js'
 import householdsRouter from './routes/households.js'
 import invitationsRouter from './routes/invitations.js'
+import shoppingRouter from './routes/shopping.js'
 
 const port = Number(process.env.PORT || 3000)
 
@@ -27,6 +28,7 @@ app.get('/health', (request, response) => {
 app.use(householdsRouter)
 app.use(invitationsRouter)
 app.use(expensesRouter)
+app.use(shoppingRouter)
 
 app.use((request, response) => {
   sendError(response, 404, 'Route not found')

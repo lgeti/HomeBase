@@ -25,3 +25,7 @@ export const markRecipeCooked = async (householdId, recipeId, cookedOn) =>
 
 export const deleteRecipe = (householdId, recipeId) =>
   apiRequest(`${recipesPath(householdId)}/${recipeId}`, { method: 'DELETE' })
+
+// A few AI recipe ideas from what is in the fridge: [{ name, ingredients, steps, usesFromFridge }]
+export const fetchRecipeSuggestions = async (householdId, today) =>
+  (await apiRequest(`/api/households/${householdId}/recipe-suggestions`, { method: 'POST', body: JSON.stringify({ today }) })).suggestions

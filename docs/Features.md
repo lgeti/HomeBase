@@ -56,6 +56,7 @@
 - Each recipe shows "You have 2 of 3", which fridge items it would use up, and what is missing; tap it for the ingredients (ticked or not), steps and link
 - "Add missing to list" puts the missing ingredients on a shopping list you pick; "Cooked it" records today
 - + on the Recipes tab adds a recipe; Edit changes or deletes one (with a confirmation)
+- **Suggest recipes from the fridge:** Google Gemini suggests 3 recipes in English that use what is in the fridge, especially what expires soon; each shows what you have, and "Save recipe" keeps it. Only food names, quantities and expiry go to Google, never people's names. Needs `GEMINI_API_KEY` on the API server (and optionally `GEMINI_MODEL`); limited to 10 requests per household per hour. Gemini's free tier may use requests to improve Google's models
 
 ## Chores
 

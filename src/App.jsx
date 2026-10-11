@@ -284,6 +284,8 @@ export default function App() {
                 onCooked={(recipe, cookedOn) => recipes.markCooked(recipe.id, cookedOn)}
                 onAddMissing={(listId, missing) => shopping.importItems(listId, missing.map((name) => ({ name })))}
                 onEditRecipe={(recipe) => setSheet({ type: 'recipe', record: recipe })}
+                onSuggest={recipes.suggest}
+                onSaveSuggestion={({ name, ingredients, steps }) => recipes.addRecipe({ name, ingredients, steps })}
               />
             )}
             items={fridge.items}

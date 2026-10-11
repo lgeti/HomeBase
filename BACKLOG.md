@@ -66,7 +66,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 
 - Read items from screenshots (for example a Temu cart) with AI. Not needed now.
 
-### Recipes from the fridge (own recipes built; AI suggestions still to do)
+### Recipes from the fridge (built; see docs/Features.md)
 
 - A **Recipes** tab inside Fridge.
 - **Our own recipes:** save recipes with a name, ingredients, steps and an optional link. HomeBase shows which ones the fridge can make, and what is missing.
@@ -79,7 +79,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 - **Missing ingredients → shopping list:** one tap adds what is missing to a list you pick.
 - Recipes and suggestions are in English. Matching fridge items to ingredients needs to be forgiving ("half a pack of ham" should count as ham); AI can help with this too.
 
-### AI provider and cost (to decide before building suggestions)
+### AI provider and cost (decided 2026-10-12: Google Gemini, free tier)
 
 - The model is called from the API server only, with the key in Render's environment settings, never in the app.
 - Anthropic's API is pay-as-you-go; a Claude subscription does not cover an app's API use. A small model (Claude Haiku) costs well under a cent per suggestion, so a household's use should cost cents a month. A monthly spending limit can be set in the Anthropic console.

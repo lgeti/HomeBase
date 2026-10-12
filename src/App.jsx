@@ -99,9 +99,10 @@ export default function App() {
     if (fromReceipt) await saveReceiptExtras(fromReceipt)
   }
 
-  // After a scanned receipt's expense is saved: fill the fridge and the inventory, and tick off what was bought.
+  // After a scanned receipt's expense is saved: fill the fridge and the inventory, tick off what was bought,
+  // and clear "running low" on what was restocked.
   // The expense is already saved, so a failure here is reported instead of offering to save again.
-  const saveReceiptExtras = async ({ fridgeItems, inventoryItems, boughtItems }) => {
+  const saveReceiptExtras = async ({ fridgeItems, inventoryItems, boughtItems, restockedItems }) => {
     const failed = []
     for (const item of fridgeItems) {
       await fridge.addItem(item).catch(() => failed.push(item.name))
@@ -110,6 +111,9 @@ export default function App() {
       await inventory.addItem(item).catch(() => failed.push(item.name))
     }
     for (const item of boughtItems) await shopping.setItemStatus(item, 'bought')
+    for (const item of restockedItems) {
+      await inventory.updateItem(item.id, { isRunningLow: false }).catch(() => failed.push(`${item.name} (restocked)`))
+    }
     if (failed.length) setApiError(`The expense is saved, but these were not added: ${failed.join(', ')}`)
   }
 
@@ -451,6 +455,7 @@ export default function App() {
             onScanReceipt={(file, today) => scanReceipt(household.household_id, file, today)}
             shoppingItems={shopping.items}
             inventoryGroups={inventory.groups}
+            inventoryItems={inventory.items}
           />
         ) : null}
       </AddTransactionSheetWrapper>

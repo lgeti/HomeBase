@@ -39,7 +39,16 @@ export const groupFridgeItems = (items, today) => {
   return { useSoon: byDate.filter(isUrgent), rest: byDate.filter((item) => !isUrgent(item)) }
 }
 
-export const initialFridgeForm = (item) => ({
+// Where food is kept, with the words the screens use for it
+export const LOCATIONS = {
+  fridge: { label: 'Fridge', in: 'in the fridge', to: 'to the fridge' },
+  pantry: { label: 'Pantry', in: 'in the pantry', to: 'to the pantry' },
+}
+
+export const itemsIn = (items, location) => items.filter((item) => (item.location || 'fridge') === location)
+
+export const initialFridgeForm = (item, location = 'fridge') => ({
+  location: item?.location ?? location,
   name: item?.name ?? '',
   quantity: item?.quantity ?? '',
   expiresOn: item?.expiresOn ?? '',
@@ -48,6 +57,7 @@ export const initialFridgeForm = (item) => ({
 
 // Empty optional fields are sent empty so editing can clear them
 export const fridgeFormToBody = (form) => ({
+  location: form.location,
   name: form.name.trim(),
   quantity: form.quantity.trim(),
   expiresOn: form.expiresOn,

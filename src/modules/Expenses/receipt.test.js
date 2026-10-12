@@ -6,6 +6,7 @@ import {
   fridgeItemsFrom,
   inventoryGroupOf,
   inventoryItemsFrom,
+  PANTRY,
   restockedInventoryItems,
   reviewItems,
   SKIP,
@@ -15,14 +16,14 @@ import {
 
 const scanned = [
   { receiptText: 'MLEKO 1L 3.2%', name: 'Milk 1 L', quantity: null, price: 1.19, isFood: true, inventoryGroup: 'Other' },
-  { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true, inventoryGroup: 'Other' },
+  { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true, inventoryGroup: 'Other', foodStorage: 'pantry' },
   { receiptText: 'WC PAPIR 8/1', name: 'Toilet paper', quantity: '8', price: 3.99, isFood: false, inventoryGroup: 'Bathroom' },
 ]
 const groups = [{ id: 'g-app', name: 'Appliances' }, { id: 'g-bath', name: 'Bathroom' }, { id: 'g-clean', name: 'Cleaning' }]
 
 describe('reviewItems', () => {
-  it('sends food to the fridge and leaves the rest out until chosen', () => {
-    assert.deepEqual(reviewItems(scanned).map((item) => [item.key, item.destination]), [[0, 'fridge'], [1, 'fridge'], [2, SKIP]])
+  it('sends food where it is kept and leaves the rest out until chosen', () => {
+    assert.deepEqual(reviewItems(scanned).map((item) => [item.key, item.destination]), [[0, 'fridge'], [1, PANTRY], [2, SKIP]])
   })
 })
 
@@ -38,7 +39,7 @@ describe('fridgeItemsFrom and inventoryItemsFrom', () => {
     const items = reviewItems(scanned)
     items[0].destination = SKIP
     items[2].destination = toInventory('g-bath')
-    assert.deepEqual(fridgeItemsFrom(items), [{ name: 'Eggs', quantity: '10' }])
+    assert.deepEqual(fridgeItemsFrom(items), [{ name: 'Eggs', quantity: '10', location: PANTRY }])
     assert.deepEqual(inventoryItemsFrom(items, '2026-10-11'), [
       { groupId: 'g-bath', name: 'Toilet paper', quantity: '8', price: 3.99, purchasedOn: '2026-10-11' },
     ])

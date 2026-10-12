@@ -1,7 +1,7 @@
 import { formatCurrency } from '../../../core/utils/calculations'
-import { FRIDGE, inventoryGroupOf, SKIP, suggestedGroup, toInventory } from '../receipt'
+import { FRIDGE, inventoryGroupOf, PANTRY, SKIP, suggestedGroup, toInventory } from '../receipt'
 
-// The lines read from a receipt: choose where each goes (fridge, an inventory group, or nowhere), fix names,
+// The lines read from a receipt: choose where each goes (fridge, pantry, an inventory group, or nowhere), fix names,
 // and choose which shopping list items were bought. Nothing here is saved until the expense is added.
 export default function ReceiptReview({
   items,
@@ -16,6 +16,7 @@ export default function ReceiptReview({
 }) {
   const change = (key, changes) => onItemsChange(items.map((item) => (item.key === key ? { ...item, ...changes } : item)))
   const toFridge = items.filter((item) => item.destination === FRIDGE).length
+  const toPantry = items.filter((item) => item.destination === PANTRY).length
   const toInventoryCount = items.filter((item) => inventoryGroupOf(item.destination)).length
 
   // The suggested inventory group comes first, so it is one tap away
@@ -29,7 +30,11 @@ export default function ReceiptReview({
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-[13px] font-semibold text-hb-text2">From the receipt</h3>
         <p className="text-xs text-hb-text3">
-          {toFridge} to the fridge{toInventoryCount > 0 && ` · ${toInventoryCount} to inventory`}
+          {[
+            toFridge > 0 && `${toFridge} to the fridge`,
+            toPantry > 0 && `${toPantry} to the pantry`,
+            toInventoryCount > 0 && `${toInventoryCount} to inventory`,
+          ].filter(Boolean).join(' · ') || 'Nothing added yet'}
         </p>
       </div>
 
@@ -67,6 +72,7 @@ export default function ReceiptReview({
               }`}
             >
               <option value={FRIDGE}>Fridge</option>
+              <option value={PANTRY}>Pantry</option>
               {inventoryOptions(item).map((group) => (
                 <option key={group.id} value={toInventory(group.id)}>{group.name}</option>
               ))}

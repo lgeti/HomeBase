@@ -5,13 +5,19 @@ import { normalizeFridgeItem, validateFridgeItem } from '../src/fridge.js'
 describe('normalizeFridgeItem', () => {
   it('trims a new item and leaves empty fields out', () => {
     assert.deepEqual(normalizeFridgeItem({ name: ' Milk ', quantity: ' 1 l ', expiresOn: '2026-10-14', note: '' }), {
-      name: 'Milk', quantity: '1 l', expires_on: '2026-10-14', note: null,
+      name: 'Milk', quantity: '1 l', expires_on: '2026-10-14', note: null, location: 'fridge',
     })
   })
 
   it('keeps every field the body leaves out when updating', () => {
-    const existing = { name: 'Eggs', quantity: '6', expires_on: '2026-10-20', note: 'free range' }
+    const existing = { name: 'Eggs', quantity: '6', expires_on: '2026-10-20', note: 'free range', location: 'fridge' }
     assert.deepEqual(normalizeFridgeItem({ quantity: '4' }, existing), { ...existing, quantity: '4' })
+  })
+
+  it('keeps food in the fridge unless told otherwise, and can move it', () => {
+    assert.equal(normalizeFridgeItem({ name: 'Pasta', location: 'pantry' }).location, 'pantry')
+    assert.equal(normalizeFridgeItem({ location: 'pantry' }, { name: 'Rice', location: 'fridge' }).location, 'pantry')
+    assert.equal(normalizeFridgeItem({ quantity: '1' }, { name: 'Rice', location: 'pantry' }).location, 'pantry')
   })
 
   it('clears the expiry date when it is sent empty', () => {
@@ -21,10 +27,12 @@ describe('normalizeFridgeItem', () => {
 })
 
 describe('validateFridgeItem', () => {
-  const valid = { name: 'Milk', quantity: null, expires_on: null, note: null }
+  const valid = { name: 'Milk', quantity: null, expires_on: null, note: null, location: 'fridge' }
 
   it('requires a name', () => {
     assert.match(validateFridgeItem({ ...valid, name: '' }), /Enter what/)
+    assert.equal(validateFridgeItem({ ...valid, location: 'pantry' }), null)
+    assert.match(validateFridgeItem({ ...valid, location: 'freezer' }), /fridge or pantry/)
     assert.equal(validateFridgeItem(valid), null)
   })
 

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { addDays, daysUntil, expiryLabel, freshness, fridgeFormToBody, groupFridgeItems, initialFridgeForm } from './fridge.js'
+import { addDays, daysUntil, expiryLabel, freshness, fridgeFormToBody, groupFridgeItems, initialFridgeForm, itemsIn } from './fridge.js'
 
 const today = '2026-10-11'
 const item = (id, expiresOn) => ({ id, name: id, expiresOn })
@@ -50,9 +50,14 @@ describe('groupFridgeItems', () => {
 
 describe('fridge form', () => {
   it('round-trips an item and sends cleared fields empty', () => {
-    const form = initialFridgeForm({ name: 'Milk ', quantity: '1 l', expiresOn: '2026-10-14', note: undefined })
-    assert.deepEqual(fridgeFormToBody(form), { name: 'Milk', quantity: '1 l', expiresOn: '2026-10-14', note: '' })
-    assert.deepEqual(fridgeFormToBody(initialFridgeForm()), { name: '', quantity: '', expiresOn: '', note: '' })
+    const form = initialFridgeForm({ name: 'Milk ', quantity: '1 l', expiresOn: '2026-10-14', note: undefined, location: 'fridge' })
+    assert.deepEqual(fridgeFormToBody(form), { location: 'fridge', name: 'Milk', quantity: '1 l', expiresOn: '2026-10-14', note: '' })
+    assert.deepEqual(fridgeFormToBody(initialFridgeForm()), { location: 'fridge', name: '', quantity: '', expiresOn: '', note: '' })
+  })
+
+  it('starts a new item where you are, and keeps an existing one where it is', () => {
+    assert.equal(initialFridgeForm(undefined, 'pantry').location, 'pantry')
+    assert.equal(initialFridgeForm({ name: 'Rice', location: 'pantry' }, 'fridge').location, 'pantry')
   })
 })
 
@@ -61,5 +66,13 @@ describe('addDays', () => {
     assert.equal(addDays('2026-10-11', 3), '2026-10-14')
     assert.equal(addDays('2026-10-30', 7), '2026-11-06')
     assert.equal(addDays('2026-12-30', 3), '2027-01-02')
+  })
+})
+
+describe('itemsIn', () => {
+  it('splits food by where it is kept; older items without a place are in the fridge', () => {
+    const items = [{ id: 'a', location: 'fridge' }, { id: 'b', location: 'pantry' }, { id: 'c' }]
+    assert.deepEqual(itemsIn(items, 'fridge').map((item) => item.id), ['a', 'c'])
+    assert.deepEqual(itemsIn(items, 'pantry').map((item) => item.id), ['b'])
   })
 })

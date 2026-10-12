@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { todayDateString } from '../../../core/utils/calculations'
 import { friendlySaveError } from '../../../core/utils/expenseForm'
-import { addDays, fridgeFormToBody, initialFridgeForm } from '../fridge'
+import { addDays, fridgeFormToBody, initialFridgeForm, LOCATIONS } from '../fridge'
 
 const QUICK_DATES = [
   { label: 'Today', days: 0 },
@@ -11,9 +11,10 @@ const QUICK_DATES = [
 ]
 
 // Pass `item` to edit it; without one the form adds a new item
-export default function FridgeItemForm({ item, onSubmit, onDelete, onCancel }) {
+// `location` is where a new item goes (the tab you are on); an item can be moved between fridge and pantry
+export default function FridgeItemForm({ item, location = 'fridge', onSubmit, onDelete, onCancel }) {
   const isEditing = Boolean(item)
-  const [form, setForm] = useState(() => initialFridgeForm(item))
+  const [form, setForm] = useState(() => initialFridgeForm(item, location))
   const [nameError, setNameError] = useState('')
   const [submitError, setSubmitError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -42,7 +43,7 @@ export default function FridgeItemForm({ item, onSubmit, onDelete, onCancel }) {
     event.preventDefault()
     if (isSaving) return
     if (!form.name.trim()) {
-      setNameError('Enter what is in the fridge')
+      setNameError('Enter what it is')
       return
     }
     run(() => onSubmit(fridgeFormToBody(form)))
@@ -53,7 +54,27 @@ export default function FridgeItemForm({ item, onSubmit, onDelete, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-      <h2 className="text-xl font-semibold text-hb-text">{isEditing ? 'Edit Fridge Item' : 'Add to Fridge'}</h2>
+      <h2 className="text-xl font-semibold text-hb-text">{isEditing ? 'Edit Food' : `Add to ${LOCATIONS[form.location].label}`}</h2>
+
+      <div role="radiogroup" aria-label="Where it is kept" className="grid grid-cols-2 gap-1 rounded-[14px] bg-hb-surface2 p-1">
+        {Object.entries(LOCATIONS).map(([value, place]) => {
+          const isOn = form.location === value
+          return (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={isOn}
+              onClick={() => choose('location', value)}
+              className={`rounded-[10px] px-2 py-2.5 text-sm transition ${
+                isOn ? 'bg-hb-seg-on text-hb-text font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.12)]' : 'text-hb-text2 font-medium'
+              }`}
+            >
+              {place.label}
+            </button>
+          )
+        })}
+      </div>
 
       <div>
         <label htmlFor="fridgeName" className={label}>What is it?</label>

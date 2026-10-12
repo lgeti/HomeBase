@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Icon from '../../../components/Icon'
 import { todayDateString } from '../../../core/utils/calculations'
 import { friendlySaveError } from '../../../core/utils/expenseForm'
-import { expiryLabel, freshness, groupFridgeItems } from '../fridge'
+import { expiryLabel, freshness, groupFridgeItems, itemsIn, LOCATIONS } from '../fridge'
 
 const EXPIRY_COLORS = {
   expired: 'text-hb-danger font-semibold',
@@ -105,6 +105,7 @@ function FridgeRow({ item, today, onEdit, onUsedUp }) {
 
 const TABS = [
   { id: 'items', label: 'Fridge' },
+  { id: 'pantry', label: 'Pantry' },
   { id: 'recipes', label: 'Recipes' },
   { id: 'inventory', label: 'Inventory' },
 ]
@@ -115,7 +116,12 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
   const [quickName, setQuickName] = useState('')
   const [quickError, setQuickError] = useState('')
   const today = todayDateString()
-  const { useSoon, rest } = groupFridgeItems(items, today)
+  // The Fridge and Pantry tabs show the same list for their own place
+  const location = tab === 'pantry' ? 'pantry' : 'fridge'
+  const place = LOCATIONS[location]
+  const shown = itemsIn(items, location)
+  const { useSoon, rest } = groupFridgeItems(shown, today)
+  const useSoonAll = groupFridgeItems(items, today).useSoon.length
 
   const quickAdd = async (event) => {
     event.preventDefault()
@@ -124,7 +130,7 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
     setQuickError('')
     setQuickName('')
     try {
-      await onQuickAdd({ name })
+      await onQuickAdd({ name, location })
     } catch (failure) {
       setQuickName(name)
       setQuickError(friendlySaveError(failure))
@@ -149,12 +155,12 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
         <div>
           <h2 className="text-2xl font-semibold text-hb-text">Home</h2>
           <p className="text-xs text-hb-text2">
-            Fridge: {items.length === 0 ? 'empty' : `${items.length} item${items.length === 1 ? '' : 's'}`}
-            {useSoon.length > 0 && ` · ${useSoon.length} to use soon`}
+            Fridge {itemsIn(items, 'fridge').length} · Pantry {itemsIn(items, 'pantry').length}
+            {useSoonAll > 0 && ` · ${useSoonAll} to use soon`}
           </p>
         </div>
 
-        <div role="tablist" aria-label="Home" className="grid grid-cols-3 gap-1 rounded-[14px] bg-hb-surface2 p-1">
+        <div role="tablist" aria-label="Home" className="grid grid-cols-4 gap-1 rounded-[14px] bg-hb-surface2 p-1">
           {TABS.map((option) => {
             const isOn = tab === option.id
             return (
@@ -164,7 +170,7 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
                 role="tab"
                 aria-selected={isOn}
                 onClick={() => onTabChange(option.id)}
-                className={`rounded-[10px] py-2 text-sm transition ${
+                className={`truncate rounded-[10px] px-1 py-2 text-sm transition ${
                   isOn ? 'bg-hb-seg-on text-hb-text font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.12)]' : 'text-hb-text2 font-medium'
                 }`}
               >
@@ -179,7 +185,7 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
             {error && <p className="rounded-xl bg-hb-danger-bg px-3 py-2 text-sm text-hb-danger">{error}</p>}
 
             <form onSubmit={quickAdd} className="flex gap-2">
-              <label htmlFor="fridgeQuickAdd" className="sr-only">Add to the fridge</label>
+              <label htmlFor="fridgeQuickAdd" className="sr-only">Add {place.to}</label>
               <input
                 id="fridgeQuickAdd"
                 type="text"
@@ -189,13 +195,13 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
                   setQuickError('')
                 }}
                 maxLength={120}
-                placeholder="Add to the fridge…"
+                placeholder={`Add ${place.to}…`}
                 className="min-w-0 flex-1 rounded-xl border border-hb-input bg-hb-field px-3 py-[11px] text-sm text-hb-text focus:outline-none focus:ring-2 focus:ring-hb-primary"
               />
               <button
                 type="submit"
                 disabled={!quickName.trim()}
-                aria-label="Add to the fridge"
+                aria-label={`Add ${place.to}`}
                 className="flex w-11 shrink-0 items-center justify-center rounded-xl bg-hb-primary text-hb-on-primary disabled:opacity-40"
               >
                 <Icon name="plus" size={20} />
@@ -203,11 +209,11 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
             </form>
             {quickError && <p role="alert" className="text-xs text-hb-danger">{quickError}</p>}
 
-            {isLoading && items.length === 0 ? (
+            {isLoading && shown.length === 0 ? (
               <p className="py-8 text-center text-sm text-hb-text2">Loading…</p>
-            ) : items.length === 0 ? (
+            ) : shown.length === 0 ? (
               <div className="py-10 text-center">
-                <p className="text-sm text-hb-text2">Nothing in the fridge yet</p>
+                <p className="text-sm text-hb-text2">Nothing {place.in} yet</p>
                 <p className="mt-1 text-xs text-hb-text3">Type above, or tap + to add an expiry date</p>
               </div>
             ) : (

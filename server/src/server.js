@@ -6,7 +6,6 @@ import choresRouter from './routes/chores.js'
 import expensesRouter from './routes/expenses.js'
 import fridgeRouter from './routes/fridge.js'
 import householdsRouter from './routes/households.js'
-import inventoryRouter from './routes/inventory.js'
 import invitationsRouter from './routes/invitations.js'
 import receiptsRouter from './routes/receipts.js'
 import recipeSuggestionsRouter from './routes/recipeSuggestions.js'
@@ -40,7 +39,6 @@ app.use(expensesRouter)
 app.use(shoppingRouter)
 app.use(shoppingImportRouter)
 app.use(fridgeRouter)
-app.use(inventoryRouter)
 app.use(choresRouter)
 app.use(recipesRouter)
 app.use(recipeSuggestionsRouter)

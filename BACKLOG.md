@@ -101,7 +101,7 @@ One of the main features: one photo of a receipt adds the expense and fills the 
 - The photo is not kept by default. Keeping it with the expense can come later.
 - If the photo can't be read, you get the normal expense form and nothing is lost.
 
-## Household inventory (built; see docs/Features.md)
+## Later: household inventory
 
 - A list of what the household owns beyond the fridge, grouped as **Appliances**, **Bathroom** and **Cleaning**, with your own groups possible.
 - Appliances: purchase date, price and warranty end; a scanned receipt could be attached as proof of purchase.

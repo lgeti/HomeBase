@@ -66,3 +66,4 @@ Migrations live in `server/db/` and are numbered. Run each new one in the Supaba
 
 - **API:** Render deploys automatically when a pull request is merged into `main`.
 - **Web app:** from `main`, run `npm run deploy`. It builds with the production settings in `.env` and publishes to GitHub Pages.
+  It first checks that this folder is on `main`, has no uncommitted changes and matches GitHub exactly (`scripts/check-deploy.js`), and stops with what to do if not. After merging a PR, pull before deploying.

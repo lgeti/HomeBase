@@ -7,9 +7,10 @@
   "scripts": {
     "dev": "vite",
     "dev:all": "node scripts/dev.js",
-    "test": "node --test \"src/**/*.test.js\"",
+    "test": "node --test \"src/**/*.test.js\" \"scripts/**/*.test.js\"",
     "build": "vite build",
     "preview": "vite preview",
+    "predeploy": "node scripts/check-deploy.js",
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {

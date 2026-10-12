@@ -4,12 +4,12 @@ import { CATEGORIES } from '../../../config/categories'
 import { getMemberName, todayDateString } from '../../../core/utils/calculations'
 import { formDataToExpense, friendlySaveError, initialFormData } from '../../../core/utils/expenseForm'
 import { receiptUpload } from '../../../core/utils/image'
-import { boughtShoppingItems, formWithReceipt, fridgeItemsFrom, reviewItems } from '../receipt'
+import { boughtShoppingItems, formWithReceipt, fridgeItemsFrom, inventoryItemsFrom, reviewItems } from '../receipt'
 import ReceiptReview from './ReceiptReview'
 
 // Pass `expense` to edit it; without one the form adds a new expense.
 // With `onScanReceipt`, a new expense can be filled in from a receipt photo or PDF; onSubmit then also gets
-// { fridgeItems, boughtItems } for the receipt lines to add to the fridge and the shopping items to tick off.
+// { fridgeItems, inventoryItems, boughtItems }: receipt lines for the fridge and the inventory, and shopping items to tick off.
 export default function TransactionForm({
   members,
   onSubmit,
@@ -19,6 +19,7 @@ export default function TransactionForm({
   expense,
   onScanReceipt,
   shoppingItems = [],
+  inventoryGroups = [],
 }) {
   const isEditing = Boolean(expense)
   const defaultPayer = defaultPayerId || members[0]?.household_member_id || ''
@@ -105,7 +106,11 @@ export default function TransactionForm({
     setIsSaving(true)
     try {
       const fromReceipt = receiptItems
-        ? { fridgeItems: fridgeItemsFrom(receiptItems), boughtItems: matches.filter((item) => tickedIds.includes(item.id)) }
+        ? {
+          fridgeItems: fridgeItemsFrom(receiptItems),
+          inventoryItems: inventoryItemsFrom(receiptItems, formData.date),
+          boughtItems: matches.filter((item) => tickedIds.includes(item.id)),
+        }
         : undefined
       await onSubmit(formDataToExpense(formData), fromReceipt)
       if (!isEditing) {
@@ -345,6 +350,7 @@ export default function TransactionForm({
         <ReceiptReview
           items={receiptItems}
           onItemsChange={setReceiptItems}
+          inventoryGroups={inventoryGroups}
           matches={matches}
           tickedIds={tickedIds}
           onTickedChange={setTickedIds}

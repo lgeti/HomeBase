@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { canAcceptInvitation, canInvite, canRemoveMember, normalizeEmail } from '../src/authorization.js'
+import { canInvite, canRemoveMember } from '../src/authorization.js'
 
 const member = (id, role) => ({ household_member_id: id, role })
 const owner = member('owner-1', 'owner')
@@ -59,32 +59,5 @@ describe('canRemoveMember', () => {
   it('rejects missing actor or target', () => {
     assert.equal(canRemoveMember(null, regular), false)
     assert.equal(canRemoveMember(owner, null), false)
-  })
-})
-
-describe('canAcceptInvitation', () => {
-  const invitation = { invited_email: 'partner@example.com' }
-
-  it('accepts the invited email regardless of case and whitespace', () => {
-    assert.equal(canAcceptInvitation({ email: ' Partner@Example.com ' }, invitation), true)
-  })
-
-  it('rejects a different signed-in email', () => {
-    assert.equal(canAcceptInvitation({ email: 'someone-else@example.com' }, invitation), false)
-  })
-
-  it('rejects users without an email and invitations without one', () => {
-    assert.equal(canAcceptInvitation({}, invitation), false)
-    assert.equal(canAcceptInvitation({ email: 'partner@example.com' }, { invited_email: null }), false)
-  })
-})
-
-describe('normalizeEmail', () => {
-  it('trims and lowercases', () => {
-    assert.equal(normalizeEmail('  A@B.Com '), 'a@b.com')
-  })
-
-  it('handles missing values', () => {
-    assert.equal(normalizeEmail(undefined), '')
   })
 })

@@ -26,10 +26,10 @@ export const createHousehold = (name, ownerName, members = []) =>
 export const fetchMyHousehold = () => apiRequest('/api/households/me')
 
 // Pass memberId to invite an existing pending member, or displayName to add someone new
-export const createInvitation = (householdId, { email, memberId, displayName }) =>
+export const createInvitation = (householdId, { memberId, displayName }) =>
   apiRequest(`/api/households/${householdId}/invitations`, {
     method: 'POST',
-    body: JSON.stringify({ email, memberId, displayName }),
+    body: JSON.stringify({ memberId, displayName }),
   })
 
 export const updateMyDisplayName = (householdId, displayName) =>

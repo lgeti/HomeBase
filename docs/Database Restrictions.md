@@ -7,6 +7,7 @@ This document summarizes the constraints and behavior defined by the SQL scripts
 - `001_initial_schema.sql` creates the initial tables, relationships, indexes, categories, and RLS settings.
 - `002_multi_member_households.sql` adds authenticated ownership, membership roles/statuses, and invitations.
 - `003_recurring_occurrences.sql` adds `expenses.recurring_source_id` and the unique constraint that makes recurring generation duplicate-safe.
+- `013_link_invitations.sql` ties invitations to a pending member instead of an email address.
 - `999_reset_application_data.sql` deletes application data for development/testing while preserving the schema, categories, and Supabase Auth users.
 
 Run the numbered scripts in order: `001`, `002`, `003`.
@@ -89,8 +90,9 @@ The v3 migration adds:
 - `auth_user_id`: optional foreign key to `auth.users(id)`.
 - `role`: defaults to `member`; allowed values are `owner`, `admin`, and `member`.
 - `status`: defaults to `active`; allowed values are `pending`, `active`, and `removed`.
-- `invited_email`: optional email address associated with an invitation.
 - `invited_at`: optional invitation timestamp.
+
+`013_link_invitations.sql` drops `invited_email`; invites are no longer tied to an email.
 - `accepted_at`: optional acceptance timestamp.
 
 The database allows pending members without an authenticated user because `auth_user_id` is nullable. That supports invitation-based membership.
@@ -155,7 +157,7 @@ The v3 migration creates `household_invitations` with:
 
 - `invitation_id`: generated UUID primary key.
 - `household_id`: required household foreign key; deleting the household deletes its invitations.
-- `invited_email`: optional email field.
+- `household_member_id`: required pending-member foreign key (added by `013_link_invitations.sql`, which also drops `invited_email`); deleting the member deletes its invitations.
 - `invited_role`: required; only `admin` or `member` are allowed.
 - `token_hash`: required and unique. The raw invitation token should not be stored.
 - `expires_at`: required expiration timestamp.
@@ -208,7 +210,7 @@ Run the reset script only against a development or test project.
 
 1. The database currently permits ownerless households, but the application should not create them.
 2. `owner_user_id` and the owner's `household_members` row are separate pieces of data. The database does not automatically create or synchronize the membership row when `owner_user_id` changes.
-3. The invite endpoint does both steps in one request: it stores the invited email on a pending member (an existing one, or a new one it creates) and creates the invitation.
-4. A pending member may have `auth_user_id = NULL`; accepting an invitation sets the authenticated user's ID, marks the member active, and records acceptance. Acceptance is refused if the signed-in email differs from the invited email, or if the user already belongs to another household.
+3. The invite endpoint does both steps in one request: it marks a pending member as invited (an existing one, or a new one it creates) and creates an invitation for that member, revoking any older unused one.
+4. A pending member may have `auth_user_id = NULL`; accepting an invitation sets the authenticated user's ID, marks the member active, and records acceptance. Any signed-in account can accept a valid link; acceptance is refused if the user already belongs to a household.
 5. The backend should derive ownership from the verified token, never from a client-provided user ID.
 6. Role permissions are enforced by the backend (`server/src/authorization.js`): owners can invite admins or members and remove anyone except the owner; admins can invite and remove members; members can do neither. There are no RLS policies yet.

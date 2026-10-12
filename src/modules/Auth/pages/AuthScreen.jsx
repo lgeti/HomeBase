@@ -12,7 +12,7 @@ export default function AuthScreen({ isConfigured, onGoogleSignIn, onPasswordSig
     <>
       {hasPendingInvite() && (
         <div className="fixed inset-x-0 top-0 z-50 bg-hb-primary px-4 py-2 text-center text-sm text-hb-on-primary">
-          You've been invited to a household. Sign in or create an account with the email the invite was sent to.
+          You've been invited to a household. Sign in or create an account to join.
         </div>
       )}
       {mode === 'reset' ? (

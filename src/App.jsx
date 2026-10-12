@@ -440,6 +440,7 @@ export default function App() {
           <FridgeItemForm
             key={sheet.record?.id || 'new-fridge-item'}
             item={sheet.record}
+            location={fridgeTab === 'pantry' ? 'pantry' : 'fridge'}
             onSubmit={handleSaveFridgeItem}
             onDelete={handleDeleteFridgeItem}
             onCancel={closeSheet}

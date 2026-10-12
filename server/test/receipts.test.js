@@ -10,8 +10,8 @@ const answer = {
   total: 10.564,
   category: 'groceries',
   items: [
-    { receiptText: 'MLEKO 1L 3.2%', name: 'Milk 1 L', quantity: '', price: 1.19, isFood: true },
-    { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true },
+    { receiptText: 'MLEKO 1L 3.2%', name: 'Milk 1 L', quantity: '', price: 1.19, isFood: true, foodStorage: 'fridge' },
+    { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true, foodStorage: 'pantry' },
     { receiptText: 'WC PAPIR 8/1', name: 'Toilet paper', quantity: '8', price: 3.99, isFood: false, inventoryGroup: 'Bathroom' },
     { receiptText: 'SIR GAUDA', name: '', quantity: '0.25 kg', price: -1, isFood: 'yes' },
     { receiptText: '', name: '', quantity: '', price: 0, isFood: false },
@@ -26,10 +26,10 @@ describe('parseReceipt', () => {
       total: 10.56,
       categoryId: 'groceries',
       items: [
-        { receiptText: 'MLEKO 1L 3.2%', name: 'Milk 1 L', quantity: null, price: 1.19, isFood: true, inventoryGroup: 'Other' },
-        { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true, inventoryGroup: 'Other' },
-        { receiptText: 'WC PAPIR 8/1', name: 'Toilet paper', quantity: '8', price: 3.99, isFood: false, inventoryGroup: 'Bathroom' },
-        { receiptText: 'SIR GAUDA', name: 'SIR GAUDA', quantity: '0.25 kg', price: null, isFood: false, inventoryGroup: 'Other' },
+        { receiptText: 'MLEKO 1L 3.2%', name: 'Milk 1 L', quantity: null, price: 1.19, isFood: true, inventoryGroup: 'Other', foodStorage: 'fridge' },
+        { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true, inventoryGroup: 'Other', foodStorage: 'pantry' },
+        { receiptText: 'WC PAPIR 8/1', name: 'Toilet paper', quantity: '8', price: 3.99, isFood: false, inventoryGroup: 'Bathroom', foodStorage: 'fridge' },
+        { receiptText: 'SIR GAUDA', name: 'SIR GAUDA', quantity: '0.25 kg', price: null, isFood: false, inventoryGroup: 'Other', foodStorage: 'fridge' },
       ],
     })
   })

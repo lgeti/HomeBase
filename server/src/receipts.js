@@ -8,6 +8,9 @@ export const CATEGORY_IDS = ['car', 'subscriptions', 'groceries', 'entertainment
 // Where a non-food line would go in the household inventory (matched to the household's groups by name)
 export const INVENTORY_GROUPS = ['Appliances', 'Bathroom', 'Cleaning', 'Other']
 
+// Where a food line is usually kept at home
+export const FOOD_STORAGE = ['fridge', 'pantry']
+
 export const RECEIPT_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
 export const MAX_FILE_BYTES = 5 * 1024 * 1024
 const MAX_ITEMS = 100
@@ -32,8 +35,9 @@ export const RECEIPT_SCHEMA = {
           price: { type: 'number' },
           isFood: { type: 'boolean' },
           inventoryGroup: { type: 'string', enum: INVENTORY_GROUPS },
+          foodStorage: { type: 'string', enum: FOOD_STORAGE },
         },
-        required: ['receiptText', 'name', 'quantity', 'price', 'isFood', 'inventoryGroup'],
+        required: ['receiptText', 'name', 'quantity', 'price', 'isFood', 'inventoryGroup', 'foodStorage'],
       },
     },
   },
@@ -53,6 +57,7 @@ export const RECEIPT_PROMPT = `Read this shop receipt (a photo, or a PDF of a di
   - quantity: how many or how much was bought, e.g. "2" or "0.5 kg", or "" if just one.
   - price: the line's price as a number, or 0 if unclear.
   - isFood: true for food and drink, false for cleaning, bathroom, household and other non-food items.
+  - foodStorage: for food, "fridge" if it is kept cold (milk, meat, yogurt, fresh vegetables) or "pantry" if it keeps at room temperature (pasta, rice, flour, tins, bread, coffee); for non-food, "pantry".
   - inventoryGroup: for non-food, "Appliances" (devices and electronics), "Bathroom" (toiletries, toilet paper), "Cleaning" (detergents, sponges) or "Other"; for food, "Other".`
 
 const clean = (value, max) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '')
@@ -79,6 +84,7 @@ export const parseReceipt = (answer, today) => {
         price: Number.isFinite(item?.price) && item.price >= 0 ? Math.round(item.price * 100) / 100 : null,
         isFood: item?.isFood === true,
         inventoryGroup: INVENTORY_GROUPS.includes(item?.inventoryGroup) ? item.inventoryGroup : 'Other',
+        foodStorage: FOOD_STORAGE.includes(item?.foodStorage) ? item.foodStorage : 'fridge',
       }
     })
     .filter((item) => item.name)

@@ -7,6 +7,7 @@ const mapFridgeItem = (item) => ({
   quantity: item.quantity || undefined,
   expiresOn: item.expires_on || undefined,
   note: item.note || undefined,
+  location: item.location || 'fridge',
   addedByMemberId: item.added_by_member_id || undefined,
 })
 

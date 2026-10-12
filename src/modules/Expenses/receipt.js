@@ -1,9 +1,11 @@
 // Turning a scanned receipt into an expense, fridge and inventory items, and ticks on shopping lists
 import { foodWords } from '../Fridge/recipes.js'
 
-// Where a receipt line goes: 'fridge', 'inventory:<group id>', or 'skip'
+// Where a receipt line goes: 'fridge', 'pantry', 'inventory:<group id>', or 'skip'
 export const FRIDGE = 'fridge'
+export const PANTRY = 'pantry'
 export const SKIP = 'skip'
+const isFoodPlace = (destination) => destination === FRIDGE || destination === PANTRY
 export const toInventory = (groupId) => `inventory:${groupId}`
 export const inventoryGroupOf = (destination) => (destination?.startsWith('inventory:') ? destination.slice(10) : null)
 
@@ -11,11 +13,20 @@ export const inventoryGroupOf = (destination) => (destination?.startsWith('inven
 export const suggestedGroup = (item, groups) =>
   groups.find((group) => group.name.toLowerCase() === (item.inventoryGroup || '').toLowerCase()) || null
 
-// Receipt lines for review: food goes to the fridge; everything else is offered for the inventory but not added
-export const reviewItems = (items) => items.map((item, index) => ({ ...item, key: index, destination: item.isFood ? FRIDGE : SKIP }))
+// Receipt lines for review: food goes where the reader says it is kept (fridge or pantry);
+// everything else is offered for the inventory but not added
+export const reviewItems = (items) =>
+  items.map((item, index) => ({
+    ...item,
+    key: index,
+    destination: item.isFood ? (item.foodStorage === PANTRY ? PANTRY : FRIDGE) : SKIP,
+  }))
 
+// Food for the fridge and the pantry, each with its place
 export const fridgeItemsFrom = (items) =>
-  items.filter((item) => item.destination === FRIDGE && item.name.trim()).map((item) => ({ name: item.name.trim(), quantity: item.quantity || '' }))
+  items
+    .filter((item) => isFoodPlace(item.destination) && item.name.trim())
+    .map((item) => ({ name: item.name.trim(), quantity: item.quantity || '', location: item.destination }))
 
 // Inventory items from the receipt, with its price and the purchase date
 export const inventoryItemsFrom = (items, purchasedOn) =>

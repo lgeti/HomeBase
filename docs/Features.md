@@ -4,7 +4,7 @@
 
 - Bottom bar: Money, Shopping, + (add), Home, Chores
 - Money holds the expense list and the dashboard as two tabs
-- Home holds three tabs: Fridge, Recipes and Inventory
+- Home holds four tabs: Fridge, Pantry, Recipes and Inventory
 - + adds what fits the section: an expense, a shopping item, a fridge item, a recipe, an inventory item, or a chore
 - Household is the button in the header; tapping it again goes back
 
@@ -21,10 +21,10 @@
 ## Scan a receipt
 
 - When adding an expense, **Scan receipt** takes a photo and **Photo or PDF** picks a photo or a digital receipt PDF (for example IKEA's); Google Gemini reads the shop, date, total, category and every line, turning receipt shorthand into readable English names ("MLEKO 1L 3.2%" → "Milk 1L 3.2%")
-- Nothing is saved until you press Add: the expense fields are filled in and editable, and under them each line has an editable name and a choice of where it goes: **Fridge** (food starts here), an **inventory group** (non-food lines suggest one, such as Bathroom for toilet paper, listed first) or **Don't add** (where non-food starts)
+- Nothing is saved until you press Add: the expense fields are filled in and editable, and under them each line has an editable name and a choice of where it goes: **Fridge** or **Pantry** (food starts where the reader says it is kept: milk and meat in the fridge, pasta and coffee in the pantry), an **inventory group** (non-food lines suggest one, such as Bathroom for toilet paper, listed first) or **Don't add** (where non-food starts)
 - Open shopping list items that match what was bought are offered for ticking off in the same step
 - Inventory items marked running low that the receipt restocks are offered under **Mark restocked** (ticked by default), which clears their running-low flag
-- On Add: the expense is saved, lines go to the fridge (no expiry date; add one later) or the inventory (with the line's price and the receipt date), and the chosen shopping items are marked bought
+- On Add: the expense is saved, lines go to the fridge or pantry (no expiry date; add one later) or the inventory (with the line's price and the receipt date), and the chosen shopping items are marked bought
 - Photos are shrunk in the browser before upload and PDFs are sent as they are (at most 5 MB); neither is kept or logged; dates in the future or over a year old are ignored; a photo that isn't a readable receipt leaves the form as it was
 - Needs `GEMINI_API_KEY` on the API server, like recipe suggestions; limited to 20 scans per household per hour
 
@@ -50,9 +50,10 @@
 - The API only reads public https pages, with a time and size limit, and never private network addresses
 - Deleted lists and items stay in the database but are hidden
 
-## Fridge
+## Fridge and Pantry (Home → Fridge, Home → Pantry)
 
-- What's in the fridge: name, quantity, optional expiry date and note
+- Food at home, kept in the **Fridge** or the **Pantry** (each its own tab, working the same way); the item sheet has a Fridge | Pantry choice, so food can be moved
+- Each item: name, quantity, optional expiry date and note
 - Quick add at the top; + opens the full sheet with quick expiry buttons (Today, 3 days, 1 week, 2 weeks)
 - "Use soon" at the top: expired items (in red) and items expiring within 3 days, soonest first; then everything else, dated items first
 - "Used up" removes an item and can put it on a shopping list you pick; "Just remove" only removes it
@@ -63,11 +64,12 @@
 
 - The household's own recipes: name, ingredients (one per line), steps, an optional link, and a favourite star
 - Ranked against what is in the fridge, best first: recipes that use food expiring soon (already expired a little more), then fewer missing ingredients, favourites higher, and lower if cooked in the last week
+- Recipes match against food in both the fridge and the pantry
 - Matching is forgiving: "50 g ham" finds "half a pack of ham", "tomatoes" finds "Cherry tomatoes"; salt, pepper, oil and water always count as at home
 - Each recipe shows "You have 2 of 3", which fridge items it would use up, and what is missing; tap it for the ingredients (ticked or not), steps and link
 - "Add missing to list" puts the missing ingredients on a shopping list you pick; "Cooked it" records today
 - + on the Recipes tab adds a recipe; Edit changes or deletes one (with a confirmation)
-- **Suggest recipes from the fridge:** Google Gemini suggests 3 recipes in English that use what is in the fridge, especially what expires soon; each shows what you have, and "Save recipe" keeps it. Only food names, quantities and expiry go to Google, never people's names. Needs `GEMINI_API_KEY` on the API server (and optionally `GEMINI_MODEL`); limited to 10 requests per household per hour. Gemini's free tier may use requests to improve Google's models
+- **Suggest recipes from the fridge:** Google Gemini suggests 3 recipes in English that use the food in the fridge and pantry, especially what expires soon; each shows what you have, and "Save recipe" keeps it. Only food names, quantities and expiry go to Google, never people's names. Needs `GEMINI_API_KEY` on the API server (and optionally `GEMINI_MODEL`); limited to 10 requests per household per hour. Gemini's free tier may use requests to improve Google's models
 
 ## Inventory (Home → Inventory)
 

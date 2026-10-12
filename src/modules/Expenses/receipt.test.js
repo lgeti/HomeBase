@@ -1,43 +1,61 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { boughtShoppingItems, formWithReceipt, fridgeItemsFrom, reviewItems } from './receipt.js'
+import {
+  boughtShoppingItems,
+  formWithReceipt,
+  fridgeItemsFrom,
+  inventoryGroupOf,
+  inventoryItemsFrom,
+  reviewItems,
+  SKIP,
+  suggestedGroup,
+  toInventory,
+} from './receipt.js'
 
 const scanned = [
-  { receiptText: 'MLEKO 1L 3.2%', name: 'Milk 1 L', quantity: null, price: 1.19, isFood: true },
-  { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true },
-  { receiptText: 'WC PAPIR 8/1', name: 'Toilet paper', quantity: '8', price: 3.99, isFood: false },
+  { receiptText: 'MLEKO 1L 3.2%', name: 'Milk 1 L', quantity: null, price: 1.19, isFood: true, inventoryGroup: 'Other' },
+  { receiptText: 'JAJCA M 10/1', name: 'Eggs', quantity: '10', price: 2.89, isFood: true, inventoryGroup: 'Other' },
+  { receiptText: 'WC PAPIR 8/1', name: 'Toilet paper', quantity: '8', price: 3.99, isFood: false, inventoryGroup: 'Bathroom' },
 ]
+const groups = [{ id: 'g-app', name: 'Appliances' }, { id: 'g-bath', name: 'Bathroom' }, { id: 'g-clean', name: 'Cleaning' }]
 
 describe('reviewItems', () => {
-  it('ticks food for the fridge and leaves the rest', () => {
-    assert.deepEqual(reviewItems(scanned).map((item) => [item.key, item.toFridge]), [[0, true], [1, true], [2, false]])
+  it('sends food to the fridge and leaves the rest out until chosen', () => {
+    assert.deepEqual(reviewItems(scanned).map((item) => [item.key, item.destination]), [[0, 'fridge'], [1, 'fridge'], [2, SKIP]])
   })
 })
 
-describe('fridgeItemsFrom', () => {
-  it('makes fridge items from the ticked lines', () => {
+describe('suggestedGroup', () => {
+  it("matches the reader's suggestion to the household's group by name", () => {
+    assert.equal(suggestedGroup(scanned[2], groups).id, 'g-bath')
+    assert.equal(suggestedGroup(scanned[0], groups), null)
+  })
+})
+
+describe('fridgeItemsFrom and inventoryItemsFrom', () => {
+  it('split the lines by where they go', () => {
     const items = reviewItems(scanned)
-    items[0].toFridge = false
+    items[0].destination = SKIP
+    items[2].destination = toInventory('g-bath')
     assert.deepEqual(fridgeItemsFrom(items), [{ name: 'Eggs', quantity: '10' }])
+    assert.deepEqual(inventoryItemsFrom(items, '2026-10-11'), [
+      { groupId: 'g-bath', name: 'Toilet paper', quantity: '8', price: 3.99, purchasedOn: '2026-10-11' },
+    ])
+    assert.equal(inventoryGroupOf('fridge'), null)
   })
 })
 
 describe('boughtShoppingItems', () => {
   const shopping = [
     { id: 's1', name: 'Milk', kind: 'buy', status: 'open' },
-    { id: 's2', name: 'eggs (free range)', kind: 'buy', status: 'open' },
+    { id: 's2', name: 'toilet paper', kind: 'buy', status: 'open' },
     { id: 's3', name: 'Bread', kind: 'buy', status: 'open' },
     { id: 's4', name: 'Milk', kind: 'buy', status: 'bought' },
     { id: 's5', name: 'Old milk jug', kind: 'sell', status: 'listed' },
   ]
 
-  it('finds open items to buy that match what went to the fridge', () => {
+  it('finds open items to buy that match anything on the receipt', () => {
     assert.deepEqual(boughtShoppingItems(reviewItems(scanned), shopping).map((item) => item.id), ['s1', 's2'])
-  })
-
-  it('ignores lines that are not going to the fridge', () => {
-    const items = reviewItems(scanned).map((item) => ({ ...item, toFridge: false }))
-    assert.deepEqual(boughtShoppingItems(items, shopping), [])
   })
 })
 

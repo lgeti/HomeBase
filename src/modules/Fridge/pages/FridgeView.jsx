@@ -104,12 +104,13 @@ function FridgeRow({ item, today, onEdit, onUsedUp }) {
 }
 
 const TABS = [
-  { id: 'items', label: 'In the fridge' },
+  { id: 'items', label: 'Fridge' },
   { id: 'recipes', label: 'Recipes' },
+  { id: 'inventory', label: 'Inventory' },
 ]
 
-// The fridge's contents, or (on the Recipes tab) `recipesView`
-export default function FridgeView({ tab, onTabChange, recipesView, items, lists, isLoading, error, onQuickAdd, onEditItem, onUsedUp }) {
+// The Home section: the fridge's contents, or `recipesView` / `inventoryView` on those tabs
+export default function FridgeView({ tab, onTabChange, recipesView, inventoryView, items, lists, isLoading, error, onQuickAdd, onEditItem, onUsedUp }) {
   const [usedUpId, setUsedUpId] = useState(null)
   const [quickName, setQuickName] = useState('')
   const [quickError, setQuickError] = useState('')
@@ -146,14 +147,14 @@ export default function FridgeView({ tab, onTabChange, recipesView, items, lists
     <div className="h-full overflow-y-auto pb-28">
       <div className="max-w-lg mx-auto p-4 space-y-3">
         <div>
-          <h2 className="text-2xl font-semibold text-hb-text">Fridge</h2>
+          <h2 className="text-2xl font-semibold text-hb-text">Home</h2>
           <p className="text-xs text-hb-text2">
-            {items.length === 0 ? 'Empty' : `${items.length} item${items.length === 1 ? '' : 's'}`}
+            Fridge: {items.length === 0 ? 'empty' : `${items.length} item${items.length === 1 ? '' : 's'}`}
             {useSoon.length > 0 && ` · ${useSoon.length} to use soon`}
           </p>
         </div>
 
-        <div role="tablist" aria-label="Fridge" className="grid grid-cols-2 gap-1 rounded-[14px] bg-hb-surface2 p-1">
+        <div role="tablist" aria-label="Home" className="grid grid-cols-3 gap-1 rounded-[14px] bg-hb-surface2 p-1">
           {TABS.map((option) => {
             const isOn = tab === option.id
             return (
@@ -173,7 +174,7 @@ export default function FridgeView({ tab, onTabChange, recipesView, items, lists
           })}
         </div>
 
-        {tab === 'recipes' ? recipesView : (
+        {tab === 'recipes' ? recipesView : tab === 'inventory' ? inventoryView : (
           <>
             {error && <p className="rounded-xl bg-hb-danger-bg px-3 py-2 text-sm text-hb-danger">{error}</p>}
 

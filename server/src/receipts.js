@@ -1,12 +1,12 @@
-// Reading a receipt photo. Pure functions so they can be tested without the AI.
+// Reading a receipt from a photo or a PDF (digital receipts). Pure functions so they can be tested without the AI.
 import { isRealDate } from './chores.js'
 import { daysBetween } from './recipeSuggestions.js'
 
 // The expense categories (the same ids as the categories table)
 export const CATEGORY_IDS = ['car', 'subscriptions', 'groceries', 'entertainment', 'going-out', 'utilities', 'home', 'other']
 
-export const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+export const RECEIPT_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+export const MAX_FILE_BYTES = 5 * 1024 * 1024
 const MAX_ITEMS = 100
 
 // What the model must answer with; unknown values come back empty or 0
@@ -36,9 +36,9 @@ export const RECEIPT_SCHEMA = {
   required: ['isReceipt', 'shop', 'date', 'total', 'category', 'items'],
 }
 
-export const RECEIPT_PROMPT = `Read this shop receipt photo. The receipt may be in any language (often Slovenian).
+export const RECEIPT_PROMPT = `Read this shop receipt (a photo, or a PDF of a digital receipt). The receipt may be in any language (often Slovenian).
 
-- isReceipt: false if the photo is not a shop receipt.
+- isReceipt: false if this is not a shop receipt.
 - shop: the shop's name as people say it (e.g. "Mercator", "Lidl"), not the company's legal name.
 - date: the purchase date as YYYY-MM-DD, or "" if you cannot read it.
 - total: the amount paid, as a number, or 0 if you cannot read it.
@@ -60,7 +60,7 @@ const receiptDate = (value, today) => {
   return age >= 0 && age <= 366 ? value : null
 }
 
-// Cleans the model's answer; returns null when the photo was not a readable receipt
+// Cleans the model's answer; returns null when the file was not a readable receipt
 export const parseReceipt = (answer, today) => {
   if (!answer || answer.isReceipt === false) return null
 
@@ -88,11 +88,11 @@ export const parseReceipt = (answer, today) => {
   return receipt.total || items.length ? receipt : null
 }
 
-// Checks the uploaded photo: { mimeType, data } with base64 data
-export const validateReceiptImage = (image) => {
-  if (!image || typeof image.data !== 'string' || !image.data) return 'Add a photo of the receipt'
-  if (!IMAGE_TYPES.includes(image.mimeType)) return 'The photo must be a JPEG, PNG or WebP image'
-  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(image.data)) return 'The photo could not be read'
-  if (Math.floor((image.data.length * 3) / 4) > MAX_IMAGE_BYTES) return 'The photo is too large'
+// Checks the uploaded receipt: { mimeType, data } with base64 data
+export const validateReceiptFile = (file) => {
+  if (!file || typeof file.data !== 'string' || !file.data) return 'Add a photo or PDF of the receipt'
+  if (!RECEIPT_FILE_TYPES.includes(file.mimeType)) return 'The receipt must be a photo (JPEG, PNG or WebP) or a PDF'
+  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(file.data)) return 'The file could not be read'
+  if (Math.floor((file.data.length * 3) / 4) > MAX_FILE_BYTES) return 'The file is too large (at most 5 MB)'
   return null
 }

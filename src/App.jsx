@@ -390,7 +390,7 @@ export default function App() {
             onCancel={closeSheet}
             defaultCategoryId={selectedCategoryId}
             defaultPayerId={joinedMembers.find((member) => member.auth_user_id === authUserId)?.household_member_id}
-            onScanReceipt={(image, today) => scanReceipt(household.household_id, image, today)}
+            onScanReceipt={(file, today) => scanReceipt(household.household_id, file, today)}
             shoppingItems={shopping.items}
           />
         ) : null}

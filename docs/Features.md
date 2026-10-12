@@ -23,6 +23,7 @@
 - When adding an expense, **Scan receipt** takes a photo and **Photo or PDF** picks a photo or a digital receipt PDF (for example IKEA's); Google Gemini reads the shop, date, total, category and every line, turning receipt shorthand into readable English names ("MLEKO 1L 3.2%" → "Milk 1L 3.2%")
 - Nothing is saved until you press Add: the expense fields are filled in and editable, and under them each line has an editable name and a choice of where it goes: **Fridge** (food starts here), an **inventory group** (non-food lines suggest one, such as Bathroom for toilet paper, listed first) or **Don't add** (where non-food starts)
 - Open shopping list items that match what was bought are offered for ticking off in the same step
+- Inventory items marked running low that the receipt restocks are offered under **Mark restocked** (ticked by default), which clears their running-low flag
 - On Add: the expense is saved, lines go to the fridge (no expiry date; add one later) or the inventory (with the line's price and the receipt date), and the chosen shopping items are marked bought
 - Photos are shrunk in the browser before upload and PDFs are sent as they are (at most 5 MB); neither is kept or logged; dates in the future or over a year old are ignored; a photo that isn't a readable receipt leaves the form as it was
 - Needs `GEMINI_API_KEY` on the API server, like recipe suggestions; limited to 20 scans per household per hour

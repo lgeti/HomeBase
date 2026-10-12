@@ -37,6 +37,13 @@ export const boughtShoppingItems = (items, shoppingItems) => {
     item.kind === 'buy' && item.status === 'open' && foodWords(item.name).some((word) => words.has(word)))
 }
 
+// Inventory items marked running low that this receipt restocks: they share a word with a line on it
+export const restockedInventoryItems = (items, inventoryItems) => {
+  const words = new Set(items.flatMap((item) => foodWords(item.name)))
+  if (words.size === 0) return []
+  return inventoryItems.filter((item) => item.isRunningLow && foodWords(item.name).some((word) => words.has(word)))
+}
+
 // The expense form after a scan: only what the receipt actually told us is changed
 export const formWithReceipt = (formData, receipt) => ({
   ...formData,

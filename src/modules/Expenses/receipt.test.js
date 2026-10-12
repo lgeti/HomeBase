@@ -6,6 +6,7 @@ import {
   fridgeItemsFrom,
   inventoryGroupOf,
   inventoryItemsFrom,
+  restockedInventoryItems,
   reviewItems,
   SKIP,
   suggestedGroup,
@@ -56,6 +57,17 @@ describe('boughtShoppingItems', () => {
 
   it('finds open items to buy that match anything on the receipt', () => {
     assert.deepEqual(boughtShoppingItems(reviewItems(scanned), shopping).map((item) => item.id), ['s1', 's2'])
+  })
+})
+
+describe('restockedInventoryItems', () => {
+  it('finds running-low inventory items that the receipt bought', () => {
+    const inventory = [
+      { id: 'i1', name: 'Toilet paper', isRunningLow: true },
+      { id: 'i2', name: 'Toilet cleaner', isRunningLow: false },
+      { id: 'i3', name: 'Dish soap', isRunningLow: true },
+    ]
+    assert.deepEqual(restockedInventoryItems(reviewItems(scanned), inventory).map((item) => item.id), ['i1'])
   })
 })
 

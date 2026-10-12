@@ -140,3 +140,11 @@ body {
   height: 100vh;
   max-width: 100%;
 }
+
+/* iPhone Safari zooms into a text field whose text is smaller than 16px when it is tapped, and does not
+   zoom back out afterwards. On touch screens, small fields get 16px text so there is nothing to zoom. */
+@media (pointer: coarse) {
+  :is(input, select, textarea):is(.text-xs, .text-sm) {
+    font-size: 16px;
+  }
+}

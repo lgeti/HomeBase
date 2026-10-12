@@ -3,12 +3,12 @@ import Icon, { CategoryIcon } from '../../../components/Icon'
 import { CATEGORIES } from '../../../config/categories'
 import { getMemberName, todayDateString } from '../../../core/utils/calculations'
 import { formDataToExpense, friendlySaveError, initialFormData } from '../../../core/utils/expenseForm'
-import { shrinkPhoto } from '../../../core/utils/image'
+import { receiptUpload } from '../../../core/utils/image'
 import { boughtShoppingItems, formWithReceipt, fridgeItemsFrom, reviewItems } from '../receipt'
 import ReceiptReview from './ReceiptReview'
 
 // Pass `expense` to edit it; without one the form adds a new expense.
-// With `onScanReceipt`, a new expense can be filled in from a receipt photo; onSubmit then also gets
+// With `onScanReceipt`, a new expense can be filled in from a receipt photo or PDF; onSubmit then also gets
 // { fridgeItems, boughtItems } for the receipt lines to add to the fridge and the shopping items to tick off.
 export default function TransactionForm({
   members,
@@ -34,7 +34,9 @@ export default function TransactionForm({
   const [tickedIds, setTickedIds] = useState([])
   const [isScanning, setIsScanning] = useState(false)
   const [scanError, setScanError] = useState('')
-  const photoInput = useRef(null)
+  // Two ways in: the camera, or a photo or PDF already on the device (digital receipts)
+  const cameraInput = useRef(null)
+  const fileInput = useRef(null)
   const matches = receiptItems ? boughtShoppingItems(receiptItems, shoppingItems) : []
 
   // A failed scan leaves the form as it was, so the expense can still be typed in
@@ -43,7 +45,7 @@ export default function TransactionForm({
     setScanError('')
     setIsScanning(true)
     try {
-      const receipt = await onScanReceipt(await shrinkPhoto(file), todayDateString())
+      const receipt = await onScanReceipt(await receiptUpload(file), todayDateString())
       const items = reviewItems(receipt.items)
       setFormData((prev) => formWithReceipt(prev, receipt))
       setErrors({})
@@ -53,7 +55,7 @@ export default function TransactionForm({
       setScanError(friendlySaveError(failure))
     } finally {
       setIsScanning(false)
-      if (photoInput.current) photoInput.current.value = ''
+      for (const input of [cameraInput.current, fileInput.current]) if (input) input.value = ''
     }
   }
 
@@ -130,7 +132,7 @@ export default function TransactionForm({
       {!isEditing && onScanReceipt && (
         <div>
           <input
-            ref={photoInput}
+            ref={cameraInput}
             type="file"
             accept="image/*"
             capture="environment"
@@ -138,16 +140,37 @@ export default function TransactionForm({
             className="sr-only"
             id="receiptPhoto"
           />
-          <label
-            htmlFor="receiptPhoto"
-            aria-disabled={isScanning}
-            className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-hb-primary/40 bg-hb-primary-tint py-2.5 text-sm font-semibold text-hb-primary ${
-              isScanning ? 'pointer-events-none opacity-60' : ''
-            }`}
-          >
-            <Icon name="receipt" size={16} />
-            {isScanning ? 'Reading the receipt…' : receiptItems ? 'Scan a different receipt' : 'Scan receipt'}
-          </label>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*,application/pdf,.pdf"
+            onChange={(event) => scan(event.target.files?.[0])}
+            className="sr-only"
+            id="receiptFile"
+          />
+          {isScanning ? (
+            <p className="flex items-center justify-center gap-2 rounded-xl border border-hb-primary/40 bg-hb-primary-tint py-2.5 text-sm font-semibold text-hb-primary">
+              <Icon name="receipt" size={16} />
+              Reading the receipt…
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <label
+                htmlFor="receiptPhoto"
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-hb-primary/40 bg-hb-primary-tint py-2.5 text-sm font-semibold text-hb-primary"
+              >
+                <Icon name="receipt" size={16} />
+                {receiptItems ? 'New photo' : 'Scan receipt'}
+              </label>
+              <label
+                htmlFor="receiptFile"
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-hb-input bg-hb-field py-2.5 text-sm font-semibold text-hb-text"
+              >
+                <Icon name="upload" size={16} />
+                Photo or PDF
+              </label>
+            </div>
+          )}
           {scanError && <p role="alert" className="mt-1.5 text-xs text-hb-danger">{scanError}</p>}
         </div>
       )}

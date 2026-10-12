@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { MAX_IMAGE_BYTES, parseReceipt, validateReceiptImage } from '../src/receipts.js'
+import { MAX_FILE_BYTES, parseReceipt, validateReceiptFile } from '../src/receipts.js'
 
 const today = '2026-10-12'
 const answer = {
@@ -54,15 +54,16 @@ describe('parseReceipt', () => {
   })
 })
 
-describe('validateReceiptImage', () => {
-  it('accepts a small JPEG', () => {
-    assert.equal(validateReceiptImage({ mimeType: 'image/jpeg', data: 'aGVsbG8=' }), null)
+describe('validateReceiptFile', () => {
+  it('accepts a small JPEG or PDF', () => {
+    assert.equal(validateReceiptFile({ mimeType: 'image/jpeg', data: 'aGVsbG8=' }), null)
+    assert.equal(validateReceiptFile({ mimeType: 'application/pdf', data: 'JVBERi0xLjQ=' }), null)
   })
 
-  it('rejects missing, wrong-type, broken and oversized photos', () => {
-    assert.match(validateReceiptImage(null), /Add a photo/)
-    assert.match(validateReceiptImage({ mimeType: 'application/pdf', data: 'aGVsbG8=' }), /JPEG/)
-    assert.match(validateReceiptImage({ mimeType: 'image/png', data: 'not base64!' }), /could not be read/)
-    assert.match(validateReceiptImage({ mimeType: 'image/png', data: 'A'.repeat(Math.ceil((MAX_IMAGE_BYTES + 10) * 4 / 3)) }), /too large/)
+  it('rejects missing, wrong-type, broken and oversized files', () => {
+    assert.match(validateReceiptFile(null), /Add a photo or PDF/)
+    assert.match(validateReceiptFile({ mimeType: 'text/html', data: 'aGVsbG8=' }), /photo .* or a PDF/)
+    assert.match(validateReceiptFile({ mimeType: 'image/png', data: 'not base64!' }), /could not be read/)
+    assert.match(validateReceiptFile({ mimeType: 'application/pdf', data: 'A'.repeat(Math.ceil((MAX_FILE_BYTES + 10) * 4 / 3)) }), /too large/)
   })
 })

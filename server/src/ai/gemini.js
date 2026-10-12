@@ -15,7 +15,7 @@ export class AiError extends Error {
 export const isAiConfigured = () => Boolean(process.env.GEMINI_API_KEY)
 
 // Asks the model for JSON matching `schema` (an OpenAPI-style schema) and returns it parsed.
-// `images` ([{ mimeType, data }] with base64 data) are sent along for the model to read.
+// `images` ([{ mimeType, data }] with base64 data; photos or PDFs) are sent along for the model to read.
 export const generateJson = async ({ prompt, schema, images = [], temperature = 0.8 }) => {
   if (!isAiConfigured()) throw new AiError('AI features are not set up yet (no AI key on the server)', 503)
 

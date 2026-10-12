@@ -2,9 +2,10 @@
 
 ## Navigation
 
-- Bottom bar: Money, Shopping, + (add), Fridge, Chores
+- Bottom bar: Money, Shopping, + (add), Home, Chores
 - Money holds the expense list and the dashboard as two tabs
-- + adds what fits the section: an expense, a shopping item, a fridge item, or a chore
+- Home holds three tabs: Fridge, Recipes and Inventory
+- + adds what fits the section: an expense, a shopping item, a fridge item, a recipe, an inventory item, or a chore
 - Household is the button in the header; tapping it again goes back
 
 ## Expenses
@@ -20,9 +21,10 @@
 ## Scan a receipt
 
 - When adding an expense, **Scan receipt** takes a photo and **Photo or PDF** picks a photo or a digital receipt PDF (for example IKEA's); Google Gemini reads the shop, date, total, category and every line, turning receipt shorthand into readable English names ("MLEKO 1L 3.2%" → "Milk 1L 3.2%")
-- Nothing is saved until you press Add: the expense fields are filled in and editable, and under them each line has an **Add to fridge** tick (food ticked, non-food not) and an editable name
+- Nothing is saved until you press Add: the expense fields are filled in and editable, and under them each line has an editable name and a choice of where it goes: **Fridge** (food starts here), an **inventory group** (non-food lines suggest one, such as Bathroom for toilet paper, listed first) or **Don't add** (where non-food starts)
 - Open shopping list items that match what was bought are offered for ticking off in the same step
-- On Add: the expense is saved, ticked lines go to the fridge (no expiry date; add one later), and the chosen shopping items are marked bought
+- Inventory items marked running low that the receipt restocks are offered under **Mark restocked** (ticked by default), which clears their running-low flag
+- On Add: the expense is saved, lines go to the fridge (no expiry date; add one later) or the inventory (with the line's price and the receipt date), and the chosen shopping items are marked bought
 - Photos are shrunk in the browser before upload and PDFs are sent as they are (at most 5 MB); neither is kept or logged; dates in the future or over a year old are ignored; a photo that isn't a readable receipt leaves the form as it was
 - Needs `GEMINI_API_KEY` on the API server, like recipe suggestions; limited to 20 scans per household per hour
 
@@ -57,7 +59,7 @@
 - Tap an item to edit or delete it (delete is for mistakes, with a confirmation)
 - Removed items stay in the database but are hidden; the database records whether each was used up or deleted
 
-## Recipes (Fridge → Recipes)
+## Recipes (Home → Recipes)
 
 - The household's own recipes: name, ingredients (one per line), steps, an optional link, and a favourite star
 - Ranked against what is in the fridge, best first: recipes that use food expiring soon (already expired a little more), then fewer missing ingredients, favourites higher, and lower if cooked in the last week
@@ -66,6 +68,14 @@
 - "Add missing to list" puts the missing ingredients on a shopping list you pick; "Cooked it" records today
 - + on the Recipes tab adds a recipe; Edit changes or deletes one (with a confirmation)
 - **Suggest recipes from the fridge:** Google Gemini suggests 3 recipes in English that use what is in the fridge, especially what expires soon; each shows what you have, and "Save recipe" keeps it. Only food names, quantities and expiry go to Google, never people's names. Needs `GEMINI_API_KEY` on the API server (and optionally `GEMINI_MODEL`); limited to 10 requests per household per hour. Gemini's free tier may use requests to improve Google's models
+
+## Inventory (Home → Inventory)
+
+- What the household owns beyond the fridge, in groups; a household starts with Appliances, Bathroom and Cleaning, and "+ New group" adds your own (rename or delete from the ⋯ menu, with a confirmation)
+- An item has a name, quantity, price, purchase date, warranty end and note; quick buttons set a 1, 2, 3 or 5 year warranty from the purchase date
+- Warranties show "Warranty until …", "Warranty ends in N days" (amber, within 60 days) or "Warranty ended …"
+- **Running low** puts the item on a shopping list you pick (or just marks it) and moves it to the top in amber; **Restocked** clears it; each group tab counts what is running low
+- Quick add at the top of a group; tap an item to edit, move or delete it
 
 ## Chores
 

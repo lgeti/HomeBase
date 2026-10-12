@@ -4,7 +4,7 @@ const TABS = [
   { view: 'money', label: 'Money', icon: 'wallet' },
   { view: 'shopping', label: 'Shopping', icon: 'cart' },
   { view: 'add', label: 'Add', icon: 'plus' },
-  { view: 'fridge', label: 'Fridge', icon: 'fridge' },
+  { view: 'fridge', label: 'Home', icon: 'house' },
   { view: 'chores', label: 'Chores', icon: 'chores' },
 ]
 

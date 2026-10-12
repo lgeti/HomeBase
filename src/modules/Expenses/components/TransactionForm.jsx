@@ -4,12 +4,13 @@ import { CATEGORIES } from '../../../config/categories'
 import { getMemberName, todayDateString } from '../../../core/utils/calculations'
 import { formDataToExpense, friendlySaveError, initialFormData } from '../../../core/utils/expenseForm'
 import { receiptUpload } from '../../../core/utils/image'
-import { boughtShoppingItems, formWithReceipt, fridgeItemsFrom, reviewItems } from '../receipt'
+import { boughtShoppingItems, formWithReceipt, fridgeItemsFrom, inventoryItemsFrom, restockedInventoryItems, reviewItems } from '../receipt'
 import ReceiptReview from './ReceiptReview'
 
 // Pass `expense` to edit it; without one the form adds a new expense.
 // With `onScanReceipt`, a new expense can be filled in from a receipt photo or PDF; onSubmit then also gets
-// { fridgeItems, boughtItems } for the receipt lines to add to the fridge and the shopping items to tick off.
+// { fridgeItems, inventoryItems, boughtItems, restockedItems }: receipt lines for the fridge and the inventory, shopping
+// items to tick off, and running-low inventory items to mark restocked.
 export default function TransactionForm({
   members,
   onSubmit,
@@ -19,6 +20,8 @@ export default function TransactionForm({
   expense,
   onScanReceipt,
   shoppingItems = [],
+  inventoryGroups = [],
+  inventoryItems = [],
 }) {
   const isEditing = Boolean(expense)
   const defaultPayer = defaultPayerId || members[0]?.household_member_id || ''
@@ -32,12 +35,14 @@ export default function TransactionForm({
   // Receipt lines under review, and which matching shopping items to tick off
   const [receiptItems, setReceiptItems] = useState(null)
   const [tickedIds, setTickedIds] = useState([])
+  const [restockIds, setRestockIds] = useState([])
   const [isScanning, setIsScanning] = useState(false)
   const [scanError, setScanError] = useState('')
   // Two ways in: the camera, or a photo or PDF already on the device (digital receipts)
   const cameraInput = useRef(null)
   const fileInput = useRef(null)
   const matches = receiptItems ? boughtShoppingItems(receiptItems, shoppingItems) : []
+  const restockMatches = receiptItems ? restockedInventoryItems(receiptItems, inventoryItems) : []
 
   // A failed scan leaves the form as it was, so the expense can still be typed in
   const scan = async (file) => {
@@ -51,6 +56,7 @@ export default function TransactionForm({
       setErrors({})
       setReceiptItems(items)
       setTickedIds(boughtShoppingItems(items, shoppingItems).map((item) => item.id))
+      setRestockIds(restockedInventoryItems(items, inventoryItems).map((item) => item.id))
     } catch (failure) {
       setScanError(friendlySaveError(failure))
     } finally {
@@ -105,7 +111,12 @@ export default function TransactionForm({
     setIsSaving(true)
     try {
       const fromReceipt = receiptItems
-        ? { fridgeItems: fridgeItemsFrom(receiptItems), boughtItems: matches.filter((item) => tickedIds.includes(item.id)) }
+        ? {
+          fridgeItems: fridgeItemsFrom(receiptItems),
+          inventoryItems: inventoryItemsFrom(receiptItems, formData.date),
+          boughtItems: matches.filter((item) => tickedIds.includes(item.id)),
+          restockedItems: restockMatches.filter((item) => restockIds.includes(item.id)),
+        }
         : undefined
       await onSubmit(formDataToExpense(formData), fromReceipt)
       if (!isEditing) {
@@ -345,9 +356,13 @@ export default function TransactionForm({
         <ReceiptReview
           items={receiptItems}
           onItemsChange={setReceiptItems}
+          inventoryGroups={inventoryGroups}
           matches={matches}
           tickedIds={tickedIds}
           onTickedChange={setTickedIds}
+          restockMatches={restockMatches}
+          restockIds={restockIds}
+          onRestockChange={setRestockIds}
         />
       )}
 

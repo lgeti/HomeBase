@@ -2,6 +2,9 @@ import { supabase } from '../auth/supabaseClient'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
+// A random id for this open copy of the app. Live updates carry it, so the app can skip the news of its own changes.
+export const CLIENT_ID = globalThis.crypto?.randomUUID?.() ?? `client-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
 export const apiRequest = async (path, options = {}) => {
   const { data: sessionData } = supabase
     ? await supabase.auth.getSession()
@@ -12,6 +15,7 @@ export const apiRequest = async (path, options = {}) => {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'X-HomeBase-Client': CLIENT_ID,
       ...(authorization ? { Authorization: `Bearer ${authorization}` } : {}),
       ...(options.headers || {}),
     },

@@ -6,6 +6,7 @@ import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { useFridgeApi } from './core/hooks/useFridgeApi'
 import { useHousehold } from './core/hooks/useHousehold'
 import { useInventoryApi } from './core/hooks/useInventoryApi'
+import { useLiveUpdates } from './core/hooks/useLiveUpdates'
 import { useRecipesApi } from './core/hooks/useRecipesApi'
 import { useShoppingApi } from './core/hooks/useShoppingApi'
 import { getJoinedMembers } from './core/utils/calculations'
@@ -55,12 +56,22 @@ export default function App() {
     refreshHousehold,
     createHousehold,
   } = useHousehold(authUserId)
-  const { expenses, addExpense, updateExpense, deleteExpense, error: expensesError } = useExpensesApi(household)
+  const { expenses, addExpense, updateExpense, deleteExpense, error: expensesError, reload: reloadExpenses } = useExpensesApi(household)
   const shopping = useShoppingApi(household)
   const fridge = useFridgeApi(household)
   const chores = useChoresApi(household)
   const recipes = useRecipesApi(household)
   const inventory = useInventoryApi(household)
+  // Changes made on the other person's phone show up here without a refresh
+  useLiveUpdates(household?.household_id, {
+    expenses: reloadExpenses,
+    shopping: shopping.reload,
+    fridge: fridge.reload,
+    recipes: recipes.reload,
+    chores: chores.reload,
+    inventory: inventory.reload,
+    household: refreshHousehold,
+  })
   const [apiError, setApiError] = useState('')
   // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'recipe' | 'inventory' | 'chore' | 'import', record } with the record being edited, or null
   const [sheet, setSheet] = useState(null)

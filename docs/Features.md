@@ -106,6 +106,14 @@
 - Sign out from the Household screen
 - While the API is waking up (Render free plan), the loading screen explains the wait after 3 seconds
 
+## Live updates
+
+- Changes made on one device show up on the household's other devices within a second or two, without refreshing: expenses, shopping lists, fridge, recipes, inventory, chores and household members
+- How: after every successful change, the API sends a short "this section changed" message on the household's private Supabase Realtime channel (`household:<id>`); the apps reload that section through the API. No household data travels through Realtime
+- Only signed-in, joined members of a household can listen on its channel (an access rule on `realtime.messages`, `server/db/011_realtime_household_channels.sql`); nobody but the API can send
+- Each open copy of the app ignores the news about its own changes; coming back to the app after 30 seconds or more, or reconnecting, reloads everything in case a message was missed
+- Fits easily in Supabase's free plan (about 200 connections and 2 million messages a month)
+
 ## Security
 
 - Every API route except the health check requires a valid Supabase sign-in token

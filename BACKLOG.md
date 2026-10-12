@@ -50,7 +50,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 ### Not in the first version
 
 - Logging an expense when a shopping item is ticked off
-- Live updates; the other person's changes appear after a refresh, as with expenses today
+- ~~Live updates~~ (built 2026-10-12; see docs/Features.md)
 
 ## Planned: shopping imports and fridge recipes (agreed 2026-10-11)
 
@@ -111,4 +111,4 @@ One of the main features: one photo of a receipt adds the expense and fills the 
 ## Not yet prioritized
 
 - **The API sleeps when idle.** Render's free plan stops the API after about 15 idle minutes, and the next visit waits about 20 seconds (measured: 22 s cold, 0.13 s warm). The app shows a "waking up" message after 3 seconds. Fixes if it becomes a problem: Render's paid plan, or a scheduled ping that keeps it awake.
-- **No database access rules (RLS policies): decided to skip for now (2026-10-10).** Row level security is on with no policies, so browsers cannot touch the database at all; only the API (with the secret key) can, and it checks every request. Policies would only add a second layer. Revisit if the browser ever needs direct database access, for example for live updates.
+- **No database access rules (RLS policies) on app tables: decided to skip for now (2026-10-10).** Row level security is on with no policies, so browsers cannot touch the app's tables at all; only the API (with the secret key) can, and it checks every request. Policies would only add a second layer. The one rule that exists (2026-10-12) lets household members listen on their household's live-update channel (`realtime.messages`); it opens no app data.

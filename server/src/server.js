@@ -2,6 +2,7 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import { sendError } from './http.js'
+import { liveUpdates } from './realtime.js'
 import choresRouter from './routes/chores.js'
 import expensesRouter from './routes/expenses.js'
 import fridgeRouter from './routes/fridge.js'
@@ -26,6 +27,8 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'https://lgeti.github.io,htt
 const app = express()
 
 app.use(cors({ origin: allowedOrigins }))
+// Announces successful changes to the household's other devices (see realtime.js)
+app.use(liveUpdates)
 // Before the 1 MB body limit: receipt photos are larger and the receipt route reads its own body
 app.use(receiptsRouter)
 app.use(express.json({ limit: '1mb' }))

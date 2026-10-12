@@ -5,9 +5,6 @@ import { daysBetween } from './recipeSuggestions.js'
 // The expense categories (the same ids as the categories table)
 export const CATEGORY_IDS = ['car', 'subscriptions', 'groceries', 'entertainment', 'going-out', 'utilities', 'home', 'other']
 
-// Where a non-food line would go in the household inventory (matched to the household's groups by name)
-export const INVENTORY_GROUPS = ['Appliances', 'Bathroom', 'Cleaning', 'Other']
-
 export const RECEIPT_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
 export const MAX_FILE_BYTES = 5 * 1024 * 1024
 const MAX_ITEMS = 100
@@ -31,9 +28,8 @@ export const RECEIPT_SCHEMA = {
           quantity: { type: 'string' },
           price: { type: 'number' },
           isFood: { type: 'boolean' },
-          inventoryGroup: { type: 'string', enum: INVENTORY_GROUPS },
         },
-        required: ['receiptText', 'name', 'quantity', 'price', 'isFood', 'inventoryGroup'],
+        required: ['receiptText', 'name', 'quantity', 'price', 'isFood'],
       },
     },
   },
@@ -52,8 +48,7 @@ export const RECEIPT_PROMPT = `Read this shop receipt (a photo, or a PDF of a di
   - name: a short readable English name with the size, e.g. "MLEKO 1L 3.2%" becomes "Milk 1 L", "JAJCA M 10/1" becomes "Eggs".
   - quantity: how many or how much was bought, e.g. "2" or "0.5 kg", or "" if just one.
   - price: the line's price as a number, or 0 if unclear.
-  - isFood: true for food and drink, false for cleaning, bathroom, household and other non-food items.
-  - inventoryGroup: for non-food, "Appliances" (devices and electronics), "Bathroom" (toiletries, toilet paper), "Cleaning" (detergents, sponges) or "Other"; for food, "Other".`
+  - isFood: true for food and drink, false for cleaning, bathroom, household and other non-food items.`
 
 const clean = (value, max) => (typeof value === 'string' ? value.replace(/\s+/g, ' ').trim().slice(0, max) : '')
 const money = (value) => (Number.isFinite(value) && value > 0 ? Math.round(value * 100) / 100 : null)
@@ -78,7 +73,6 @@ export const parseReceipt = (answer, today) => {
         quantity: clean(item?.quantity, 30) || null,
         price: Number.isFinite(item?.price) && item.price >= 0 ? Math.round(item.price * 100) / 100 : null,
         isFood: item?.isFood === true,
-        inventoryGroup: INVENTORY_GROUPS.includes(item?.inventoryGroup) ? item.inventoryGroup : 'Other',
       }
     })
     .filter((item) => item.name)

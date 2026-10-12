@@ -17,6 +17,15 @@
 - Recurring expenses (weekly, monthly, yearly): the server creates each due occurrence automatically, including missed ones, labelled "Added automatically"
 - Soft delete: deleted expenses stay in the database but are hidden
 
+## Scan a receipt
+
+- When adding an expense, **Scan receipt** takes a photo (or picks one); Google Gemini reads the shop, date, total, category and every line, turning receipt shorthand into readable English names ("MLEKO 1L 3.2%" → "Milk 1L 3.2%")
+- Nothing is saved until you press Add: the expense fields are filled in and editable, and under them each line has an **Add to fridge** tick (food ticked, non-food not) and an editable name
+- Open shopping list items that match what was bought are offered for ticking off in the same step
+- On Add: the expense is saved, ticked lines go to the fridge (no expiry date; add one later), and the chosen shopping items are marked bought
+- The photo is shrunk in the browser before upload and is not kept or logged; dates in the future or over a year old are ignored; a photo that isn't a readable receipt leaves the form as it was
+- Needs `GEMINI_API_KEY` on the API server, like recipe suggestions; limited to 20 scans per household per hour
+
 ## Dashboard
 
 - Month navigation with the monthly total and the two previous months

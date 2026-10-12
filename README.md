@@ -39,7 +39,7 @@ You need **Node.js 22 or newer**. Local development uses a separate Supabase pro
      PORT=3000
      SUPABASE_URL=<homebase-dev project URL>
      SUPABASE_SECRET_KEY=<homebase-dev secret key>
-     GEMINI_API_KEY=<optional: Google AI Studio key, for recipe suggestions>
+     GEMINI_API_KEY=<optional: Google AI Studio key, for recipe suggestions and receipt scanning>
      ```
 3. Start the API and the web app together:
    ```bash

@@ -7,6 +7,7 @@ import expensesRouter from './routes/expenses.js'
 import fridgeRouter from './routes/fridge.js'
 import householdsRouter from './routes/households.js'
 import invitationsRouter from './routes/invitations.js'
+import receiptsRouter from './routes/receipts.js'
 import recipeSuggestionsRouter from './routes/recipeSuggestions.js'
 import recipesRouter from './routes/recipes.js'
 import shoppingRouter from './routes/shopping.js'
@@ -24,6 +25,8 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'https://lgeti.github.io,htt
 const app = express()
 
 app.use(cors({ origin: allowedOrigins }))
+// Before the 1 MB body limit: receipt photos are larger and the receipt route reads its own body
+app.use(receiptsRouter)
 app.use(express.json({ limit: '1mb' }))
 
 app.get('/health', (request, response) => {

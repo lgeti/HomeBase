@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { scanReceipt } from './core/api/receiptsApi'
 import { useAuth } from './core/auth/useAuth'
 import { useChoresApi } from './core/hooks/useChoresApi'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
@@ -81,7 +82,7 @@ export default function App() {
   }
 
   // These throw on failure so the sheet can show the error where the person is looking
-  const handleAddTransaction = async (expense) => {
+  const handleAddTransaction = async (expense, fromReceipt) => {
     const isHouseholdMember = getJoinedMembers(household?.members || []).some(
       (member) => member.household_member_id === expense.paidByMemberId
     )
@@ -90,6 +91,18 @@ export default function App() {
 
     await addExpense(expense)
     setSheet(null)
+    if (fromReceipt) await saveReceiptExtras(fromReceipt)
+  }
+
+  // After a scanned receipt's expense is saved: put food in the fridge and tick off what was bought.
+  // The expense is already saved, so a failure here is reported instead of offering to save again.
+  const saveReceiptExtras = async ({ fridgeItems, boughtItems }) => {
+    const failed = []
+    for (const item of fridgeItems) {
+      await fridge.addItem(item).catch(() => failed.push(item.name))
+    }
+    for (const item of boughtItems) await shopping.setItemStatus(item, 'bought')
+    if (failed.length) setApiError(`The expense is saved, but these were not added to the fridge: ${failed.join(', ')}`)
   }
 
   const handleEditTransaction = async (expense) => {
@@ -377,6 +390,8 @@ export default function App() {
             onCancel={closeSheet}
             defaultCategoryId={selectedCategoryId}
             defaultPayerId={joinedMembers.find((member) => member.auth_user_id === authUserId)?.household_member_id}
+            onScanReceipt={(image, today) => scanReceipt(household.household_id, image, today)}
+            shoppingItems={shopping.items}
           />
         ) : null}
       </AddTransactionSheetWrapper>

@@ -7,6 +7,8 @@ begin;
 
 -- CASCADE also removes related household invitations when that table exists.
 truncate table
+  public.inventory_items,
+  public.inventory_groups,
   public.recipes,
   public.chore_completions,
   public.chores,

@@ -5,6 +5,7 @@ import { useChoresApi } from './core/hooks/useChoresApi'
 import { useExpensesApi } from './core/hooks/useExpensesApi'
 import { useFridgeApi } from './core/hooks/useFridgeApi'
 import { useHousehold } from './core/hooks/useHousehold'
+import { useInventoryApi } from './core/hooks/useInventoryApi'
 import { useRecipesApi } from './core/hooks/useRecipesApi'
 import { useShoppingApi } from './core/hooks/useShoppingApi'
 import { getJoinedMembers } from './core/utils/calculations'
@@ -25,6 +26,8 @@ import RecipeForm from './modules/Fridge/components/RecipeForm'
 import FridgeView from './modules/Fridge/pages/FridgeView'
 import RecipesView from './modules/Fridge/pages/RecipesView'
 import HouseholdView from './modules/Household/pages/HouseholdView'
+import InventoryItemForm from './modules/Inventory/components/InventoryItemForm'
+import InventoryView from './modules/Inventory/pages/InventoryView'
 import ImportForm from './modules/Shopping/components/ImportForm'
 import ShoppingItemForm from './modules/Shopping/components/ShoppingItemForm'
 import ShoppingView from './modules/Shopping/pages/ShoppingView'
@@ -57,14 +60,16 @@ export default function App() {
   const fridge = useFridgeApi(household)
   const chores = useChoresApi(household)
   const recipes = useRecipesApi(household)
+  const inventory = useInventoryApi(household)
   const [apiError, setApiError] = useState('')
-  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'recipe' | 'chore' | 'import', record } with the record being edited, or null
+  // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'recipe' | 'inventory' | 'chore' | 'import', record } with the record being edited, or null
   const [sheet, setSheet] = useState(null)
   const [activeView, setActiveView] = useState('money')
   const [moneyTab, setMoneyTab] = useState('expenses')
   const [fridgeTab, setFridgeTab] = useState('items')
   const [selectedCategoryId, setSelectedCategoryId] = useState('groceries')
   const [chosenListId, setChosenListId] = useState(null)
+  const [chosenGroupId, setChosenGroupId] = useState(null)
 
   // Errors belong to the previous account once someone else signs in
   useEffect(() => {
@@ -94,15 +99,18 @@ export default function App() {
     if (fromReceipt) await saveReceiptExtras(fromReceipt)
   }
 
-  // After a scanned receipt's expense is saved: put food in the fridge and tick off what was bought.
+  // After a scanned receipt's expense is saved: fill the fridge and the inventory, and tick off what was bought.
   // The expense is already saved, so a failure here is reported instead of offering to save again.
-  const saveReceiptExtras = async ({ fridgeItems, boughtItems }) => {
+  const saveReceiptExtras = async ({ fridgeItems, inventoryItems, boughtItems }) => {
     const failed = []
     for (const item of fridgeItems) {
       await fridge.addItem(item).catch(() => failed.push(item.name))
     }
+    for (const item of inventoryItems) {
+      await inventory.addItem(item).catch(() => failed.push(item.name))
+    }
     for (const item of boughtItems) await shopping.setItemStatus(item, 'bought')
-    if (failed.length) setApiError(`The expense is saved, but these were not added to the fridge: ${failed.join(', ')}`)
+    if (failed.length) setApiError(`The expense is saved, but these were not added: ${failed.join(', ')}`)
   }
 
   const handleEditTransaction = async (expense) => {
@@ -158,6 +166,27 @@ export default function App() {
     setSheet(null)
   }
 
+  const handleSaveInventoryItem = async (body) => {
+    if (sheet.record) {
+      await inventory.updateItem(sheet.record.id, body)
+    } else {
+      await inventory.addItem(body)
+      setChosenGroupId(body.groupId)
+    }
+    setSheet(null)
+  }
+
+  const handleDeleteInventoryItem = async () => {
+    await inventory.removeItem(sheet.record.id)
+    setSheet(null)
+  }
+
+  // Running low: optionally onto a shopping list, then flagged until it is restocked
+  const handleRunningLow = async (item, listId) => {
+    if (listId) await shopping.addItem({ listId, name: item.name })
+    await inventory.updateItem(item.id, { isRunningLow: true })
+  }
+
   const handleSaveChore = async (body) => {
     if (sheet.record) {
       await chores.editChore(sheet.record.id, body)
@@ -175,7 +204,7 @@ export default function App() {
   // The + button adds whatever fits the section
   const openAddSheet = () => {
     const type = activeView === 'fridge'
-      ? fridgeTab === 'recipes' ? 'recipe' : 'fridge'
+      ? fridgeTab === 'recipes' ? 'recipe' : fridgeTab === 'inventory' && inventory.groups.length ? 'inventory' : 'fridge'
       : activeView === 'chores'
         ? 'chore'
         : activeView === 'shopping' && shopping.lists.length > 0 ? 'item' : 'expense'
@@ -225,6 +254,7 @@ export default function App() {
   const errorMessage = apiError || inviteError || expensesError
   const activeListId = resolveActiveListId(shopping.lists, chosenListId)
   const isHouseholdOpen = activeView === 'household'
+  const activeGroupId = resolveActiveListId(inventory.groups, chosenGroupId)
 
   return (
     <div className="flex flex-col h-screen bg-hb-bg">
@@ -301,6 +331,24 @@ export default function App() {
                 onSaveSuggestion={({ name, ingredients, steps }) => recipes.addRecipe({ name, ingredients, steps })}
               />
             )}
+            inventoryView={(
+              <InventoryView
+                groups={inventory.groups}
+                items={inventory.items}
+                lists={shopping.lists}
+                activeGroupId={activeGroupId}
+                isLoading={inventory.isLoading}
+                error={inventory.error}
+                onSelectGroup={setChosenGroupId}
+                onAddGroup={inventory.addGroup}
+                onRenameGroup={inventory.renameGroup}
+                onDeleteGroup={inventory.removeGroup}
+                onQuickAdd={inventory.addItem}
+                onEditItem={(item) => setSheet({ type: 'inventory', record: item })}
+                onRunningLow={handleRunningLow}
+                onRestocked={(item) => inventory.updateItem(item.id, { isRunningLow: false })}
+              />
+            )}
             items={fridge.items}
             lists={shopping.lists}
             isLoading={fridge.isLoading}
@@ -334,7 +382,17 @@ export default function App() {
       </div>
 
       <AddTransactionSheetWrapper isOpen={Boolean(sheet)} onClose={closeSheet}>
-        {sheet?.type === 'recipe' ? (
+        {sheet?.type === 'inventory' ? (
+          <InventoryItemForm
+            key={sheet.record?.id || 'new-inventory-item'}
+            groups={inventory.groups}
+            groupId={activeGroupId}
+            item={sheet.record}
+            onSubmit={handleSaveInventoryItem}
+            onDelete={handleDeleteInventoryItem}
+            onCancel={closeSheet}
+          />
+        ) : sheet?.type === 'recipe' ? (
           <RecipeForm
             key={sheet.record?.id || 'new-recipe'}
             recipe={sheet.record}
@@ -392,6 +450,7 @@ export default function App() {
             defaultPayerId={joinedMembers.find((member) => member.auth_user_id === authUserId)?.household_member_id}
             onScanReceipt={(file, today) => scanReceipt(household.household_id, file, today)}
             shoppingItems={shopping.items}
+            inventoryGroups={inventory.groups}
           />
         ) : null}
       </AddTransactionSheetWrapper>

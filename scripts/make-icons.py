@@ -2,22 +2,16 @@
 # Run: python scripts/make-icons.py
 from PIL import Image, ImageDraw
 
-SAGE, CREAM, CLAY = (47, 93, 80), (246, 242, 234), (192, 112, 63)
+OLIVE, CREAM, CLAY = (78, 122, 58), (246, 242, 234), (192, 112, 63)
 S = 2048  # draw large, then shrink for smooth edges
 
 def draw():
-    img = Image.new('RGB', (S, S), SAGE)  # full square: iOS rounds the corners itself
+    img = Image.new('RGB', (S, S), OLIVE)  # full square: iOS rounds the corners itself
     d = ImageDraw.Draw(img)
     u = S / 100
-    house = [(50, 22), (80, 47), (74, 47), (74, 78), (26, 78), (26, 47), (20, 47)]
-    pts = [(x * u, y * u) for x, y in house]
-    d.polygon(pts, fill=CREAM)
-    r = 2 * u  # rounded corners, like the SVG's round stroke
-    d.line(pts + [pts[0]], fill=CREAM, width=int(4 * u), joint='curve')
-    for x, y in pts:
-        d.ellipse([x - r, y - r, x + r, y + r], fill=CREAM)
-    d.rectangle([43 * u, 58 * u, 57 * u, 78 * u], fill=CLAY)
-    d.pieslice([43 * u, 51 * u, 57 * u, 65 * u], 180, 360, fill=CLAY)
+    for x in (28, 58):  # the H's two posts
+        d.rounded_rectangle([x * u, 24 * u, (x + 14) * u, 76 * u], radius=3 * u, fill=CREAM)
+    d.rectangle([42 * u, 44 * u, 58 * u, 56 * u], fill=CLAY)  # crossbar
     return img
 
 big = draw()

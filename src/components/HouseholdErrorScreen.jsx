@@ -1,7 +1,10 @@
+import Logo from './Logo'
+
 export default function HouseholdErrorScreen({ message }) {
   return (
     <div className="flex items-center justify-center min-h-screen bg-hb-bg px-4">
       <div className="w-full max-w-sm rounded-2xl bg-hb-surface p-8 text-center shadow-lg">
+        <Logo className="mx-auto mb-4" />
         <h1 className="text-2xl font-semibold text-hb-text">HomeBase</h1>
         <p className="mt-3 text-sm text-hb-danger">
           HomeBase could not reach the household service. Your data was not changed.

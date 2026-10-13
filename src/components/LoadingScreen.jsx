@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import Logo from './Logo'
 
 export default function LoadingScreen() {
   const [isSlow, setIsSlow] = useState(false)
@@ -12,6 +13,7 @@ export default function LoadingScreen() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-hb-bg">
       <div className="text-center">
+        <Logo size={64} className="mx-auto mb-4" />
         <h1 className="text-2xl font-semibold text-hb-text">HomeBase</h1>
         <p className="text-hb-text2 mt-2">Loading...</p>
         {isSlow && (

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Logo from '../../../components/Logo'
 
 export default function SetNewPassword({ onSave }) {
   const [password, setPassword] = useState('')
@@ -28,6 +29,7 @@ export default function SetNewPassword({ onSave }) {
     <div className="flex items-center justify-center min-h-screen bg-hb-bg px-4">
       <main className="w-full max-w-sm bg-hb-surface rounded-2xl shadow-lg p-8 space-y-6">
         <div className="text-center space-y-2">
+          <Logo className="mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-hb-text">Choose a new password</h1>
           <p className="text-hb-text2">You'll stay signed in afterwards</p>
         </div>

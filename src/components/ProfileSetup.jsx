@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import Logo from './Logo'
 
 export default function ProfileSetup({ onProfileSet, initialOwnerName = '', errorMessage = '' }) {
   const [householdName, setHouseholdName] = useState('')
@@ -29,6 +30,7 @@ export default function ProfileSetup({ onProfileSet, initialOwnerName = '', erro
       <div className="w-full max-w-sm">
         <div className="bg-hb-surface rounded-2xl shadow-lg p-8 space-y-6">
           <div className="text-center space-y-2">
+            <Logo className="mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-hb-text">Welcome to HomeBase</h1>
             <p className="text-hb-text2">Let's set up your household</p>
           </div>

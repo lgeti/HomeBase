@@ -1,20 +1,20 @@
 import crypto from 'node:crypto'
 import express from 'express'
-import { canAcceptInvitation, canInvite, normalizeEmail } from '../authorization.js'
+import { canInvite } from '../authorization.js'
 import { sendError } from '../http.js'
 import { requireAuth, requireHouseholdMember } from '../middleware.js'
 import { supabase } from '../supabase.js'
 
 const router = express.Router()
 
-// Invite someone by email - links the invite to an existing pending member (memberId) or creates a new pending member (displayName)
+// Create an invite link for an existing pending member (memberId) or a new pending member (displayName).
+// Whoever opens the link and signs in becomes that member.
 router.post('/api/households/:householdId/invitations', requireAuth, requireHouseholdMember, async (request, response) => {
-  const { email, role = 'member', memberId, displayName } = request.body
+  const { role = 'member', memberId, displayName } = request.body
   const householdId = request.params.householdId
-  const normalizedEmail = normalizeEmail(email)
 
-  if (!normalizedEmail.includes('@') || !['admin', 'member'].includes(role)) {
-    return sendError(response, 400, 'a valid email and role are required')
+  if (!['admin', 'member'].includes(role)) {
+    return sendError(response, 400, 'a valid role is required')
   }
 
   if (!memberId && !String(displayName || '').trim()) {
@@ -25,25 +25,11 @@ router.post('/api/households/:householdId/invitations', requireAuth, requireHous
     return sendError(response, 403, 'Forbidden: your role cannot send this invitation')
   }
 
-  const { data: emailOwner, error: emailOwnerError } = await supabase
-    .from('household_members')
-    .select('household_member_id')
-    .eq('household_id', householdId)
-    .eq('invited_email', normalizedEmail)
-    .neq('status', 'removed')
-    .maybeSingle()
-
-  if (emailOwnerError) return sendError(response, 500, emailOwnerError.message)
-
-  if (emailOwner && emailOwner.household_member_id !== memberId) {
-    return sendError(response, 409, 'This email is already invited to another member of this household')
-  }
-
   let member
   if (memberId) {
     const { data, error } = await supabase
       .from('household_members')
-      .update({ invited_email: normalizedEmail, invited_at: new Date().toISOString() })
+      .update({ invited_at: new Date().toISOString() })
       .eq('household_id', householdId)
       .eq('household_member_id', memberId)
       .eq('status', 'pending')
@@ -61,7 +47,6 @@ router.post('/api/households/:householdId/invitations', requireAuth, requireHous
         display_name: String(displayName).trim(),
         role: 'member',
         status: 'pending',
-        invited_email: normalizedEmail,
         invited_at: new Date().toISOString(),
       })
       .select()
@@ -71,12 +56,11 @@ router.post('/api/households/:householdId/invitations', requireAuth, requireHous
     member = data
   }
 
-  // Only the newest invitation for an email stays usable
+  // Only the newest link for a member stays usable
   const { error: revokeError } = await supabase
     .from('household_invitations')
     .update({ revoked_at: new Date().toISOString() })
-    .eq('household_id', householdId)
-    .eq('invited_email', normalizedEmail)
+    .eq('household_member_id', member.household_member_id)
     .is('accepted_at', null)
     .is('revoked_at', null)
 
@@ -90,7 +74,7 @@ router.post('/api/households/:householdId/invitations', requireAuth, requireHous
     .from('household_invitations')
     .insert({
       household_id: householdId,
-      invited_email: normalizedEmail,
+      household_member_id: member.household_member_id,
       invited_role: role,
       token_hash: tokenHash,
       expires_at: expiresAt,
@@ -103,7 +87,6 @@ router.post('/api/households/:householdId/invitations', requireAuth, requireHous
   response.status(201).json({
     invitationId: invitation.invitation_id,
     memberId: member.household_member_id,
-    email: normalizedEmail,
     role,
     expiresAt,
     inviteToken: token,
@@ -125,23 +108,21 @@ router.post('/api/invitations/:token/accept', requireAuth, async (request, respo
   if (inviteError) return sendError(response, 500, inviteError.message)
   if (!invitation) return sendError(response, 400, 'Invitation is invalid, expired, or already used')
 
-  if (!canAcceptInvitation(request.user, invitation)) {
-    return sendError(response, 403, 'Forbidden: this invitation was sent to a different email')
-  }
-
-  // The app supports one household per person, so a member of another household cannot join this one
+  // The app supports one household per person, so someone who already has a household cannot join this one
   const { data: existingMembership, error: membershipError } = await supabase
     .from('household_members')
     .select('household_id')
     .eq('auth_user_id', request.user.id)
     .eq('status', 'active')
-    .neq('household_id', invitation.household_id)
     .limit(1)
     .maybeSingle()
 
   if (membershipError) return sendError(response, 500, membershipError.message)
   if (existingMembership) {
-    return sendError(response, 409, 'You already belong to another household')
+    const message = existingMembership.household_id === invitation.household_id
+      ? 'You are already a member of this household'
+      : 'You already belong to another household'
+    return sendError(response, 409, message)
   }
 
   // Claim the invitation first so the same token cannot be accepted twice
@@ -171,7 +152,7 @@ router.post('/api/invitations/:token/accept', requireAuth, async (request, respo
       accepted_at: new Date().toISOString(),
     })
     .eq('household_id', invitation.household_id)
-    .eq('invited_email', invitation.invited_email)
+    .eq('household_member_id', invitation.household_member_id)
     .eq('status', 'pending')
     .select()
     .maybeSingle()

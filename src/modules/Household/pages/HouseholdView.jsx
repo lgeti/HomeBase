@@ -9,7 +9,7 @@ const NEW_MEMBER = 'new'
 
 const memberStatus = (member) => {
   if (member.status === 'active') return 'Joined'
-  return member.invited_email ? `Invited · ${member.invited_email}` : 'Not invited yet'
+  return member.invited_at ? 'Invited' : 'Not invited yet'
 }
 
 export default function HouseholdView({ household, currentUserId, onHouseholdChange, onSignOut }) {
@@ -20,7 +20,6 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
 
   const [inviteTarget, setInviteTarget] = useState(pendingMembers[0]?.household_member_id || NEW_MEMBER)
   const [displayName, setDisplayName] = useState('')
-  const [email, setEmail] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState('')
   const [createdInvite, setCreatedInvite] = useState(null)
@@ -71,14 +70,8 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
     event.preventDefault()
     setError('')
 
-    const trimmedEmail = email.trim()
     const trimmedName = displayName.trim()
     const isNewMember = inviteTarget === NEW_MEMBER
-
-    if (!trimmedEmail.includes('@')) {
-      setError('Enter the email address they will sign in with')
-      return
-    }
 
     if (isNewMember && !trimmedName) {
       setError('Enter their name')
@@ -90,16 +83,15 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
       const invitation = await createInvitation(
         household.household_id,
         isNewMember
-          ? { email: trimmedEmail, displayName: trimmedName }
-          : { email: trimmedEmail, memberId: inviteTarget }
+          ? { displayName: trimmedName }
+          : { memberId: inviteTarget }
       )
       const invitedName = isNewMember
         ? trimmedName
         : pendingMembers.find((member) => member.household_member_id === inviteTarget)?.display_name
 
-      setCreatedInvite({ link: buildInviteLink(invitation.inviteToken), email: invitation.email, name: invitedName })
+      setCreatedInvite({ link: buildInviteLink(invitation.inviteToken), name: invitedName })
       setCopied(false)
-      setEmail('')
       setDisplayName('')
       await onHouseholdChange()
     } catch (inviteError) {
@@ -243,7 +235,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
             <div>
               <h3 className="font-semibold text-hb-text">Invite someone</h3>
               <p className="text-sm text-hb-text2">
-                You'll get a link to send them. It works for 7 days, only for the email you enter.
+                You'll get a link to send them. It works once, for 7 days, with any account they sign in with.
               </p>
             </div>
 
@@ -285,20 +277,6 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
                 </div>
               )}
 
-              <div>
-                <label htmlFor="inviteEmail" className="block text-sm font-medium text-hb-text2 mb-1">
-                  Their email
-                </label>
-                <input
-                  id="inviteEmail"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="The email they sign in with"
-                  className="w-full px-3 py-2.5 border border-hb-input rounded-lg focus:outline-none focus:ring-2 focus:ring-hb-primary"
-                />
-              </div>
-
               {error && <div className="p-3 bg-hb-danger-bg text-hb-danger rounded-lg text-sm">{error}</div>}
 
               <button
@@ -313,8 +291,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
             {createdInvite && (
               <div className="rounded-lg bg-hb-primary-tint p-3 space-y-2">
                 <p className="text-sm text-hb-text2">
-                  Send this link to {createdInvite.name || 'them'}. They need to sign in as{' '}
-                  <span className="font-medium">{createdInvite.email}</span>.
+                  Send this link to {createdInvite.name || 'them'}. Anyone who opens it can join as them, so only send it to them.
                 </p>
                 <input
                   readOnly

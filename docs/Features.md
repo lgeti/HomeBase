@@ -93,7 +93,7 @@
 
 - Create a household when you first sign in
 - Household screen: members with role (owner, admin, member) and status (joined, invited, not invited yet)
-- Owners and admins create invite links for an email address; links work for 7 days and only for that email
+- Owners and admins create an invite link for a member (new or not invited yet); the link works once, for 7 days, with any account, and a new link for the same member cancels the old one
 - Opening an invite link before signing in keeps it through sign-in, sign-up and email confirmation, then joins the household
 - Owners can remove anyone except themselves; admins can remove members (quiet ✕ with a confirmation)
 - Only members who have joined can pay for or share expenses; invited people count once they accept

@@ -10,11 +10,12 @@ When someone sends a photo of their fridge or pantry, list what you can see, che
 Use short everyday names ("Milk", "Cheddar"), put amounts in quantity ("1 l", "6", "half a pack") and only set expiresOn when a date is readable or the person tells you.`
 
 const location = z.enum(FOOD_LOCATIONS)
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
 
 const foodFields = {
   name: z.string().describe('What it is, e.g. "Milk"'),
   quantity: z.string().optional().describe('How much, e.g. "1 l", "6", "half a pack"'),
-  expiresOn: z.string().optional().describe('Expiry date as YYYY-MM-DD'),
+  expiresOn: date.optional().describe('Expiry date as YYYY-MM-DD'),
   note: z.string().optional(),
   location: location.optional().describe('Where it is kept; fridge when left out'),
 }
@@ -60,7 +61,7 @@ export const createMcpServer = (api) => {
     title: 'List food',
     description: 'Lists the food at home, soonest expiry first. Leave location out for both the fridge and the pantry.',
     inputSchema: { location: location.optional() },
-    annotations: { readOnlyHint: true },
+    annotations: { readOnlyHint: true, openWorldHint: false },
   }, tool(async ({ location: where }) => {
     const items = await api(`${await household()}/fridge-items`)
     return reply(items.filter((item) => !where || item.location === where).map(describeItem))
@@ -70,6 +71,7 @@ export const createMcpServer = (api) => {
     title: 'Add food',
     description: 'Adds one or more items to the fridge or pantry. Reports which were added and which failed.',
     inputSchema: { items: z.array(z.object(foodFields)).min(1).max(50) },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ items }) => {
     const path = `${await household()}/fridge-items`
     const added = []
@@ -91,22 +93,35 @@ export const createMcpServer = (api) => {
     inputSchema: {
       itemId: z.string(),
       ...Object.fromEntries(Object.entries(foodFields).map(([key, schema]) => [key, schema.optional()])),
+      // An empty string clears the date
+      expiresOn: z.union([date, z.literal('')]).optional().describe('Expiry date as YYYY-MM-DD'),
     },
+    annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, tool(async ({ itemId, ...changes }) => {
     const item = await api(`${await household()}/fridge-items/${encodeURIComponent(itemId)}`, { method: 'PATCH', body: changes })
     return reply(describeItem(item))
   }))
 
-  server.registerTool('remove_food_item', {
+  server.registerTool('remove_food_items', {
     title: 'Remove food',
-    description: 'Removes an item from list_food. Set usedUp when it was eaten or thrown away, leave it false when it was added by mistake.',
-    inputSchema: { itemId: z.string(), usedUp: z.boolean().optional() },
-    annotations: { destructiveHint: true },
-  }, tool(async ({ itemId, usedUp = false }) => {
-    const path = `${await household()}/fridge-items/${encodeURIComponent(itemId)}`
-    if (usedUp) await api(`${path}/used-up`, { method: 'POST', body: {} })
-    else await api(path, { method: 'DELETE' })
-    return reply({ removed: itemId, usedUp })
+    description: 'Removes one or more items from list_food. Set usedUp when an item was eaten or thrown away, leave it false when it was added by mistake. Reports which were removed and which failed.',
+    inputSchema: { items: z.array(z.object({ itemId: z.string(), usedUp: z.boolean().optional() })).min(1).max(50) },
+    annotations: { destructiveHint: true, openWorldHint: false },
+  }, tool(async ({ items }) => {
+    const base = `${await household()}/fridge-items`
+    const removed = []
+    const failed = []
+    for (const { itemId, usedUp = false } of items) {
+      const path = `${base}/${encodeURIComponent(itemId)}`
+      try {
+        if (usedUp) await api(`${path}/used-up`, { method: 'POST', body: {} })
+        else await api(path, { method: 'DELETE' })
+        removed.push({ itemId, usedUp })
+      } catch (error) {
+        failed.push({ itemId, error: error.message })
+      }
+    }
+    return reply({ removed, failed })
   }))
 
   return server

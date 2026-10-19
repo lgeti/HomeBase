@@ -9,6 +9,7 @@ import fridgeRouter from './routes/fridge.js'
 import householdsRouter from './routes/households.js'
 import inventoryRouter from './routes/inventory.js'
 import invitationsRouter from './routes/invitations.js'
+import mcpRouter from './routes/mcp.js'
 import receiptsRouter from './routes/receipts.js'
 import recipeSuggestionsRouter from './routes/recipeSuggestions.js'
 import recipesRouter from './routes/recipes.js'
@@ -47,6 +48,8 @@ app.use(inventoryRouter)
 app.use(choresRouter)
 app.use(recipesRouter)
 app.use(recipeSuggestionsRouter)
+// Claude's way in (see mcp.js)
+app.use(mcpRouter)
 
 app.use((request, response) => {
   sendError(response, 404, 'Route not found')

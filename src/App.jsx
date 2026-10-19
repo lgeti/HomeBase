@@ -10,6 +10,7 @@ import { useLiveUpdates } from './core/hooks/useLiveUpdates'
 import { useRecipesApi } from './core/hooks/useRecipesApi'
 import { useShoppingApi } from './core/hooks/useShoppingApi'
 import { getJoinedMembers } from './core/utils/calculations'
+import { getPendingAuthorization } from './core/utils/pendingAuthorization'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import BottomNav from './components/BottomNav'
 import HouseholdErrorScreen from './components/HouseholdErrorScreen'
@@ -17,6 +18,7 @@ import Icon from './components/Icon'
 import LoadingScreen from './components/LoadingScreen'
 import ProfileSetup from './components/ProfileSetup'
 import AuthScreen from './modules/Auth/pages/AuthScreen'
+import ConnectAppScreen from './modules/Auth/pages/ConnectAppScreen'
 import ChoreForm from './modules/Chores/components/ChoreForm'
 import ChoresView from './modules/Chores/pages/ChoresView'
 import SetNewPassword from './modules/Auth/pages/SetNewPassword'
@@ -73,6 +75,7 @@ export default function App() {
     household: refreshHousehold,
   })
   const [apiError, setApiError] = useState('')
+  const [authorizationId, setAuthorizationId] = useState(getPendingAuthorization)
   // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'recipe' | 'inventory' | 'chore' | 'import', record } with the record being edited, or null
   const [sheet, setSheet] = useState(null)
   const [activeView, setActiveView] = useState('money')
@@ -245,6 +248,11 @@ export default function App() {
         onSendPasswordReset={sendPasswordReset}
       />
     )
+  }
+
+  // Another app, such as Claude, asked to use HomeBase as this person
+  if (authorizationId) {
+    return <ConnectAppScreen authorizationId={authorizationId} email={authUser.email} onDone={() => setAuthorizationId(null)} />
   }
 
   if (!household) {

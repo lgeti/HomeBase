@@ -35,9 +35,12 @@ const call = async (api, name, args = {}) => {
 }
 
 describe('HomeBase MCP server', () => {
-  it('offers the food tools', async () => {
+  it('offers the food and shopping tools', async () => {
     const { tools } = await (await connect(fakeApi().api)).listTools()
-    assert.deepEqual(tools.map((tool) => tool.name).sort(), ['add_food_items', 'list_food', 'remove_food_item', 'update_food_item'])
+    assert.deepEqual(tools.map((tool) => tool.name).sort(), [
+      'add_food_items', 'add_shopping_items', 'list_food', 'list_shopping',
+      'remove_food_item', 'remove_shopping_item', 'update_food_item', 'update_shopping_item',
+    ])
   })
 
   it('lists food, optionally from one place', async () => {
@@ -87,5 +90,51 @@ describe('HomeBase MCP server', () => {
 
     const apiError = await call(fakeApi({ 'PATCH /fridge-items/a': () => { throw new Error('Item not found') } }).api, 'update_food_item', { itemId: 'a', name: 'x' })
     assert.equal(apiError.value, 'Item not found')
+  })
+
+  describe('shopping', () => {
+    const groceries = { list_id: 'g', name: 'Groceries' }
+    const hardware = { list_id: 'h', name: 'Hardware' }
+    const eggs = { item_id: 'e', list_id: 'g', name: 'Eggs', quantity: '6', note: null, kind: 'buy', status: 'open' }
+    const bread = { item_id: 'b', list_id: 'g', name: 'Bread', quantity: null, note: null, kind: 'buy', status: 'bought' }
+    const bike = { item_id: 'k', list_id: 'h', name: 'Old bike', quantity: null, note: null, kind: 'sell', status: 'listed' }
+    const lists = { 'GET /shopping-lists': () => [groceries, hardware], 'GET /shopping-items': () => [eggs, bread, bike] }
+
+    it('lists each list with what is still open', async () => {
+      const { value } = await call(fakeApi(lists).api, 'list_shopping')
+      assert.deepEqual(value.map((list) => [list.name, list.items.map((item) => item.name)]), [['Groceries', ['Eggs']], ['Hardware', ['Old bike']]])
+      const withDone = (await call(fakeApi(lists).api, 'list_shopping', { includeDone: true })).value
+      assert.deepEqual(withDone[0].items.map((item) => [item.name, item.done]), [['Eggs', false], ['Bread', true]])
+    })
+
+    it('adds to the first list unless another is named', async () => {
+      const { api, calls } = fakeApi({ ...lists, 'POST /shopping-items': (body) => ({ ...eggs, item_id: body.name, name: body.name, list_id: body.listId }) })
+      const first = (await call(api, 'add_shopping_items', { items: [{ name: 'Mustard' }] })).value
+      assert.equal(first.list, 'Groceries')
+      assert.deepEqual(calls.at(-1).body, { name: 'Mustard', listId: 'g', kind: 'buy' })
+
+      const named = (await call(api, 'add_shopping_items', { listId: 'h', items: [{ name: 'Screws', quantity: '20' }] })).value
+      assert.equal(named.list, 'Hardware')
+      assert.deepEqual(calls.at(-1).body, { name: 'Screws', quantity: '20', listId: 'h', kind: 'buy' })
+
+      const missing = await call(api, 'add_shopping_items', { listId: 'nope', items: [{ name: 'x' }] })
+      assert.match(missing.value, /does not exist/)
+    })
+
+    it('ticks items off as bought or sold, and back on', async () => {
+      const { api, calls } = fakeApi({ ...lists, 'PATCH /shopping-items/e': (body) => ({ ...eggs, ...body }), 'PATCH /shopping-items/k': (body) => ({ ...bike, ...body }) })
+      assert.equal((await call(api, 'update_shopping_item', { itemId: 'e', done: true })).value.done, true)
+      assert.deepEqual(calls.at(-1).body, { status: 'bought' })
+      await call(api, 'update_shopping_item', { itemId: 'k', done: true })
+      assert.deepEqual(calls.at(-1).body, { status: 'sold' })
+      await call(api, 'update_shopping_item', { itemId: 'e', done: false, quantity: '12' })
+      assert.deepEqual(calls.at(-1).body, { quantity: '12', status: 'open' })
+    })
+
+    it('removes an item', async () => {
+      const { api, calls } = fakeApi({ 'DELETE /shopping-items/e': () => null })
+      assert.equal((await call(api, 'remove_shopping_item', { itemId: 'e' })).isError, undefined)
+      assert.equal(calls.at(-1).method, 'DELETE')
+    })
   })
 })

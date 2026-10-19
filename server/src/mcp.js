@@ -4,10 +4,12 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { FOOD_LOCATIONS } from './fridge.js'
+import { DONE_STATUS, OPEN_STATUS, isDone } from './shopping.js'
 
-const INSTRUCTIONS = `HomeBase is a shared household app. These tools manage the food at home, kept in the fridge or the pantry.
+const INSTRUCTIONS = `HomeBase is a shared household app. These tools manage the food at home (kept in the fridge or the pantry) and the shopping lists.
 When someone sends a photo of their fridge or pantry, list what you can see, check it against list_food so nothing is added twice, then add the new items with one add_food_items call.
-Use short everyday names ("Milk", "Cheddar"), put amounts in quantity ("1 l", "6", "half a pack") and only set expiresOn when a date is readable or the person tells you.`
+Use short everyday names ("Milk", "Cheddar"), put amounts in quantity ("1 l", "6", "half a pack") and only set expiresOn when a date is readable or the person tells you.
+To put something on the shopping list, use add_shopping_items; it goes on the first list (usually Groceries) unless the person names another one from list_shopping.`
 
 const location = z.enum(FOOD_LOCATIONS)
 
@@ -27,6 +29,16 @@ const describeItem = (item) => ({
   expiresOn: item.expires_on,
   note: item.note,
   location: item.location,
+})
+
+// A shopping item, in the app's own words
+const describeShoppingItem = (item) => ({
+  itemId: item.item_id,
+  name: item.name,
+  quantity: item.quantity,
+  note: item.note,
+  kind: item.kind,
+  done: isDone(item),
 })
 
 const reply = (value) => ({ content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] })
@@ -107,6 +119,87 @@ export const createMcpServer = (api) => {
     if (usedUp) await api(`${path}/used-up`, { method: 'POST', body: {} })
     else await api(path, { method: 'DELETE' })
     return reply({ removed: itemId, usedUp })
+  }))
+
+  server.registerTool('list_shopping', {
+    title: 'List shopping',
+    description: 'Lists the shopping lists and what is still to buy (or sell) on each. Set includeDone to also see what was already bought or sold.',
+    inputSchema: { includeDone: z.boolean().optional() },
+    annotations: { readOnlyHint: true },
+  }, tool(async ({ includeDone = false }) => {
+    const path = await household()
+    const [lists, items] = await Promise.all([api(`${path}/shopping-lists`), api(`${path}/shopping-items`)])
+    return reply(lists.map((list) => ({
+      listId: list.list_id,
+      name: list.name,
+      items: items
+        .filter((item) => item.list_id === list.list_id && (includeDone || !isDone(item)))
+        .map(describeShoppingItem),
+    })))
+  }))
+
+  server.registerTool('add_shopping_items', {
+    title: 'Add to shopping list',
+    description: 'Puts one or more things on a shopping list, the first list (usually Groceries) unless listId is given. Reports which were added and which failed.',
+    inputSchema: {
+      listId: z.string().optional().describe('A list from list_shopping'),
+      items: z.array(z.object({
+        name: z.string().describe('What to buy, e.g. "Mustard"'),
+        quantity: z.string().optional().describe('How much, e.g. "2", "1 kg"'),
+        note: z.string().optional(),
+      })).min(1).max(50),
+    },
+  }, tool(async ({ listId, items }) => {
+    const path = await household()
+    // Listing the lists also creates the Groceries list for a household that has none yet
+    const lists = await api(`${path}/shopping-lists`)
+    const list = listId ? lists.find((entry) => entry.list_id === listId) : lists[0]
+    if (!list) throw new Error('That list does not exist. Use list_shopping to see the lists.')
+
+    const added = []
+    const failed = []
+    for (const item of items) {
+      try {
+        const created = await api(`${path}/shopping-items`, { method: 'POST', body: { ...item, listId: list.list_id, kind: 'buy' } })
+        added.push(describeShoppingItem(created))
+      } catch (error) {
+        failed.push({ name: item.name, error: error.message })
+      }
+    }
+    return reply({ list: list.name, added, failed })
+  }))
+
+  server.registerTool('update_shopping_item', {
+    title: 'Change shopping item',
+    description: 'Ticks an item from list_shopping off (done: true) or back on (done: false), or changes its name, quantity or note. Send an empty string to clear quantity or note.',
+    inputSchema: {
+      itemId: z.string(),
+      done: z.boolean().optional(),
+      name: z.string().optional(),
+      quantity: z.string().optional(),
+      note: z.string().optional(),
+    },
+  }, tool(async ({ itemId, done, ...changes }) => {
+    const path = await household()
+    const body = { ...changes }
+    if (done !== undefined) {
+      // Done means bought for things to buy and sold for things to sell
+      const existing = (await api(`${path}/shopping-items`)).find((item) => item.item_id === itemId)
+      if (!existing) throw new Error('Item not found')
+      body.status = done ? DONE_STATUS[existing.kind] : OPEN_STATUS[existing.kind]
+    }
+    const item = await api(`${path}/shopping-items/${encodeURIComponent(itemId)}`, { method: 'PATCH', body })
+    return reply(describeShoppingItem(item))
+  }))
+
+  server.registerTool('remove_shopping_item', {
+    title: 'Remove shopping item',
+    description: 'Takes an item from list_shopping off its list. To mark it bought, use update_shopping_item with done: true instead.',
+    inputSchema: { itemId: z.string() },
+    annotations: { destructiveHint: true },
+  }, tool(async ({ itemId }) => {
+    await api(`${await household()}/shopping-items/${encodeURIComponent(itemId)}`, { method: 'DELETE' })
+    return reply({ removed: itemId })
   }))
 
   return server

@@ -3,13 +3,15 @@
 // same checks, validation and live updates apply as when they tap around in the app.
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
+import { CHORE_FREQUENCIES } from './chores.js'
 import { FOOD_LOCATIONS } from './fridge.js'
 import { DONE_STATUS, OPEN_STATUS, isDone } from './shopping.js'
 
-const INSTRUCTIONS = `HomeBase is a shared household app. These tools manage the food at home (kept in the fridge or the pantry) and the shopping lists.
+const INSTRUCTIONS = `HomeBase is a shared household app. These tools manage the food at home (kept in the fridge or the pantry), the shopping lists and the chores.
 When someone sends a photo of their fridge or pantry, list what you can see, check it against list_food so nothing is added twice, then add the new items with one add_food_items call.
 Use short everyday names ("Milk", "Cheddar"), put amounts in quantity ("1 l", "6", "half a pack") and only set expiresOn when a date is readable or the person tells you.
-To put something on the shopping list, use add_shopping_items; it goes on the first list (usually Groceries) unless the person names another one from list_shopping.`
+To put something on the shopping list, use add_shopping_items; it goes on the first list (usually Groceries) unless the person names another one from list_shopping.
+Chores have a due date and repeat once, daily, weekly or monthly. Use the person's own local date for dueOn and doneOn, and give a chore to someone by the name list_chores shows for the household's members.`
 
 const location = z.enum(FOOD_LOCATIONS)
 
@@ -41,6 +43,18 @@ const describeShoppingItem = (item) => ({
   done: isDone(item),
 })
 
+const frequency = z.enum(CHORE_FREQUENCIES)
+
+const choreFields = {
+  name: z.string().describe('What needs doing, e.g. "Take out the bins"'),
+  dueOn: z.string().describe('When it is next due, as YYYY-MM-DD'),
+  frequency: frequency.optional().describe('How often it repeats; once when left out'),
+  fixedSchedule: z.boolean().optional()
+    .describe('Keep the same weekday or day of the month however early or late it is done (bin day). Otherwise the next date counts from the day it was done.'),
+  assignee: z.string().optional().describe('The member who does it, by name; leave out or send an empty string for anyone'),
+  note: z.string().optional(),
+}
+
 const reply = (value) => ({ content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] })
 const failure = (message) => ({ content: [{ type: 'text', text: message }], isError: true })
 
@@ -50,14 +64,43 @@ export const createMcpServer = (api) => {
   const server = new McpServer({ name: 'homebase', version: '1.0.0' }, { instructions: INSTRUCTIONS })
 
   // Each MCP request gets its own server, so this looks the household up at most once per request
-  let householdPath = null
-  const household = async () => {
-    if (householdPath) return householdPath
-    const found = await api('/api/households/me')
+  let found = null
+  const loadHousehold = async () => {
+    found ??= await api('/api/households/me')
     if (!found) throw new Error('You are not in a household yet. Open HomeBase and create or join one first.')
-    householdPath = `/api/households/${found.household_id}`
-    return householdPath
+    return found
   }
+  const household = async () => `/api/households/${(await loadHousehold()).household_id}`
+
+  // Chores are given to members who have joined, named the way the app shows them
+  const joinedMembers = async () => ((await loadHousehold()).members || []).filter((member) => member.status === 'active')
+  const memberName = (members, memberId) => members.find((member) => member.household_member_id === memberId)?.display_name ?? null
+  const memberIdFor = async (name) => {
+    if (!name?.trim()) return null
+    const members = await joinedMembers()
+    const member = members.find((entry) => entry.display_name.toLowerCase() === name.trim().toLowerCase())
+    if (!member) throw new Error(`No joined member is called "${name}". The members are: ${members.map((entry) => entry.display_name).join(', ')}`)
+    return member.household_member_id
+  }
+
+  // A chore, in the app's own words
+  const describeChore = (chore, members) => ({
+    choreId: chore.chore_id,
+    name: chore.name,
+    dueOn: chore.due_on,
+    frequency: chore.frequency,
+    fixedSchedule: chore.fixed_schedule,
+    assignee: memberName(members, chore.assignee_member_id),
+    note: chore.note,
+    lastDoneOn: chore.last_done_on,
+    lastDoneBy: memberName(members, chore.last_done_by_member_id),
+  })
+
+  // The API's field names for the chore fields Claude sent, leaving out the ones it did not
+  const choreBody = async ({ assignee, ...fields }) => ({
+    ...fields,
+    ...(assignee === undefined ? {} : { assigneeMemberId: await memberIdFor(assignee) }),
+  })
 
   // Turns a thrown API error into a tool error Claude can read and act on
   const tool = (handler) => async (args) => {
@@ -200,6 +243,72 @@ export const createMcpServer = (api) => {
   }, tool(async ({ itemId }) => {
     await api(`${await household()}/shopping-items/${encodeURIComponent(itemId)}`, { method: 'DELETE' })
     return reply({ removed: itemId })
+  }))
+
+  server.registerTool('list_chores', {
+    title: 'List chores',
+    description: 'Lists the chores still to do, soonest first, with who does each one and who did it last. Also lists the household members chores can be given to.',
+    annotations: { readOnlyHint: true },
+  }, tool(async () => {
+    const chores = await api(`${await household()}/chores`)
+    const members = (await loadHousehold()).members || []
+    return reply({
+      members: (await joinedMembers()).map((member) => member.display_name),
+      chores: chores.map((chore) => describeChore(chore, members)),
+    })
+  }))
+
+  server.registerTool('add_chores', {
+    title: 'Add chores',
+    description: 'Adds one or more chores. Reports which were added and which failed.',
+    inputSchema: { chores: z.array(z.object(choreFields)).min(1).max(50) },
+  }, tool(async ({ chores }) => {
+    const path = `${await household()}/chores`
+    const members = (await loadHousehold()).members || []
+    const added = []
+    const failed = []
+    for (const chore of chores) {
+      try {
+        const created = await api(path, { method: 'POST', body: { frequency: 'once', ...(await choreBody(chore)) } })
+        added.push(describeChore(created, members))
+      } catch (error) {
+        failed.push({ name: chore.name, error: error.message })
+      }
+    }
+    return reply({ added, failed })
+  }))
+
+  server.registerTool('update_chore', {
+    title: 'Change chore',
+    description: 'Changes a chore from list_chores. Only the fields given are changed. A new due date, frequency or fixedSchedule restarts its schedule from that date.',
+    inputSchema: {
+      choreId: z.string(),
+      ...Object.fromEntries(Object.entries(choreFields).map(([key, schema]) => [key, schema.optional()])),
+    },
+  }, tool(async ({ choreId, ...changes }) => {
+    const path = `${await household()}/chores/${encodeURIComponent(choreId)}`
+    const chore = await api(path, { method: 'PATCH', body: await choreBody(changes) })
+    return reply(describeChore(chore, (await loadHousehold()).members || []))
+  }))
+
+  server.registerTool('complete_chore', {
+    title: 'Mark chore done',
+    description: 'Marks a chore from list_chores as done by the signed-in person. A repeating chore moves to its next date; a one-time chore is finished.',
+    inputSchema: { choreId: z.string(), doneOn: z.string().describe("The day it was done, as YYYY-MM-DD in the person's own time zone") },
+  }, tool(async ({ choreId, doneOn }) => {
+    const path = `${await household()}/chores/${encodeURIComponent(choreId)}/done`
+    const { chore } = await api(path, { method: 'POST', body: { doneOn } })
+    return reply(chore ? { done: true, nextDueOn: chore.due_on } : { done: true, finished: true })
+  }))
+
+  server.registerTool('remove_chore', {
+    title: 'Remove chore',
+    description: 'Deletes a chore from list_chores for good, including its repeats. To record that it was done, use complete_chore instead.',
+    inputSchema: { choreId: z.string() },
+    annotations: { destructiveHint: true },
+  }, tool(async ({ choreId }) => {
+    await api(`${await household()}/chores/${encodeURIComponent(choreId)}`, { method: 'DELETE' })
+    return reply({ removed: choreId })
   }))
 
   return server

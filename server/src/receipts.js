@@ -52,7 +52,7 @@ export const RECEIPT_PROMPT = `Read this shop receipt (a photo, or a PDF of a di
 - total: the amount paid, as a number, or 0 if you cannot read it.
 - category: the best fit for the whole receipt (food shopping is "groceries").
 - items: every bought line, skipping discounts, deposits, bags and totals.
-  - receiptText: the line as printed.
+  - receiptText: the product as printed, without the amounts, prices and tax letters (e.g. "MLEKO 1L 3.2%").
   - name: a short readable English name with the size, e.g. "MLEKO 1L 3.2%" becomes "Milk 1 L", "JAJCA M 10/1" becomes "Eggs".
   - quantity: how many or how much was bought, e.g. "2" or "0.5 kg", or "" if just one.
   - price: the line's price as a number, or 0 if unclear.

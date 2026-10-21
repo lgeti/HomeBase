@@ -49,7 +49,7 @@ router.post('/mcp', async (request, response) => {
     return sendError(response, 401, 'Sign in to HomeBase first')
   }
 
-  const server = createMcpServer(callApi(authorization))
+  const server = createMcpServer(callApi(authorization), { userId: data.user.id })
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })
   response.on('close', () => {
     transport.close()

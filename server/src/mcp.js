@@ -5,13 +5,16 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { CHORE_FREQUENCIES } from './chores.js'
 import { FOOD_LOCATIONS } from './fridge.js'
+import { CATEGORY_IDS } from './receipts.js'
+import { FREQUENCIES } from './recurring.js'
 import { DONE_STATUS, OPEN_STATUS, isDone } from './shopping.js'
 
-const INSTRUCTIONS = `HomeBase is a shared household app. These tools manage the food at home (kept in the fridge or the pantry), the shopping lists and the chores.
+const INSTRUCTIONS = `HomeBase is a shared household app. These tools manage the food at home (kept in the fridge or the pantry), the shopping lists, the chores and the shared expenses.
 When someone sends a photo of their fridge or pantry, list what you can see, check it against list_food so nothing is added twice, then add the new items with one add_food_items call.
 Use short everyday names ("Milk", "Cheddar"), put amounts in quantity ("1 l", "6", "half a pack") and only set expiresOn when a date is readable or the person tells you.
 To put something on the shopping list, use add_shopping_items; it goes on the first list (usually Groceries) unless the person names another one from list_shopping.
-Chores have a due date and repeat once, daily, weekly or monthly. Use the person's own local date for dueOn and doneOn, and give a chore to someone by the name list_chores shows for the household's members.`
+Chores have a due date and repeat once, daily, weekly or monthly. Use the person's own local date for dueOn and doneOn, and give a chore to someone by the name list_chores shows for the household's members.
+Expenses are in euros. When someone sends a receipt, add it with add_expenses using the total, the receipt's date and the category that fits; it is paid by the signed-in person unless they say otherwise. Ask whether to split it equally when they have not said, since that decides who owes whom. money_summary answers "who owes whom" for a month.`
 
 const location = z.enum(FOOD_LOCATIONS)
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
@@ -56,12 +59,61 @@ const choreFields = {
   note: z.string().optional(),
 }
 
+const expenseFields = {
+  amount: z.number().positive().describe('In euros, e.g. 23.40'),
+  category: z.enum(CATEGORY_IDS),
+  date: date.describe('When it was paid, as YYYY-MM-DD'),
+  description: z.string().optional().describe('What it was, e.g. "Lidl" or "Electricity October"'),
+  type: z.string().optional().describe('A finer kind within the category as the app names it, e.g. "Supermarket" or "Fuel"'),
+  paidBy: z.string().optional().describe('The member who paid, by name; the signed-in person when left out'),
+  split: z.boolean().optional().describe('true to share it equally between the joined members; false (the default) when the payer covers it all'),
+  repeats: z.enum(FREQUENCIES).optional().describe('Add it again automatically every week, month or year'),
+}
+
+// Paid, owed and net per joined member for a month's expenses, the way the app's Money tab counts them
+// (src/core/utils/calculations.js): a split expense is shared equally, otherwise the payer owes all of it.
+export const summarizeMonth = (expenses, members) => {
+  const joined = members.filter((member) => member.status === 'active')
+  const people = Object.fromEntries(joined.map((member) => [member.household_member_id, { name: member.display_name, paid: 0, owed: 0 }]))
+  const round = (value) => Math.round(value * 100) / 100
+  const byCategory = {}
+  let total = 0
+
+  for (const expense of expenses) {
+    const amount = Number(expense.amount)
+    total += amount
+    byCategory[expense.category_id] = (byCategory[expense.category_id] || 0) + amount
+    const payer = people[expense.paid_by_member_id]
+    if (payer) payer.paid += amount
+    if (expense.split_type === 'split') {
+      for (const person of Object.values(people)) person.owed += amount / joined.length
+    } else if (payer) {
+      payer.owed += amount
+    }
+  }
+
+  const summary = Object.values(people).map((person) => ({ ...person, net: round(person.paid - person.owed) }))
+  const sorted = [...summary].sort((left, right) => right.net - left.net)
+  const owed = sorted[0]
+  const owes = sorted.at(-1)
+  const settle = owed && owes && owed !== owes && owed.net > 0 && owes.net < 0
+    ? { owes: owes.name, owed: owed.name, amount: round(Math.min(owed.net, -owes.net)) }
+    : null
+
+  return {
+    total: round(total),
+    byCategory: Object.fromEntries(Object.entries(byCategory).map(([category, amount]) => [category, round(amount)])),
+    members: summary.map((person) => ({ ...person, paid: round(person.paid), owed: round(person.owed) })),
+    settle,
+  }
+}
+
 const reply = (value) => ({ content: [{ type: 'text', text: JSON.stringify(value, null, 2) }] })
 const failure = (message) => ({ content: [{ type: 'text', text: message }], isError: true })
 
 // `api(path, options)` calls the HomeBase API as the signed-in person and returns the parsed JSON,
 // throwing an Error with the API's message when the request fails.
-export const createMcpServer = (api) => {
+export const createMcpServer = (api, { userId } = {}) => {
   const server = new McpServer({ name: 'homebase', version: '1.0.0' }, { instructions: INSTRUCTIONS })
 
   // Each MCP request gets its own server, so this looks the household up at most once per request
@@ -101,6 +153,41 @@ export const createMcpServer = (api) => {
   const choreBody = async ({ assignee, ...fields }) => ({
     ...fields,
     ...(assignee === undefined ? {} : { assigneeMemberId: await memberIdFor(assignee) }),
+  })
+
+  // An expense, in the app's own words
+  const describeExpense = (expense, members) => ({
+    expenseId: expense.expense_id,
+    date: expense.expense_date,
+    amount: Number(expense.amount),
+    category: expense.category_id,
+    type: expense.tag,
+    description: expense.description,
+    paidBy: memberName(members, expense.paid_by_member_id),
+    split: expense.split_type === 'split',
+    repeats: expense.is_recurring ? expense.recurring_frequency : null,
+    // Added automatically by a repeating expense; change the original to change future ones
+    isRepeat: Boolean(expense.recurring_source_id),
+  })
+
+  // The signed-in person's own member id, the payer when none is named
+  const ownMemberId = async () => {
+    const own = (await joinedMembers()).find((member) => member.auth_user_id === userId)
+    if (!own) throw new Error('Say who paid: the signed-in person is not a joined member of this household.')
+    return own.household_member_id
+  }
+
+  // The API takes the whole expense, in its own field names. `payerId` keeps a payer already on the expense.
+  const expenseBody = async ({ amount, category, date: expenseDate, description, type, paidBy, payerId, split, repeats }) => ({
+    amount,
+    categoryId: category,
+    expenseDate,
+    description: description || null,
+    tag: type || null,
+    paidByMemberId: paidBy ? await memberIdFor(paidBy) : payerId ?? await ownMemberId(),
+    splitType: split ? 'split' : 'one',
+    isRecurring: Boolean(repeats),
+    recurringFrequency: repeats || null,
   })
 
   // Turns a thrown API error into a tool error Claude can read and act on
@@ -329,6 +416,88 @@ export const createMcpServer = (api) => {
   }, tool(async ({ choreId }) => {
     await api(`${await household()}/chores/${encodeURIComponent(choreId)}`, { method: 'DELETE' })
     return reply({ removed: choreId })
+  }))
+
+  server.registerTool('list_expenses', {
+    title: 'List expenses',
+    description: 'Lists the expenses between two dates, newest first, with who paid and whether each is split. Without dates it lists this month so far.',
+    inputSchema: {
+      from: date.optional().describe('First day, as YYYY-MM-DD'),
+      to: date.optional().describe('Last day, as YYYY-MM-DD'),
+      category: z.enum(CATEGORY_IDS).optional(),
+    },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  }, tool(async ({ from, to, category }) => {
+    const query = new URLSearchParams({ from: from || `${new Date().toISOString().slice(0, 7)}-01` })
+    if (to) query.set('to', to)
+    if (category) query.set('categoryId', category)
+    const expenses = await api(`${await household()}/expenses?${query}`)
+    const members = (await loadHousehold()).members || []
+    return reply(expenses.map((expense) => describeExpense(expense, members)))
+  }))
+
+  server.registerTool('money_summary', {
+    title: 'Money summary',
+    description: "Totals for a month: spent per category, what each member paid and owes, and who owes whom, as the app's Money tab counts them.",
+    inputSchema: { month: z.string().regex(/^\d{4}-\d{2}$/, 'Use YYYY-MM').optional().describe('As YYYY-MM; this month when left out') },
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  }, tool(async ({ month = new Date().toISOString().slice(0, 7) }) => {
+    const [year, monthNumber] = month.split('-').map(Number)
+    const lastDay = new Date(Date.UTC(year, monthNumber, 0)).toISOString().slice(0, 10)
+    const expenses = await api(`${await household()}/expenses?${new URLSearchParams({ from: `${month}-01`, to: lastDay })}`)
+    return reply({ month, ...summarizeMonth(expenses, (await loadHousehold()).members || []) })
+  }))
+
+  server.registerTool('add_expenses', {
+    title: 'Add expenses',
+    description: 'Adds one or more expenses. Reports which were added and which failed.',
+    inputSchema: { expenses: z.array(z.object(expenseFields)).min(1).max(50) },
+    annotations: { destructiveHint: false, openWorldHint: false },
+  }, tool(async ({ expenses }) => {
+    const path = `${await household()}/expenses`
+    const members = (await loadHousehold()).members || []
+    const added = []
+    const failed = []
+    for (const expense of expenses) {
+      try {
+        added.push(describeExpense(await api(path, { method: 'POST', body: await expenseBody(expense) }), members))
+      } catch (error) {
+        failed.push({ description: expense.description ?? null, amount: expense.amount, error: error.message })
+      }
+    }
+    return reply({ added, failed })
+  }))
+
+  server.registerTool('update_expense', {
+    title: 'Change expense',
+    description: 'Changes an expense from list_expenses. Only the fields given are changed; send an empty string to clear description or type, and repeats: "" to stop it repeating.',
+    inputSchema: {
+      expenseId: z.string(),
+      ...Object.fromEntries(Object.entries(expenseFields).map(([key, schema]) => [key, schema.optional()])),
+      repeats: z.union([z.enum(FREQUENCIES), z.literal('')]).optional().describe('weekly, monthly or yearly; an empty string stops it repeating'),
+    },
+    annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
+  }, tool(async ({ expenseId, ...changes }) => {
+    const path = await household()
+    // The API replaces the whole expense, so the fields left out come from the current one
+    const existing = (await api(`${path}/expenses`)).find((expense) => expense.expense_id === expenseId)
+    if (!existing) throw new Error('Expense not found')
+    const members = (await loadHousehold()).members || []
+    // An older expense may keep a payer who has since left, so the payer stays unless a new one is named
+    const { paidBy: _currentPayer, ...current } = describeExpense(existing, members)
+    const body = await expenseBody({ ...current, payerId: existing.paid_by_member_id, ...changes })
+    const expense = await api(`${path}/expenses/${encodeURIComponent(expenseId)}`, { method: 'PATCH', body })
+    return reply(describeExpense(expense, members))
+  }))
+
+  server.registerTool('remove_expense', {
+    title: 'Remove expense',
+    description: 'Deletes an expense from list_expenses. Deleting a repeating expense also stops its future repeats.',
+    inputSchema: { expenseId: z.string() },
+    annotations: { destructiveHint: true, openWorldHint: false },
+  }, tool(async ({ expenseId }) => {
+    await api(`${await household()}/expenses/${encodeURIComponent(expenseId)}`, { method: 'DELETE' })
+    return reply({ removed: expenseId })
   }))
 
   return server

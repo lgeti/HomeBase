@@ -2,11 +2,11 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
-import { createMcpServer } from '../src/mcp.js'
+import { createMcpServer, summarizeMonth } from '../src/mcp.js'
 
 const householdId = '11111111-1111-1111-1111-111111111111'
 const members = [
-  { household_member_id: 'm1', display_name: 'Daniel', status: 'active' },
+  { household_member_id: 'm1', display_name: 'Daniel', status: 'active', auth_user_id: 'u1' },
   { household_member_id: 'm2', display_name: 'Carol', status: 'active' },
   { household_member_id: 'm3', display_name: 'Invited Ian', status: 'invited' },
 ]
@@ -19,16 +19,18 @@ const fakeApi = (handlers = {}) => {
   const api = async (path, options = {}) => {
     calls.push({ path, method: options.method || 'GET', body: options.body })
     if (path === '/api/households/me') return handlers.household === undefined ? { household_id: householdId, members } : handlers.household
-    const handler = handlers[`${options.method || 'GET'} ${path.replace(`/api/households/${householdId}`, '')}`]
+    const [route, query = ''] = path.replace(`/api/households/${householdId}`, '').split('?')
+    const handler = handlers[`${options.method || 'GET'} ${route}`]
     if (!handler) throw new Error(`No fake for ${path}`)
-    return handler(options.body)
+    return handler(options.body, Object.fromEntries(new URLSearchParams(query)))
   }
   return { api, calls }
 }
 
 const connect = async (api) => {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
-  await createMcpServer(api).connect(serverTransport)
+  // Signed in as Daniel
+  await createMcpServer(api, { userId: 'u1' }).connect(serverTransport)
   const client = new Client({ name: 'test', version: '1.0.0' })
   await client.connect(clientTransport)
   return client
@@ -40,11 +42,13 @@ const call = async (api, name, args = {}) => {
 }
 
 describe('HomeBase MCP server', () => {
-  it('offers the food, shopping and chore tools', async () => {
+  it('offers the food, shopping, chore and money tools', async () => {
     const { tools } = await (await connect(fakeApi().api)).listTools()
     assert.deepEqual(tools.map((tool) => tool.name).sort(), [
-      'add_chores', 'add_food_items', 'add_shopping_items', 'complete_chore', 'list_chores', 'list_food', 'list_shopping',
-      'remove_chore', 'remove_food_items','remove_shopping_item', 'update_chore', 'update_food_item', 'update_shopping_item',
+      'add_chores', 'add_expenses', 'add_food_items', 'add_shopping_items', 'complete_chore',
+      'list_chores', 'list_expenses', 'list_food', 'list_shopping', 'money_summary',
+      'remove_chore', 'remove_expense', 'remove_food_items', 'remove_shopping_item',
+      'update_chore', 'update_expense', 'update_food_item', 'update_shopping_item',
     ])
   })
 
@@ -103,7 +107,7 @@ describe('HomeBase MCP server', () => {
   it('marks only removing as destructive', async () => {
     const { tools } = await (await connect(fakeApi().api)).listTools()
     const destructive = tools.filter((tool) => !tool.annotations?.readOnlyHint && tool.annotations?.destructiveHint !== false)
-    assert.deepEqual(destructive.map((tool) => tool.name), ['remove_food_items', 'remove_shopping_item', 'remove_chore'])
+    assert.deepEqual(destructive.map((tool) => tool.name), ['remove_food_items', 'remove_shopping_item', 'remove_chore', 'remove_expense'])
   })
 
   it('explains what went wrong instead of failing', async () => {
@@ -215,6 +219,86 @@ describe('HomeBase MCP server', () => {
     it('removes a chore', async () => {
       const { api, calls } = fakeApi({ 'DELETE /chores/c1': () => null })
       await call(api, 'remove_chore', { choreId: 'c1' })
+      assert.equal(calls.at(-1).method, 'DELETE')
+    })
+  })
+
+  describe('money', () => {
+    const lidl = {
+      expense_id: 'x1', expense_date: '2026-10-20', amount: '42.50', category_id: 'groceries', tag: 'Supermarket', description: 'Lidl',
+      paid_by_member_id: 'm1', split_type: 'split', is_recurring: false, recurring_frequency: null, recurring_source_id: null,
+    }
+    const rent = { ...lidl, expense_id: 'x2', amount: '600', category_id: 'utilities', tag: 'Rent', description: 'Rent', paid_by_member_id: 'm2', is_recurring: true, recurring_frequency: 'monthly' }
+    const solo = { ...lidl, expense_id: 'x3', amount: '10', category_id: 'going-out', tag: null, description: 'Coffee', split_type: 'one' }
+
+    it('summarizes a month the way the Money tab does', () => {
+      assert.deepEqual(summarizeMonth([lidl, rent, solo], members), {
+        total: 652.5,
+        byCategory: { groceries: 42.5, utilities: 600, 'going-out': 10 },
+        members: [
+          { name: 'Daniel', paid: 52.5, owed: 331.25, net: -278.75 },
+          { name: 'Carol', paid: 600, owed: 321.25, net: 278.75 },
+        ],
+        settle: { owes: 'Daniel', owed: 'Carol', amount: 278.75 },
+      })
+      assert.equal(summarizeMonth([solo], members).settle, null)
+    })
+
+    it('lists expenses with names, from the start of this month unless told otherwise', async () => {
+      const queries = []
+      const { api } = fakeApi({ 'GET /expenses': (_body, query) => { queries.push(query); return [lidl, rent] } })
+      const { value } = await call(api, 'list_expenses')
+      assert.deepEqual(queries[0], { from: `${new Date().toISOString().slice(0, 7)}-01` })
+      assert.deepEqual(value[0], {
+        expenseId: 'x1', date: '2026-10-20', amount: 42.5, category: 'groceries', type: 'Supermarket', description: 'Lidl',
+        paidBy: 'Daniel', split: true, repeats: null, isRepeat: false,
+      })
+      assert.equal(value[1].repeats, 'monthly')
+
+      await call(api, 'list_expenses', { from: '2026-09-01', to: '2026-09-30', category: 'utilities' })
+      assert.deepEqual(queries[1], { from: '2026-09-01', to: '2026-09-30', categoryId: 'utilities' })
+    })
+
+    it('asks the API for the whole month in the summary', async () => {
+      const queries = []
+      const { api } = fakeApi({ 'GET /expenses': (_body, query) => { queries.push(query); return [lidl] } })
+      const { value } = await call(api, 'money_summary', { month: '2026-02' })
+      assert.deepEqual(queries[0], { from: '2026-02-01', to: '2026-02-28' })
+      assert.equal(value.month, '2026-02')
+      assert.deepEqual(value.settle, { owes: 'Carol', owed: 'Daniel', amount: 21.25 })
+    })
+
+    it('adds expenses paid by the signed-in person unless someone else is named', async () => {
+      const { api, calls } = fakeApi({ 'POST /expenses': (body) => ({ ...lidl, paid_by_member_id: body.paidByMemberId }) })
+      const { value } = await call(api, 'add_expenses', { expenses: [
+        { amount: 42.5, category: 'groceries', date: '2026-10-20', description: 'Lidl', split: true },
+        { amount: 600, category: 'utilities', date: '2026-10-01', paidBy: 'Carol', repeats: 'monthly' },
+        { amount: 5, category: 'other', date: '2026-10-01', paidBy: 'Ian' },
+      ] })
+      assert.deepEqual(calls.filter((entry) => entry.method === 'POST').map((entry) => entry.body), [
+        { amount: 42.5, categoryId: 'groceries', expenseDate: '2026-10-20', description: 'Lidl', tag: null, paidByMemberId: 'm1', splitType: 'split', isRecurring: false, recurringFrequency: null },
+        { amount: 600, categoryId: 'utilities', expenseDate: '2026-10-01', description: null, tag: null, paidByMemberId: 'm2', splitType: 'one', isRecurring: true, recurringFrequency: 'monthly' },
+      ])
+      assert.deepEqual(value.added.map((expense) => expense.paidBy), ['Daniel', 'Carol'])
+      assert.match(value.failed[0].error, /No joined member is called "Ian"/)
+    })
+
+    it('changes only the fields given, keeping the rest of the expense', async () => {
+      const { api, calls } = fakeApi({ 'GET /expenses': () => [lidl, rent], 'PATCH /expenses/x2': (body) => ({ ...rent, amount: String(body.amount), is_recurring: body.isRecurring }) })
+      const { value } = await call(api, 'update_expense', { expenseId: 'x2', amount: 650, repeats: '' })
+      assert.deepEqual(calls.at(-1).body, {
+        amount: 650, categoryId: 'utilities', expenseDate: '2026-10-20', description: 'Rent', tag: 'Rent',
+        paidByMemberId: 'm2', splitType: 'split', isRecurring: false, recurringFrequency: null,
+      })
+      assert.deepEqual([value.amount, value.repeats], [650, null])
+
+      const missing = await call(api, 'update_expense', { expenseId: 'nope', amount: 1 })
+      assert.equal(missing.value, 'Expense not found')
+    })
+
+    it('removes an expense', async () => {
+      const { api, calls } = fakeApi({ 'DELETE /expenses/x1': () => null })
+      await call(api, 'remove_expense', { expenseId: 'x1' })
       assert.equal(calls.at(-1).method, 'DELETE')
     })
   })

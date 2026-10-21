@@ -42,6 +42,7 @@ export default function App() {
     isLoading: authLoading,
     isConfigured,
     signInWithGoogle,
+    signInWithGoogleIdToken,
     signInWithPassword,
     signUpWithPassword,
     sendPasswordReset,
@@ -243,6 +244,7 @@ export default function App() {
       <AuthScreen
         isConfigured={isConfigured}
         onGoogleSignIn={signInWithGoogle}
+        onGoogleIdToken={signInWithGoogleIdToken}
         onPasswordSignIn={signInWithPassword}
         onSignUp={signUpWithPassword}
         onSendPasswordReset={sendPasswordReset}

@@ -59,6 +59,14 @@ export const useAuth = () => {
     if (error) throw error
   }
 
+  // Signs in with the ID token from Google's own button (see GoogleSignInButton)
+  const signInWithGoogleIdToken = async (token, nonce) => {
+    if (!supabase) throw new Error('Supabase Auth is not configured')
+
+    const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token, nonce })
+    if (error) throw error
+  }
+
   const signInWithPassword = async (email, password) => {
     if (!supabase) throw new Error('Supabase Auth is not configured')
 
@@ -102,6 +110,7 @@ export const useAuth = () => {
     isConfigured: isSupabaseConfigured,
     isRecoveringPassword,
     signInWithGoogle,
+    signInWithGoogleIdToken,
     signInWithPassword,
     signUpWithPassword,
     sendPasswordReset,

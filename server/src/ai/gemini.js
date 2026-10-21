@@ -16,13 +16,14 @@ export const isAiConfigured = () => Boolean(process.env.GEMINI_API_KEY)
 
 // Asks the model for JSON matching `schema` (an OpenAPI-style schema) and returns it parsed.
 // `images` ([{ mimeType, data }] with base64 data; photos or PDFs) are sent along for the model to read.
-export const generateJson = async ({ prompt, schema, images = [], temperature = 0.8 }) => {
+// `timeoutMs` is how long to wait for one answer; long answers (a full receipt) need more than the default.
+export const generateJson = async ({ prompt, schema, images = [], temperature = 0.8, timeoutMs = TIMEOUT_MS }) => {
   if (!isAiConfigured()) throw new AiError('AI features are not set up yet (no AI key on the server)', 503)
 
   const model = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'
   const request = () => fetch(`${API_URL}/${encodeURIComponent(model)}:generateContent`, {
     method: 'POST',
-    signal: AbortSignal.timeout(TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
     body: JSON.stringify({
       contents: [{ role: 'user', parts: [...images.map((image) => ({ inlineData: image })), { text: prompt }] }],

@@ -44,7 +44,7 @@ describe('HomeBase MCP server', () => {
     const { tools } = await (await connect(fakeApi().api)).listTools()
     assert.deepEqual(tools.map((tool) => tool.name).sort(), [
       'add_chores', 'add_food_items', 'add_shopping_items', 'complete_chore', 'list_chores', 'list_food', 'list_shopping',
-      'remove_chore', 'remove_food_item', 'remove_shopping_item', 'update_chore', 'update_food_item', 'update_shopping_item',
+      'remove_chore', 'remove_food_items','remove_shopping_item', 'update_chore', 'update_food_item', 'update_shopping_item',
     ])
   })
 
@@ -81,11 +81,29 @@ describe('HomeBase MCP server', () => {
     assert.deepEqual(calls.at(-1).body, { quantity: '2 l' })
   })
 
-  it('removes an item as used up or as a mistake', async () => {
-    const { api, calls } = fakeApi({ 'POST /fridge-items/a/used-up': () => ({ shoppingItem: null }), 'DELETE /fridge-items/a': () => null })
-    await call(api, 'remove_food_item', { itemId: 'a', usedUp: true })
-    await call(api, 'remove_food_item', { itemId: 'a' })
-    assert.deepEqual(calls.filter((entry) => entry.method !== 'GET').map((entry) => entry.method), ['POST', 'DELETE'])
+  it('removes several items as used up or as mistakes and reports the ones that failed', async () => {
+    const { api, calls } = fakeApi({
+      'POST /fridge-items/a/used-up': () => ({ shoppingItem: null }),
+      'DELETE /fridge-items/b': () => null,
+      'DELETE /fridge-items/c': () => { throw new Error('Item not found') },
+    })
+    const { value } = await call(api, 'remove_food_items', { items: [{ itemId: 'a', usedUp: true }, { itemId: 'b' }, { itemId: 'c' }] })
+    assert.deepEqual(value.removed, [{ itemId: 'a', usedUp: true }, { itemId: 'b', usedUp: false }])
+    assert.deepEqual(value.failed, [{ itemId: 'c', error: 'Item not found' }])
+    assert.deepEqual(calls.filter((entry) => entry.method !== 'GET').map((entry) => entry.method), ['POST', 'DELETE', 'DELETE'])
+  })
+
+  it('only accepts expiry dates as YYYY-MM-DD, or empty to clear one', async () => {
+    const { api, calls } = fakeApi({ 'PATCH /fridge-items/a': (body) => ({ ...milk, expires_on: body.expiresOn || null }) })
+    assert.equal((await call(api, 'add_food_items', { items: [{ name: 'Milk', expiresOn: '25/10/2026' }] })).isError, true)
+    assert.equal((await call(api, 'update_food_item', { itemId: 'a', expiresOn: '' })).value.expiresOn, null)
+    assert.equal(calls.some((entry) => entry.method === 'POST'), false)
+  })
+
+  it('marks only removing as destructive', async () => {
+    const { tools } = await (await connect(fakeApi().api)).listTools()
+    const destructive = tools.filter((tool) => !tool.annotations?.readOnlyHint && tool.annotations?.destructiveHint !== false)
+    assert.deepEqual(destructive.map((tool) => tool.name), ['remove_food_items', 'remove_shopping_item', 'remove_chore'])
   })
 
   it('explains what went wrong instead of failing', async () => {

@@ -14,11 +14,12 @@ To put something on the shopping list, use add_shopping_items; it goes on the fi
 Chores have a due date and repeat once, daily, weekly or monthly. Use the person's own local date for dueOn and doneOn, and give a chore to someone by the name list_chores shows for the household's members.`
 
 const location = z.enum(FOOD_LOCATIONS)
+const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD')
 
 const foodFields = {
   name: z.string().describe('What it is, e.g. "Milk"'),
   quantity: z.string().optional().describe('How much, e.g. "1 l", "6", "half a pack"'),
-  expiresOn: z.string().optional().describe('Expiry date as YYYY-MM-DD'),
+  expiresOn: date.optional().describe('Expiry date as YYYY-MM-DD'),
   note: z.string().optional(),
   location: location.optional().describe('Where it is kept; fridge when left out'),
 }
@@ -115,7 +116,7 @@ export const createMcpServer = (api) => {
     title: 'List food',
     description: 'Lists the food at home, soonest expiry first. Leave location out for both the fridge and the pantry.',
     inputSchema: { location: location.optional() },
-    annotations: { readOnlyHint: true },
+    annotations: { readOnlyHint: true, openWorldHint: false },
   }, tool(async ({ location: where }) => {
     const items = await api(`${await household()}/fridge-items`)
     return reply(items.filter((item) => !where || item.location === where).map(describeItem))
@@ -125,6 +126,7 @@ export const createMcpServer = (api) => {
     title: 'Add food',
     description: 'Adds one or more items to the fridge or pantry. Reports which were added and which failed.',
     inputSchema: { items: z.array(z.object(foodFields)).min(1).max(50) },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ items }) => {
     const path = `${await household()}/fridge-items`
     const added = []
@@ -146,29 +148,42 @@ export const createMcpServer = (api) => {
     inputSchema: {
       itemId: z.string(),
       ...Object.fromEntries(Object.entries(foodFields).map(([key, schema]) => [key, schema.optional()])),
+      // An empty string clears the date
+      expiresOn: z.union([date, z.literal('')]).optional().describe('Expiry date as YYYY-MM-DD'),
     },
+    annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, tool(async ({ itemId, ...changes }) => {
     const item = await api(`${await household()}/fridge-items/${encodeURIComponent(itemId)}`, { method: 'PATCH', body: changes })
     return reply(describeItem(item))
   }))
 
-  server.registerTool('remove_food_item', {
+  server.registerTool('remove_food_items', {
     title: 'Remove food',
-    description: 'Removes an item from list_food. Set usedUp when it was eaten or thrown away, leave it false when it was added by mistake.',
-    inputSchema: { itemId: z.string(), usedUp: z.boolean().optional() },
-    annotations: { destructiveHint: true },
-  }, tool(async ({ itemId, usedUp = false }) => {
-    const path = `${await household()}/fridge-items/${encodeURIComponent(itemId)}`
-    if (usedUp) await api(`${path}/used-up`, { method: 'POST', body: {} })
-    else await api(path, { method: 'DELETE' })
-    return reply({ removed: itemId, usedUp })
+    description: 'Removes one or more items from list_food. Set usedUp when an item was eaten or thrown away, leave it false when it was added by mistake. Reports which were removed and which failed.',
+    inputSchema: { items: z.array(z.object({ itemId: z.string(), usedUp: z.boolean().optional() })).min(1).max(50) },
+    annotations: { destructiveHint: true, openWorldHint: false },
+  }, tool(async ({ items }) => {
+    const base = `${await household()}/fridge-items`
+    const removed = []
+    const failed = []
+    for (const { itemId, usedUp = false } of items) {
+      const path = `${base}/${encodeURIComponent(itemId)}`
+      try {
+        if (usedUp) await api(`${path}/used-up`, { method: 'POST', body: {} })
+        else await api(path, { method: 'DELETE' })
+        removed.push({ itemId, usedUp })
+      } catch (error) {
+        failed.push({ itemId, error: error.message })
+      }
+    }
+    return reply({ removed, failed })
   }))
 
   server.registerTool('list_shopping', {
     title: 'List shopping',
     description: 'Lists the shopping lists and what is still to buy (or sell) on each. Set includeDone to also see what was already bought or sold.',
     inputSchema: { includeDone: z.boolean().optional() },
-    annotations: { readOnlyHint: true },
+    annotations: { readOnlyHint: true, openWorldHint: false },
   }, tool(async ({ includeDone = false }) => {
     const path = await household()
     const [lists, items] = await Promise.all([api(`${path}/shopping-lists`), api(`${path}/shopping-items`)])
@@ -192,6 +207,7 @@ export const createMcpServer = (api) => {
         note: z.string().optional(),
       })).min(1).max(50),
     },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ listId, items }) => {
     const path = await household()
     // Listing the lists also creates the Groceries list for a household that has none yet
@@ -222,6 +238,7 @@ export const createMcpServer = (api) => {
       quantity: z.string().optional(),
       note: z.string().optional(),
     },
+    annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, tool(async ({ itemId, done, ...changes }) => {
     const path = await household()
     const body = { ...changes }
@@ -239,7 +256,7 @@ export const createMcpServer = (api) => {
     title: 'Remove shopping item',
     description: 'Takes an item from list_shopping off its list. To mark it bought, use update_shopping_item with done: true instead.',
     inputSchema: { itemId: z.string() },
-    annotations: { destructiveHint: true },
+    annotations: { destructiveHint: true, openWorldHint: false },
   }, tool(async ({ itemId }) => {
     await api(`${await household()}/shopping-items/${encodeURIComponent(itemId)}`, { method: 'DELETE' })
     return reply({ removed: itemId })
@@ -248,7 +265,7 @@ export const createMcpServer = (api) => {
   server.registerTool('list_chores', {
     title: 'List chores',
     description: 'Lists the chores still to do, soonest first, with who does each one and who did it last. Also lists the household members chores can be given to.',
-    annotations: { readOnlyHint: true },
+    annotations: { readOnlyHint: true, openWorldHint: false },
   }, tool(async () => {
     const chores = await api(`${await household()}/chores`)
     const members = (await loadHousehold()).members || []
@@ -262,6 +279,7 @@ export const createMcpServer = (api) => {
     title: 'Add chores',
     description: 'Adds one or more chores. Reports which were added and which failed.',
     inputSchema: { chores: z.array(z.object(choreFields)).min(1).max(50) },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ chores }) => {
     const path = `${await household()}/chores`
     const members = (await loadHousehold()).members || []
@@ -285,6 +303,7 @@ export const createMcpServer = (api) => {
       choreId: z.string(),
       ...Object.fromEntries(Object.entries(choreFields).map(([key, schema]) => [key, schema.optional()])),
     },
+    annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, tool(async ({ choreId, ...changes }) => {
     const path = `${await household()}/chores/${encodeURIComponent(choreId)}`
     const chore = await api(path, { method: 'PATCH', body: await choreBody(changes) })
@@ -295,6 +314,7 @@ export const createMcpServer = (api) => {
     title: 'Mark chore done',
     description: 'Marks a chore from list_chores as done by the signed-in person. A repeating chore moves to its next date; a one-time chore is finished.',
     inputSchema: { choreId: z.string(), doneOn: z.string().describe("The day it was done, as YYYY-MM-DD in the person's own time zone") },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ choreId, doneOn }) => {
     const path = `${await household()}/chores/${encodeURIComponent(choreId)}/done`
     const { chore } = await api(path, { method: 'POST', body: { doneOn } })
@@ -305,7 +325,7 @@ export const createMcpServer = (api) => {
     title: 'Remove chore',
     description: 'Deletes a chore from list_chores for good, including its repeats. To record that it was done, use complete_chore instead.',
     inputSchema: { choreId: z.string() },
-    annotations: { destructiveHint: true },
+    annotations: { destructiveHint: true, openWorldHint: false },
   }, tool(async ({ choreId }) => {
     await api(`${await household()}/chores/${encodeURIComponent(choreId)}`, { method: 'DELETE' })
     return reply({ removed: choreId })

@@ -12,6 +12,9 @@ const router = express.Router()
 // 20 receipt scans per household per hour keeps well inside the free AI quota
 const allowScan = createRateLimiter({ limit: 20, windowMs: 60 * 60 * 1000 })
 
+// A long receipt is a long answer: usually 15-30 seconds, sometimes about a minute
+const SCAN_TIMEOUT_MS = 90 * 1000
+
 // Reads a receipt (a photo or a PDF) and returns what is on it. Nothing is saved, and the file is not kept or logged.
 // It has its own body limit because files are bigger than the 1 MB the other routes accept.
 // The file arrives as { file } (older app versions send { image }).
@@ -34,6 +37,7 @@ router.post(
         schema: RECEIPT_SCHEMA,
         images: [{ mimeType: file.mimeType, data: file.data }],
         temperature: 0,
+        timeoutMs: SCAN_TIMEOUT_MS,
       })
       const receipt = parseReceipt(answer, today)
       if (!receipt) return sendError(response, 422, 'That could not be read as a receipt; fill in the expense by hand')

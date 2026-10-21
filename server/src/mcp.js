@@ -183,7 +183,7 @@ export const createMcpServer = (api) => {
     title: 'List shopping',
     description: 'Lists the shopping lists and what is still to buy (or sell) on each. Set includeDone to also see what was already bought or sold.',
     inputSchema: { includeDone: z.boolean().optional() },
-    annotations: { readOnlyHint: true },
+    annotations: { readOnlyHint: true, openWorldHint: false },
   }, tool(async ({ includeDone = false }) => {
     const path = await household()
     const [lists, items] = await Promise.all([api(`${path}/shopping-lists`), api(`${path}/shopping-items`)])
@@ -207,6 +207,7 @@ export const createMcpServer = (api) => {
         note: z.string().optional(),
       })).min(1).max(50),
     },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ listId, items }) => {
     const path = await household()
     // Listing the lists also creates the Groceries list for a household that has none yet
@@ -237,6 +238,7 @@ export const createMcpServer = (api) => {
       quantity: z.string().optional(),
       note: z.string().optional(),
     },
+    annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, tool(async ({ itemId, done, ...changes }) => {
     const path = await household()
     const body = { ...changes }
@@ -254,7 +256,7 @@ export const createMcpServer = (api) => {
     title: 'Remove shopping item',
     description: 'Takes an item from list_shopping off its list. To mark it bought, use update_shopping_item with done: true instead.',
     inputSchema: { itemId: z.string() },
-    annotations: { destructiveHint: true },
+    annotations: { destructiveHint: true, openWorldHint: false },
   }, tool(async ({ itemId }) => {
     await api(`${await household()}/shopping-items/${encodeURIComponent(itemId)}`, { method: 'DELETE' })
     return reply({ removed: itemId })
@@ -263,7 +265,7 @@ export const createMcpServer = (api) => {
   server.registerTool('list_chores', {
     title: 'List chores',
     description: 'Lists the chores still to do, soonest first, with who does each one and who did it last. Also lists the household members chores can be given to.',
-    annotations: { readOnlyHint: true },
+    annotations: { readOnlyHint: true, openWorldHint: false },
   }, tool(async () => {
     const chores = await api(`${await household()}/chores`)
     const members = (await loadHousehold()).members || []
@@ -277,6 +279,7 @@ export const createMcpServer = (api) => {
     title: 'Add chores',
     description: 'Adds one or more chores. Reports which were added and which failed.',
     inputSchema: { chores: z.array(z.object(choreFields)).min(1).max(50) },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ chores }) => {
     const path = `${await household()}/chores`
     const members = (await loadHousehold()).members || []
@@ -300,6 +303,7 @@ export const createMcpServer = (api) => {
       choreId: z.string(),
       ...Object.fromEntries(Object.entries(choreFields).map(([key, schema]) => [key, schema.optional()])),
     },
+    annotations: { destructiveHint: false, idempotentHint: true, openWorldHint: false },
   }, tool(async ({ choreId, ...changes }) => {
     const path = `${await household()}/chores/${encodeURIComponent(choreId)}`
     const chore = await api(path, { method: 'PATCH', body: await choreBody(changes) })
@@ -310,6 +314,7 @@ export const createMcpServer = (api) => {
     title: 'Mark chore done',
     description: 'Marks a chore from list_chores as done by the signed-in person. A repeating chore moves to its next date; a one-time chore is finished.',
     inputSchema: { choreId: z.string(), doneOn: z.string().describe("The day it was done, as YYYY-MM-DD in the person's own time zone") },
+    annotations: { destructiveHint: false, openWorldHint: false },
   }, tool(async ({ choreId, doneOn }) => {
     const path = `${await household()}/chores/${encodeURIComponent(choreId)}/done`
     const { chore } = await api(path, { method: 'POST', body: { doneOn } })
@@ -320,7 +325,7 @@ export const createMcpServer = (api) => {
     title: 'Remove chore',
     description: 'Deletes a chore from list_chores for good, including its repeats. To record that it was done, use complete_chore instead.',
     inputSchema: { choreId: z.string() },
-    annotations: { destructiveHint: true },
+    annotations: { destructiveHint: true, openWorldHint: false },
   }, tool(async ({ choreId }) => {
     await api(`${await household()}/chores/${encodeURIComponent(choreId)}`, { method: 'DELETE' })
     return reply({ removed: choreId })

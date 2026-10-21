@@ -44,7 +44,7 @@ describe('HomeBase MCP server', () => {
     const { tools } = await (await connect(fakeApi().api)).listTools()
     assert.deepEqual(tools.map((tool) => tool.name).sort(), [
       'add_chores', 'add_food_items', 'add_shopping_items', 'complete_chore', 'list_chores', 'list_food', 'list_shopping',
-      'remove_chore', 'remove_food_item', 'remove_shopping_item', 'update_chore', 'update_food_item', 'update_shopping_item',
+      'remove_chore', 'remove_food_items','remove_shopping_item', 'update_chore', 'update_food_item', 'update_shopping_item',
     ])
   })
 
@@ -103,7 +103,7 @@ describe('HomeBase MCP server', () => {
   it('marks only removing as destructive', async () => {
     const { tools } = await (await connect(fakeApi().api)).listTools()
     const destructive = tools.filter((tool) => !tool.annotations?.readOnlyHint && tool.annotations?.destructiveHint !== false)
-    assert.deepEqual(destructive.map((tool) => tool.name), ['remove_food_items'])
+    assert.deepEqual(destructive.map((tool) => tool.name), ['remove_food_items', 'remove_shopping_item', 'remove_chore'])
   })
 
   it('explains what went wrong instead of failing', async () => {

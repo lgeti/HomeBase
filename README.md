@@ -33,7 +33,9 @@ You need **Node.js 22 or newer**. Local development uses a separate Supabase pro
      VITE_SUPABASE_URL=<homebase-dev project URL>
      VITE_SUPABASE_PUBLISHABLE_KEY=<homebase-dev publishable key>
      VITE_AUTH_REDIRECT_URL=http://localhost:5173/HomeBase/
+     VITE_GOOGLE_CLIENT_ID=<optional: Google OAuth client ID, for the "Continue with Google" button>
      ```
+     The Google client needs `http://localhost` and `http://localhost:5173` under **Authorized JavaScript origins** in Google Cloud, and the same client ID under **Client IDs** in the Supabase project's Google provider. Without it, the button falls back to Supabase's redirect sign-in.
    - `server/.env.development.local`
      ```
      PORT=3000

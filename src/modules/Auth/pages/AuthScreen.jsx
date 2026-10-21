@@ -5,7 +5,7 @@ import Login from './Login'
 import Signup from './Signup'
 
 // Sign in or sign up, with a notice when the person arrived from an invite link
-export default function AuthScreen({ isConfigured, onGoogleSignIn, onPasswordSignIn, onSignUp, onSendPasswordReset }) {
+export default function AuthScreen({ isConfigured, onGoogleSignIn, onGoogleIdToken, onPasswordSignIn, onSignUp, onSendPasswordReset }) {
   const [mode, setMode] = useState('login')
 
   return (
@@ -31,6 +31,7 @@ export default function AuthScreen({ isConfigured, onGoogleSignIn, onPasswordSig
         <Login
           isConfigured={isConfigured}
           onGoogleSignIn={onGoogleSignIn}
+          onGoogleIdToken={onGoogleIdToken}
           onPasswordSignIn={onPasswordSignIn}
           onSwitchToSignup={() => setMode('signup')}
           onForgotPassword={() => setMode('reset')}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Logo from './Logo'
+import { OnboardingProgress } from './Onboarding'
 
 export default function ProfileSetup({ onProfileSet, initialOwnerName = '', errorMessage = '' }) {
   const [householdName, setHouseholdName] = useState('')
@@ -29,10 +30,11 @@ export default function ProfileSetup({ onProfileSet, initialOwnerName = '', erro
     <div className="flex items-center justify-center min-h-screen bg-hb-bg px-4">
       <div className="w-full max-w-sm">
         <div className="bg-hb-surface rounded-2xl shadow-lg p-8 space-y-6">
+          <OnboardingProgress step={1} />
           <div className="text-center space-y-2">
             <Logo className="mx-auto mb-4" />
             <h1 className="text-3xl font-bold text-hb-text">Welcome to HomeBase</h1>
-            <p className="text-hb-text2">Let's set up your household</p>
+            <p className="text-hb-text2">Let's set up your household. You can invite people next.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

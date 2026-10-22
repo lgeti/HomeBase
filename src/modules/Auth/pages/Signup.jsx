@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Logo from '../../../components/Logo'
 
-export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
+export default function Signup({ isConfigured, onSignUp, onSwitchToLogin, onBack }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -86,8 +86,14 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin }) {
           onClick={onSwitchToLogin}
           className="w-full text-sm text-hb-primary hover:underline"
         >
-          Back to sign in
+          I already have an account
         </button>
+
+        {onBack && (
+          <button type="button" onClick={onBack} className="w-full text-sm text-hb-text3 hover:underline">
+            Back to the home page
+          </button>
+        )}
       </main>
     </div>
   )

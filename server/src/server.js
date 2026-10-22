@@ -2,6 +2,7 @@ import 'dotenv/config'
 import cors from 'cors'
 import express from 'express'
 import { sendError } from './http.js'
+import { limitPerAddress } from './rateLimit.js'
 import { liveUpdates } from './realtime.js'
 import choresRouter from './routes/chores.js'
 import expensesRouter from './routes/expenses.js'
@@ -26,8 +27,12 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'https://lgeti.github.io,htt
   .filter(Boolean)
 
 const app = express()
+// Render sits in front of the API as one proxy, so request.ip is the visitor's address
+app.set('trust proxy', 1)
 
 app.use(cors({ origin: allowedOrigins }))
+// Before sign-in is checked, so unsigned floods are turned away without asking Supabase about each one
+app.use(limitPerAddress({ limit: 600, windowMs: 60 * 1000 }))
 // Announces successful changes to the household's other devices (see realtime.js)
 app.use(liveUpdates)
 // Before the 1 MB body limit: receipt photos are larger and the receipt route reads its own body

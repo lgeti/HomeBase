@@ -3,8 +3,8 @@ import { AiError, generateJson } from '../ai/gemini.js'
 import { isRealDate } from '../chores.js'
 import { sendError } from '../http.js'
 import { checkQuota, requireAuth, requireHouseholdMember } from '../middleware.js'
+import { createRateLimiter } from '../rateLimit.js'
 import { parseReceipt, RECEIPT_PROMPT, RECEIPT_SCHEMA, validateReceiptFile } from '../receipts.js'
-import { createRateLimiter } from '../recipeSuggestions.js'
 import { todayUtc } from '../recurring.js'
 
 const router = express.Router()

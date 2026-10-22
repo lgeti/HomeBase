@@ -51,10 +51,10 @@ export default function GoogleSignInButton({ disabled, onCredential, onError }) 
         callback: ({ credential }) => handlersRef.current.onCredential(credential, nonce),
       })
 
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      // The white button in both modes: Google's dark one has a white logo tile and a grey box around it
       window.google.accounts.id.renderButton(containerRef.current, {
         type: 'standard',
-        theme: isDark ? 'filled_black' : 'outline',
+        theme: 'outline',
         size: 'large',
         text: 'continue_with',
         shape: 'rectangular',

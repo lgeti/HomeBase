@@ -79,7 +79,9 @@ export default function GoogleSignInButton({ disabled, onCredential, onError }) 
       className={`flex justify-center min-h-[44px] ${disabled ? 'opacity-50 pointer-events-none' : ''}`}
       aria-busy={!isReady}
     >
-      <div ref={containerRef} className="w-full flex justify-center" />
+      {/* Google's iframe is a light page; matching its color scheme keeps the browser from painting
+          a white box behind it in dark mode */}
+      <div ref={containerRef} className="w-full flex justify-center" style={{ colorScheme: 'light' }} />
     </div>
   )
 }

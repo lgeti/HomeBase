@@ -2,7 +2,7 @@ import express from 'express'
 import { AiError, generateJson } from '../ai/gemini.js'
 import { isRealDate } from '../chores.js'
 import { sendError } from '../http.js'
-import { requireAuth, requireHouseholdMember } from '../middleware.js'
+import { checkQuota, requireAuth, requireHouseholdMember } from '../middleware.js'
 import { parseReceipt, RECEIPT_PROMPT, RECEIPT_SCHEMA, validateReceiptFile } from '../receipts.js'
 import { createRateLimiter } from '../recipeSuggestions.js'
 import { todayUtc } from '../recurring.js'
@@ -23,6 +23,7 @@ router.post(
   express.json({ limit: '8mb' }),
   requireAuth,
   requireHouseholdMember,
+  checkQuota('ai_call'),
   async (request, response) => {
     const { householdId } = request.params
     const file = request.body?.file ?? request.body?.image

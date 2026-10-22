@@ -17,6 +17,7 @@ import HouseholdErrorScreen from './components/HouseholdErrorScreen'
 import Icon from './components/Icon'
 import LoadingScreen from './components/LoadingScreen'
 import ProfileSetup from './components/ProfileSetup'
+import UpgradePrompt from './components/UpgradePrompt'
 import AuthScreen from './modules/Auth/pages/AuthScreen'
 import ConnectAppScreen from './modules/Auth/pages/ConnectAppScreen'
 import ChoreForm from './modules/Chores/components/ChoreForm'
@@ -483,6 +484,7 @@ export default function App() {
       </AddTransactionSheetWrapper>
 
       <BottomNav activeView={activeView} onNavigate={setActiveView} onAdd={openAddSheet} />
+      <UpgradePrompt />
     </div>
   )
 }

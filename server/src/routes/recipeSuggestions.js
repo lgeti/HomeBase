@@ -2,7 +2,7 @@ import express from 'express'
 import { AiError, generateJson } from '../ai/gemini.js'
 import { isRealDate } from '../chores.js'
 import { sendError } from '../http.js'
-import { requireAuth, requireHouseholdMember } from '../middleware.js'
+import { checkQuota, requireAuth, requireHouseholdMember } from '../middleware.js'
 import { buildSuggestionPrompt, createRateLimiter, parseSuggestions, SUGGESTION_SCHEMA } from '../recipeSuggestions.js'
 import { todayUtc } from '../recurring.js'
 import { supabase } from '../supabase.js'
@@ -13,7 +13,7 @@ const router = express.Router()
 const allowSuggestion = createRateLimiter({ limit: 10, windowMs: 60 * 60 * 1000 })
 
 // A few recipe ideas from what is in the fridge. Only item names, quantities and expiry go to the AI.
-router.post('/api/households/:householdId/recipe-suggestions', requireAuth, requireHouseholdMember, async (request, response) => {
+router.post('/api/households/:householdId/recipe-suggestions', requireAuth, requireHouseholdMember, checkQuota('ai_call'), async (request, response) => {
   const { householdId } = request.params
   const today = isRealDate(request.body?.today) ? request.body.today : todayUtc()
 

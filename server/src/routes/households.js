@@ -1,7 +1,8 @@
 import express from 'express'
 import { canRemoveMember } from '../authorization.js'
 import { sendError } from '../http.js'
-import { requireAuth, requireHouseholdMember } from '../middleware.js'
+import { countUsage, planForRequest, requireAuth, requireHouseholdMember } from '../middleware.js'
+import { describePlan, USAGE_KINDS } from '../plans.js'
 import { supabase } from '../supabase.js'
 
 const router = express.Router()
@@ -112,6 +113,22 @@ router.get('/api/households/:householdId/members', requireAuth, requireHousehold
 
   if (error) return sendError(response, 500, error.message)
   response.json(data)
+})
+
+// The household's plan, its limits and this month's usage
+router.get('/api/households/:householdId/plan', requireAuth, requireHouseholdMember, async (request, response) => {
+  const { householdId } = request.params
+  const { count: memberCount, error } = await supabase
+    .from('household_members')
+    .select('household_member_id', { count: 'exact', head: true })
+    .eq('household_id', householdId)
+    .neq('status', 'removed')
+
+  if (error) return sendError(response, 500, error.message)
+  const planId = await planForRequest(request)
+  const kinds = Object.keys(USAGE_KINDS)
+  const counts = await Promise.all(kinds.map((kind) => countUsage(householdId, kind)))
+  response.json(describePlan(planId, Object.fromEntries(kinds.map((kind, index) => [kind, counts[index]])), memberCount ?? 0))
 })
 
 // Change your own display name in a household

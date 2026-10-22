@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import InviteLinkBox from '../../../components/InviteLinkBox'
 import { createInvitation, removeMember, updateMyDisplayName } from '../../../core/api/expensesApi'
+import { fetchPlan } from '../../../core/api/planApi'
 import { buildInviteLink } from '../../../core/utils/pendingInvite'
 // The same rule the server enforces, so the Remove button only appears when removing is allowed
 import { canRemoveMember } from '../../../../server/src/authorization.js'
@@ -11,6 +12,56 @@ const NEW_MEMBER = 'new'
 const memberStatus = (member) => {
   if (member.status === 'active') return 'Joined'
   return member.invited_at ? 'Invited' : 'Not invited yet'
+}
+
+// Used of limit, or just the count when there is no limit
+const formatUsage = ({ used, limit }) => (limit === null ? `${used}` : `${used} of ${limit}`)
+
+// The household's plan and how much of it this month has used. Billing comes later.
+function PlanUsage({ household }) {
+  const [plan, setPlan] = useState(null)
+  const [error, setError] = useState('')
+
+  // household changes when members join or leave, so the counts follow
+  useEffect(() => {
+    let isCurrent = true
+    fetchPlan(household.household_id)
+      .then((loaded) => { if (isCurrent) { setPlan(loaded); setError('') } })
+      .catch((loadError) => { if (isCurrent) setError(loadError.message) })
+    return () => { isCurrent = false }
+  }, [household])
+
+  return (
+    <section className="bg-hb-surface rounded-xl border border-hb-border p-4 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="font-semibold text-hb-text">Plan & usage</h3>
+        {plan && (
+          <span className="rounded-full bg-hb-primary-tint px-2.5 py-1 text-xs font-semibold text-hb-primary">{plan.name}</span>
+        )}
+      </div>
+      {error && <div className="p-3 bg-hb-danger-bg text-hb-danger rounded-lg text-sm">{error}</div>}
+      {!plan && !error && <p className="text-sm text-hb-text2">Loading...</p>}
+      {plan && (
+        <dl className="space-y-2 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-hb-text2">Members</dt>
+            <dd className="text-hb-text">{formatUsage(plan.members)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-hb-text2">AI calls this month</dt>
+            <dd className="text-hb-text">{formatUsage(plan.usage.ai_call)}</dd>
+          </div>
+          <div className="flex justify-between gap-3">
+            <dt className="text-hb-text2">HomeBase in Claude</dt>
+            <dd className="text-hb-text">{plan.features.mcp ? 'Included' : 'Pro only'}</dd>
+          </div>
+        </dl>
+      )}
+      {plan?.plan === 'free' && (
+        <p className="text-xs text-hb-text3">Pro adds unlimited members, more AI calls and HomeBase in Claude. Upgrading from the app is coming soon.</p>
+      )}
+    </section>
+  )
 }
 
 export default function HouseholdView({ household, currentUserId, onHouseholdChange, onSignOut }) {
@@ -277,6 +328,8 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
             {createdInvite && <InviteLinkBox key={createdInvite.link} link={createdInvite.link} name={createdInvite.name} />}
           </section>
         )}
+
+        <PlanUsage household={household} />
 
         <button
           type="button"

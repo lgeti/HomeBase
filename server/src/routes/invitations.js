@@ -2,7 +2,8 @@ import crypto from 'node:crypto'
 import express from 'express'
 import { canInvite } from '../authorization.js'
 import { sendError } from '../http.js'
-import { requireAuth, requireHouseholdMember } from '../middleware.js'
+import { planForRequest, requireAuth, requireHouseholdMember } from '../middleware.js'
+import { memberFits, planError, planOf } from '../plans.js'
 import { supabase } from '../supabase.js'
 
 const router = express.Router()
@@ -23,6 +24,18 @@ router.post('/api/households/:householdId/invitations', requireAuth, requireHous
 
   if (!canInvite(request.householdMember.role, role)) {
     return sendError(response, 403, 'Forbidden: your role cannot send this invitation')
+  }
+
+  // The plan caps how many people a household can have
+  const { data: currentMembers, error: membersError } = await supabase
+    .from('household_members')
+    .select('status')
+    .eq('household_id', householdId)
+
+  if (membersError) return sendError(response, 500, membersError.message)
+  const planId = await planForRequest(request)
+  if (!memberFits(planId, currentMembers, { existingPending: Boolean(memberId) })) {
+    return response.status(402).json(planError.members(planId))
   }
 
   let member
@@ -123,6 +136,26 @@ router.post('/api/invitations/:token/accept', requireAuth, async (request, respo
       ? 'You are already a member of this household'
       : 'You already belong to another household'
     return sendError(response, 409, message)
+  }
+
+  // Older links may still be out after the household filled its places, so check again on joining
+  const { data: household, error: householdError } = await supabase
+    .from('households')
+    .select('plan, plan_status')
+    .eq('household_id', invitation.household_id)
+    .single()
+
+  if (householdError) return sendError(response, 500, householdError.message)
+  const { data: joinedMembers, error: joinedError } = await supabase
+    .from('household_members')
+    .select('status')
+    .eq('household_id', invitation.household_id)
+    .eq('status', 'active')
+
+  if (joinedError) return sendError(response, 500, joinedError.message)
+  const planId = planOf(household)
+  if (!memberFits(planId, joinedMembers, { existingPending: true })) {
+    return response.status(402).json(planError.members(planId))
   }
 
   // Claim the invitation first so the same token cannot be accepted twice

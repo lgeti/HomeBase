@@ -5,6 +5,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 // A random id for this open copy of the app. Live updates carry it, so the app can skip the news of its own changes.
 export const CLIENT_ID = globalThis.crypto?.randomUUID?.() ?? `client-${Date.now()}-${Math.random().toString(36).slice(2)}`
 
+// 402 means the household's plan does not cover this; the app listens for it and shows the upgrade prompt
+export const UPGRADE_EVENT = 'homebase:upgrade-needed'
+
 export const apiRequest = async (path, options = {}) => {
   const { data: sessionData } = supabase
     ? await supabase.auth.getSession()
@@ -25,7 +28,11 @@ export const apiRequest = async (path, options = {}) => {
   const data = text ? JSON.parse(text) : null
 
   if (!response.ok) {
-    throw new Error(data?.error || `API request failed with status ${response.status}`)
+    const error = new Error(data?.error || `API request failed with status ${response.status}`)
+    error.status = response.status
+    error.code = data?.code
+    if (response.status === 402) window.dispatchEvent(new CustomEvent(UPGRADE_EVENT, { detail: data }))
+    throw error
   }
 
   return data

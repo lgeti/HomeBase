@@ -2,6 +2,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import express from 'express'
 import { sendError } from '../http.js'
 import { createMcpServer } from '../mcp.js'
+import { requirePlan } from '../middleware.js'
 import { supabase } from '../supabase.js'
 
 const router = express.Router()
@@ -38,8 +39,8 @@ const callApi = (authorization) => async (path, { method = 'GET', body } = {}) =
   return data
 }
 
-// Stateless: every request brings its token and gets a fresh server, so nothing is kept between calls
-router.post('/mcp', async (request, response) => {
+// Like requireAuth, but also tells Claude where to sign in
+const requireMcpAuth = async (request, response, next) => {
   const authorization = request.headers.authorization
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : null
   const { data } = token ? await supabase.auth.getUser(token) : { data: null }
@@ -49,7 +50,14 @@ router.post('/mcp', async (request, response) => {
     return sendError(response, 401, 'Sign in to HomeBase first')
   }
 
-  const server = createMcpServer(callApi(authorization), { userId: data.user.id })
+  request.user = data.user
+  next()
+}
+
+// Stateless: every request brings its token and gets a fresh server, so nothing is kept between calls
+router.post('/mcp', requireMcpAuth, requirePlan('mcp'), async (request, response) => {
+  const authorization = request.headers.authorization
+  const server = createMcpServer(callApi(authorization), { userId: request.user.id })
   const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true })
   response.on('close', () => {
     transport.close()

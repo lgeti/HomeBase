@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { buildSuggestionPrompt, createRateLimiter, daysBetween, describeFridge, parseSuggestions, SUGGESTION_COUNT } from '../src/recipeSuggestions.js'
+import { buildSuggestionPrompt, daysBetween, describeFridge, parseSuggestions, SUGGESTION_COUNT } from '../src/recipeSuggestions.js'
 
 const today = '2026-10-11'
 const fridge = [
@@ -76,16 +76,5 @@ describe('parseSuggestions', () => {
   it('copes with an answer of the wrong shape', () => {
     assert.deepEqual(parseSuggestions(null), [])
     assert.deepEqual(parseSuggestions({ suggestions: 'nope' }), [])
-  })
-})
-
-describe('createRateLimiter', () => {
-  it('allows a few calls per window per household', () => {
-    const allow = createRateLimiter({ limit: 2, windowMs: 1000 })
-    assert.equal(allow('h1', 0), true)
-    assert.equal(allow('h1', 10), true)
-    assert.equal(allow('h1', 20), false)
-    assert.equal(allow('h2', 20), true)
-    assert.equal(allow('h1', 1001), true)
   })
 })

@@ -13,11 +13,15 @@ import {
   validateImportedItem,
 } from '../linkImport.js'
 import { requireAuth, requireHouseholdMember } from '../middleware.js'
+import { createRateLimiter } from '../rateLimit.js'
 import { OPEN_STATUS } from '../shopping.js'
 import { supabase } from '../supabase.js'
 
 const router = express.Router()
 const base = '/api/households/:householdId/shopping-lists/:listId'
+
+// Each preview fetches other websites (a shared IKEA list fetches one page per item), so keep it modest
+const allowPreview = createRateLimiter({ limit: 30, windowMs: 60 * 60 * 1000 })
 
 const findList = (householdId, listId) =>
   supabase
@@ -65,6 +69,7 @@ const mapLimited = async (values, limit, work) => {
 // What a link would add, without saving anything: a shared IKEA list gives all its items, any other link one item
 router.post(`${base}/import-preview`, requireAuth, requireHouseholdMember, async (request, response) => {
   const { householdId, listId } = request.params
+  if (!allowPreview(householdId)) return sendError(response, 429, 'That is a lot of links for one hour; try again later')
   const link = typeof request.body.url === 'string' ? request.body.url.trim() : ''
 
   let url

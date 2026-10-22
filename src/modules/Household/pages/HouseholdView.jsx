@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import InviteLinkBox from '../../../components/InviteLinkBox'
 import { createInvitation, removeMember, updateMyDisplayName } from '../../../core/api/expensesApi'
 import { buildInviteLink } from '../../../core/utils/pendingInvite'
 // The same rule the server enforces, so the Remove button only appears when removing is allowed
@@ -23,7 +24,6 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState('')
   const [createdInvite, setCreatedInvite] = useState(null)
-  const [copied, setCopied] = useState(false)
   const [removeError, setRemoveError] = useState('')
   const [confirmingRemoveId, setConfirmingRemoveId] = useState(null)
   const [isRemoving, setIsRemoving] = useState(false)
@@ -91,7 +91,6 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
         : pendingMembers.find((member) => member.household_member_id === inviteTarget)?.display_name
 
       setCreatedInvite({ link: buildInviteLink(invitation.inviteToken), name: invitedName })
-      setCopied(false)
       setDisplayName('')
       await onHouseholdChange()
     } catch (inviteError) {
@@ -99,19 +98,6 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
     } finally {
       setIsSending(false)
     }
-  }
-
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(createdInvite.link)
-      setCopied(true)
-    } catch {
-      setError('Could not copy automatically. Select the link and copy it instead.')
-    }
-  }
-
-  const shareLink = () => {
-    navigator.share({ title: 'Join my HomeBase household', url: createdInvite.link }).catch(() => {})
   }
 
   return (
@@ -288,38 +274,7 @@ export default function HouseholdView({ household, currentUserId, onHouseholdCha
               </button>
             </form>
 
-            {createdInvite && (
-              <div className="rounded-lg bg-hb-primary-tint p-3 space-y-2">
-                <p className="text-sm text-hb-text2">
-                  Send this link to {createdInvite.name || 'them'}. Anyone who opens it can join as them, so only send it to them.
-                </p>
-                <input
-                  readOnly
-                  value={createdInvite.link}
-                  onFocus={(event) => event.target.select()}
-                  aria-label="Invite link"
-                  className="w-full px-3 py-2 text-xs border border-hb-border rounded-lg bg-hb-surface text-hb-text2"
-                />
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={copyLink}
-                    className="flex-1 rounded-lg border border-hb-primary py-2 text-sm font-semibold text-hb-primary"
-                  >
-                    {copied ? 'Copied!' : 'Copy link'}
-                  </button>
-                  {typeof navigator.share === 'function' && (
-                    <button
-                      type="button"
-                      onClick={shareLink}
-                      className="flex-1 rounded-lg bg-hb-primary py-2 text-sm font-semibold text-hb-on-primary"
-                    >
-                      Share
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+            {createdInvite && <InviteLinkBox key={createdInvite.link} link={createdInvite.link} name={createdInvite.name} />}
           </section>
         )}
 

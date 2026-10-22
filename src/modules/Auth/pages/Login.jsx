@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Logo from '../../../components/Logo'
 import GoogleSignInButton, { googleClientId } from './GoogleSignInButton'
 
-export default function Login({ isConfigured, onGoogleSignIn, onGoogleIdToken, onPasswordSignIn, onSwitchToSignup, onForgotPassword }) {
+export default function Login({ isConfigured, onGoogleSignIn, onGoogleIdToken, onPasswordSignIn, onSwitchToSignup, onForgotPassword, onBack }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -127,6 +127,12 @@ export default function Login({ isConfigured, onGoogleSignIn, onGoogleIdToken, o
         >
           Create a new account
         </button>
+
+        {onBack && (
+          <button type="button" onClick={onBack} className="w-full text-sm text-hb-text3 hover:underline">
+            Back to the home page
+          </button>
+        )}
       </main>
     </div>
   )

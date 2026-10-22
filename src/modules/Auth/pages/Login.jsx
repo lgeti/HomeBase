@@ -1,36 +1,12 @@
 import { useState } from 'react'
 import Logo from '../../../components/Logo'
-import GoogleSignInButton, { googleClientId } from './GoogleSignInButton'
+import ContinueWithGoogle from './ContinueWithGoogle'
 
 export default function Login({ isConfigured, onGoogleSignIn, onGoogleIdToken, onPasswordSignIn, onSwitchToSignup, onForgotPassword, onBack }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isSigningIn, setIsSigningIn] = useState(false)
-
-  const handleGoogleSignIn = async () => {
-    setError('')
-    setIsSigningIn(true)
-
-    try {
-      await onGoogleSignIn()
-    } catch (signInError) {
-      setError(signInError.message)
-      setIsSigningIn(false)
-    }
-  }
-
-  const handleGoogleCredential = async (credential, nonce) => {
-    setError('')
-    setIsSigningIn(true)
-
-    try {
-      await onGoogleIdToken(credential, nonce)
-    } catch (signInError) {
-      setError(signInError.message)
-      setIsSigningIn(false)
-    }
-  }
 
   const handlePasswordSignIn = async (event) => {
     event.preventDefault()
@@ -102,23 +78,13 @@ export default function Login({ isConfigured, onGoogleSignIn, onGoogleIdToken, o
           <span className="h-px bg-hb-border flex-1" />
         </div>
 
-        {/* Without a Google client ID, fall back to Supabase's redirect sign-in */}
-        {googleClientId ? (
-          <GoogleSignInButton
-            disabled={!isConfigured || isSigningIn}
-            onCredential={handleGoogleCredential}
-            onError={(loadError) => setError(loadError.message)}
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={!isConfigured || isSigningIn}
-            className="w-full py-3 rounded-lg bg-hb-surface border border-hb-input text-hb-text font-semibold hover:bg-hb-surface2 disabled:opacity-50 transition"
-          >
-            Continue with Google
-          </button>
-        )}
+        <ContinueWithGoogle
+          disabled={!isConfigured || isSigningIn}
+          onGoogleSignIn={onGoogleSignIn}
+          onGoogleIdToken={onGoogleIdToken}
+          onBusy={setIsSigningIn}
+          onError={setError}
+        />
 
         <button
           type="button"

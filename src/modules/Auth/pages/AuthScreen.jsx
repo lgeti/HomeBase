@@ -25,6 +25,8 @@ export default function AuthScreen({ initialMode = 'login', onBack, isConfigured
         <Signup
           isConfigured={isConfigured}
           onSignUp={onSignUp}
+          onGoogleSignIn={onGoogleSignIn}
+          onGoogleIdToken={onGoogleIdToken}
           onSwitchToLogin={() => setMode('login')}
           onBack={onBack}
         />

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import Logo from '../../../components/Logo'
+import ContinueWithGoogle from './ContinueWithGoogle'
 
-export default function Signup({ isConfigured, onSignUp, onSwitchToLogin, onBack }) {
+export default function Signup({ isConfigured, onSignUp, onGoogleSignIn, onGoogleIdToken, onSwitchToLogin, onBack }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -80,6 +81,20 @@ export default function Signup({ isConfigured, onSignUp, onSwitchToLogin, onBack
             {isSubmitting ? 'Creating account...' : 'Create account'}
           </button>
         </form>
+
+        <div className="flex items-center gap-3 text-xs text-hb-text3">
+          <span className="h-px bg-hb-border flex-1" />
+          or
+          <span className="h-px bg-hb-border flex-1" />
+        </div>
+
+        <ContinueWithGoogle
+          disabled={!isConfigured || isSubmitting}
+          onGoogleSignIn={onGoogleSignIn}
+          onGoogleIdToken={onGoogleIdToken}
+          onBusy={setIsSubmitting}
+          onError={setError}
+        />
 
         <button
           type="button"

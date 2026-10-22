@@ -1,18 +1,20 @@
 // What the landing page's pricing table shows. Prices are placeholders until Stripe is set up;
-// the limits the API enforces live on the server, so keep this wording in line with them.
+// the limits come from the API's own plan table, so the page and the API never disagree.
+import { PLANS as LIMITS } from '../../server/src/plans.js'
+
 export const PLANS = [
   {
     id: 'free',
     name: 'Free',
     price: '€0',
     period: 'forever',
-    summary: 'Everything a household needs day to day.',
+    summary: 'Everything a small household needs day to day.',
     features: [
-      'One household with the people you live with',
+      `Up to ${LIMITS.free.members} people in the household`,
       'Shared expenses and who-owes-who',
       'Shopping lists, fridge, pantry and inventory',
       'Repeating chores, shared out between you',
-      'A few receipt scans and recipe ideas each month',
+      `${LIMITS.free.aiCallsPerMonth} AI receipt scans or recipe ideas a month`,
     ],
     cta: 'Start for free',
   },
@@ -21,13 +23,12 @@ export const PLANS = [
     name: 'Pro',
     price: '€4',
     period: 'per household / month',
-    summary: 'For busy homes that want the AI to do the typing.',
+    summary: 'For families, flatshares and homes that let the AI do the typing.',
     features: [
       'Everything in Free',
-      'Unlimited receipt scans that fill the fridge',
-      'Unlimited AI recipe suggestions',
-      'Connect AI assistants like Claude to your household',
-      'Larger households and priority support',
+      'As many people as live with you',
+      `${LIMITS.pro.aiCallsPerMonth} AI receipt scans or recipe ideas a month`,
+      'Use HomeBase from AI assistants like Claude',
     ],
     cta: 'Start free, upgrade later',
     isHighlighted: true,

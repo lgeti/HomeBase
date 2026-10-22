@@ -112,7 +112,10 @@ export default function LandingPage({ onSignIn, onSignUp }) {
                 <Icon name="link" size={22} />
               </span>
               <div>
-                <h3 className="font-semibold">Works with your AI assistant</h3>
+                <h3 className="font-semibold">
+                  Works with your AI assistant
+                  <span className="ml-2 rounded-full bg-hb-primary-tint px-2 py-0.5 text-xs font-semibold text-hb-primary">Pro</span>
+                </h3>
                 <p className="mt-1 text-sm text-hb-text2">
                   Connect Claude or another assistant and ask it to add to the shopping list or log an expense for you.
                 </p>

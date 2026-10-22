@@ -1,5 +1,9 @@
 import { sendError } from './http.js'
+import { createRateLimiter } from './rateLimit.js'
 import { supabase } from './supabase.js'
+
+// Generous for a person using the app (and Claude through MCP), low enough to stop a runaway script
+const allowUserRequest = createRateLimiter({ limit: 300, windowMs: 60 * 1000 })
 
 const getUserFromToken = async (authorizationHeader) => {
   if (!authorizationHeader?.startsWith('Bearer ')) return null
@@ -15,6 +19,9 @@ export const requireAuth = async (request, response, next) => {
   const user = await getUserFromToken(request.headers.authorization)
   if (!user) {
     return sendError(response, 401, 'Unauthorized')
+  }
+  if (!allowUserRequest(user.id)) {
+    return sendError(response, 429, 'Too many requests; slow down and try again shortly')
   }
 
   request.user = user

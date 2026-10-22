@@ -89,18 +89,3 @@ export const parseSuggestions = (answer, fridgeNames = []) => {
     .filter((suggestion) => suggestion.name && suggestion.ingredients.length > 0)
     .slice(0, SUGGESTION_COUNT)
 }
-
-// A small per-household limit so one household cannot use up the free AI quota
-export const createRateLimiter = ({ limit, windowMs }) => {
-  const calls = new Map()
-  return (key, now = Date.now()) => {
-    const recent = (calls.get(key) || []).filter((time) => now - time < windowMs)
-    if (recent.length >= limit) {
-      calls.set(key, recent)
-      return false
-    }
-    recent.push(now)
-    calls.set(key, recent)
-    return true
-  }
-}

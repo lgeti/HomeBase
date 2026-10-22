@@ -2,15 +2,17 @@
 
 ## North Star
 
-HomeBase should become a calm, shared financial home base for two people. It should make everyday household spending easy to capture, easy to understand, and increasingly automatic without turning the product into a dense accounting tool.
+HomeBase should become the calm, shared home base for any household: couples, families and flatmates. It brings shared money, shopping, the fridge and pantry, the household's belongings and chores into one app, and makes everyday upkeep easy to capture, easy to understand, and increasingly automatic without turning into a dense accounting or project tool.
 
-The first version is intentionally household-first: two named people, a small set of clear categories, fast transaction entry, monthly summaries, shared settlement math, and recurring costs. The product should keep that clarity while adding the infrastructure needed for secure accounts, bank imports, budgets, and synchronized data.
+HomeBase is offered as a service anyone can sign up for. Signed-out visitors see a landing page that explains the product and its plans; a new account creates a household, invites the people who live there, and starts with a few tips. There is a **Free** plan that covers everyday household use and a paid **Pro** plan (per household) for heavier AI use such as unlimited receipt scans, recipe suggestions and connecting AI assistants. Payments (Stripe) come later; until then Pro prices on the landing page are placeholders (`src/config/plans.js`).
+
+The product started as a two-person expense tracker. It keeps that clarity — a small set of clear categories, fast entry, shared settlement math — while supporting households of any size and adding the infrastructure needed for secure accounts, plan limits, bank imports, budgets, and synchronized data.
 
 ## Product Principles
 
 ### 1. Keep the household model simple
 
-The current two-person experience is a strength. Preserve the direct language of “who paid?”, “split 50/50”, and “who owes who?” before introducing generalized accounting concepts. The data model should be extensible, but the interface should remain understandable to a household using the app casually.
+A household is a group of people who share a home, whether that is two partners, a family or four flatmates. Preserve the direct language of “who paid?”, “split equally”, and “who owes who?” before introducing generalized accounting concepts. The data model should be extensible, but the interface should remain understandable to a household using the app casually, and should read naturally whether there are two members or six.
 
 ### 2. Make automation trustworthy
 
@@ -33,8 +35,9 @@ The visual system should remain warm, polished, and restrained. Use color for ca
 | 3. Budgets and planning | Users can set limits and understand progress | Add monthly category budgets, progress indicators, remaining amounts, overspend states, budget history, and optional alerts |
 | 4. Bank connection | Users can connect a bank account safely | Add a server-side Enable Banking OAuth/consent flow, Gorenjska Banka selection, callback handling, secure connection records, and a connection status UI |
 | 5. Transaction synchronization | Imported bank data becomes useful and safe | Add account discovery, transaction normalization, stable external IDs, duplicate detection, pending-to-posted reconciliation, manual review, and sync history |
-| 6. Shared household collaboration | Both people see the same current information | Add real-time or near-real-time refresh, conflict handling, activity history, and household member management |
-| 7. Modular home base | Finance is the first module, not the last | Shopping lists, a fridge inventory and chores are planned (2026-10-11; see `BACKLOG.md`). Meal planning and document storage later |
+| 6. Shared household collaboration | Everyone in the household sees the same current information | Add real-time or near-real-time refresh, conflict handling, activity history, and household member management |
+| 7. Modular home base | Finance is the first module, not the last | Shopping lists, fridge and pantry with recipe suggestions, inventory, chores and receipt scanning are built (see `docs/Features.md`). Meal planning and document storage later |
+| 8. Public service | Anyone can find, sign up for and pay for HomeBase | Landing page with Free vs Pro pricing, onboarding (household, invite, tips), per-household isolation and plan limits on the API, then Stripe billing for Pro |
 
 ## Recommended Technical Direction
 

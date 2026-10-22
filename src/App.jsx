@@ -11,11 +11,13 @@ import { useRecipesApi } from './core/hooks/useRecipesApi'
 import { useShoppingApi } from './core/hooks/useShoppingApi'
 import { getJoinedMembers } from './core/utils/calculations'
 import { getPendingAuthorization } from './core/utils/pendingAuthorization'
+import { hasPendingInvite } from './core/utils/pendingInvite'
 import { AddTransactionSheetWrapper } from './components/AddTransactionSheet'
 import BottomNav from './components/BottomNav'
 import HouseholdErrorScreen from './components/HouseholdErrorScreen'
 import Icon from './components/Icon'
 import LoadingScreen from './components/LoadingScreen'
+import Onboarding from './components/Onboarding'
 import ProfileSetup from './components/ProfileSetup'
 import AuthScreen from './modules/Auth/pages/AuthScreen'
 import ConnectAppScreen from './modules/Auth/pages/ConnectAppScreen'
@@ -29,6 +31,7 @@ import RecipeForm from './modules/Fridge/components/RecipeForm'
 import FridgeView from './modules/Fridge/pages/FridgeView'
 import RecipesView from './modules/Fridge/pages/RecipesView'
 import HouseholdView from './modules/Household/pages/HouseholdView'
+import LandingPage from './modules/Landing/pages/LandingPage'
 import InventoryItemForm from './modules/Inventory/components/InventoryItemForm'
 import InventoryView from './modules/Inventory/pages/InventoryView'
 import ImportForm from './modules/Shopping/components/ImportForm'
@@ -77,6 +80,11 @@ export default function App() {
   })
   const [apiError, setApiError] = useState('')
   const [authorizationId, setAuthorizationId] = useState(getPendingAuthorization)
+  // Signed-out visitors see the landing page until they pick sign in or sign up ('login' | 'signup').
+  // Someone arriving from an invite link or an app's connect request goes straight to signing in.
+  const [authMode, setAuthMode] = useState(() => (hasPendingInvite() || authorizationId ? 'login' : null))
+  // Set after creating a household, so the invite step and tips show before the app
+  const [isOnboarding, setIsOnboarding] = useState(false)
   // What the bottom sheet shows: { type: 'expense' | 'item' | 'fridge' | 'recipe' | 'inventory' | 'chore' | 'import', record } with the record being edited, or null
   const [sheet, setSheet] = useState(null)
   const [activeView, setActiveView] = useState('money')
@@ -89,6 +97,7 @@ export default function App() {
   // Errors belong to the previous account once someone else signs in
   useEffect(() => {
     setApiError('')
+    setIsOnboarding(false)
   }, [authUserId])
 
   const handleProfileSet = async (profile) => {
@@ -96,6 +105,7 @@ export default function App() {
 
     try {
       await createHousehold(profile)
+      setIsOnboarding(true)
     } catch (error) {
       setApiError(error.message)
     }
@@ -240,8 +250,13 @@ export default function App() {
   if (householdLoading) return <LoadingScreen />
 
   if (!authUser) {
+    if (!authMode) return <LandingPage onSignIn={() => setAuthMode('login')} onSignUp={() => setAuthMode('signup')} />
+
     return (
       <AuthScreen
+        key={authMode}
+        initialMode={authMode}
+        onBack={() => setAuthMode(null)}
         isConfigured={isConfigured}
         onGoogleSignIn={signInWithGoogle}
         onGoogleIdToken={signInWithGoogleIdToken}
@@ -271,6 +286,10 @@ export default function App() {
         errorMessage={apiError || inviteError}
       />
     )
+  }
+
+  if (isOnboarding) {
+    return <Onboarding household={household} onHouseholdChange={refreshHousehold} onFinish={() => setIsOnboarding(false)} />
   }
 
   // All members, for naming the payer of older expenses; only joined members pay and share new ones

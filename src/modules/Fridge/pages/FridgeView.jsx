@@ -10,17 +10,22 @@ const EXPIRY_COLORS = {
   ok: 'text-hb-text2',
 }
 
-// Asks where a used-up item goes: onto a shopping list, or just out of the fridge
-function UsedUpPanel({ item, lists, onConfirm, onCancel }) {
+const BAR_BUTTON = 'rounded-lg border border-hb-border bg-hb-surface px-3 py-1.5 text-sm font-semibold text-hb-text disabled:opacity-60'
+const BAR_PRIMARY = 'rounded-lg bg-hb-primary px-3 py-1.5 text-sm font-semibold text-hb-on-primary disabled:opacity-60'
+
+// Shown while items are ticked: mark them all used up (optionally onto a shopping list) or move them
+function SelectionBar({ count, lists, otherPlace, onUsedUp, onMove, onClear }) {
+  const [step, setStep] = useState('actions')
   const [listId, setListId] = useState(lists[0]?.id || '')
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const noun = count === 1 ? '1 item' : `${count} items`
 
-  const confirm = async (chosenListId) => {
+  const run = async (action) => {
     setError('')
     setIsSaving(true)
     try {
-      await onConfirm(item, chosenListId)
+      await action()
     } catch (failure) {
       setError(friendlySaveError(failure))
       setIsSaving(false)
@@ -28,76 +33,98 @@ function UsedUpPanel({ item, lists, onConfirm, onCancel }) {
   }
 
   return (
-    <div className="space-y-2.5 rounded-2xl border border-hb-primary/30 bg-hb-primary-tint px-3.5 py-3">
-      <p className="text-sm text-hb-text">
-        <span className="font-semibold">{item.name}</span> is used up. Add it to a shopping list?
-      </p>
-      {lists.length > 0 && (
-        <div>
-          <label htmlFor={`usedUpList-${item.id}`} className="sr-only">Shopping list</label>
-          <select
-            id={`usedUpList-${item.id}`}
-            value={listId}
-            onChange={(event) => setListId(event.target.value)}
-            className="w-full rounded-xl border border-hb-input bg-hb-field px-3 py-2.5 text-sm text-hb-text focus:outline-none focus:ring-2 focus:ring-hb-primary"
-          >
-            {lists.map((list) => (
-              <option key={list.id} value={list.id}>{list.name}</option>
-            ))}
-          </select>
-        </div>
+    <div className="sticky top-0 z-10 space-y-2.5 rounded-2xl border border-hb-primary/30 bg-hb-primary-tint px-3.5 py-3">
+      {step === 'usedUp' ? (
+        <>
+          <p className="text-sm text-hb-text">
+            <span className="font-semibold">{noun}</span> used up. Add {count === 1 ? 'it' : 'them'} to a shopping list?
+          </p>
+          {lists.length > 0 && (
+            <div>
+              <label htmlFor="usedUpList" className="sr-only">Shopping list</label>
+              <select
+                id="usedUpList"
+                value={listId}
+                onChange={(event) => setListId(event.target.value)}
+                className="w-full rounded-xl border border-hb-input bg-hb-field px-3 py-2.5 text-sm text-hb-text focus:outline-none focus:ring-2 focus:ring-hb-primary"
+              >
+                {lists.map((list) => (
+                  <option key={list.id} value={list.id}>{list.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {error && <p role="alert" className="text-xs text-hb-danger">{error}</p>}
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" onClick={() => setStep('actions')} className={`${BAR_BUTTON} text-hb-text2`}>
+              Back
+            </button>
+            <button type="button" disabled={isSaving} onClick={() => run(() => onUsedUp(null))} className={BAR_BUTTON}>
+              Just remove
+            </button>
+            {lists.length > 0 && (
+              <button type="button" disabled={isSaving} onClick={() => run(() => onUsedUp(listId))} className={BAR_PRIMARY}>
+                Add to list
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-hb-text">{noun} selected</p>
+            <button type="button" onClick={onClear} className="text-sm font-semibold text-hb-text2 hover:text-hb-text">
+              Cancel
+            </button>
+          </div>
+          {error && <p role="alert" className="text-xs text-hb-danger">{error}</p>}
+          <div className="flex flex-wrap justify-end gap-2">
+            <button type="button" disabled={isSaving} onClick={() => run(onMove)} className={BAR_BUTTON}>
+              Move {otherPlace.to}
+            </button>
+            <button type="button" disabled={isSaving} onClick={() => setStep('usedUp')} className={BAR_PRIMARY}>
+              Used up
+            </button>
+          </div>
+        </>
       )}
-      {error && <p role="alert" className="text-xs text-hb-danger">{error}</p>}
-      <div className="flex flex-wrap justify-end gap-2">
-        <button type="button" onClick={onCancel} className="rounded-lg border border-hb-border bg-hb-surface px-3 py-1.5 text-sm font-semibold text-hb-text2">
-          Cancel
-        </button>
-        <button
-          type="button"
-          disabled={isSaving}
-          onClick={() => confirm(null)}
-          className="rounded-lg border border-hb-border bg-hb-surface px-3 py-1.5 text-sm font-semibold text-hb-text disabled:opacity-60"
-        >
-          Just remove
-        </button>
-        {lists.length > 0 && (
-          <button
-            type="button"
-            disabled={isSaving}
-            onClick={() => confirm(listId)}
-            className="rounded-lg bg-hb-primary px-3 py-1.5 text-sm font-semibold text-hb-on-primary disabled:opacity-60"
-          >
-            Add to list
-          </button>
-        )}
-      </div>
     </div>
   )
 }
 
-function FridgeRow({ item, today, onEdit, onUsedUp }) {
+function FridgeRow({ item, today, isSelected, isSelecting, onEdit, onToggle }) {
   const state = freshness(item, today)
   const label = expiryLabel(item, today)
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-hb-border bg-hb-surface px-3.5 py-3">
+    <div
+      className={`flex items-center gap-3 rounded-2xl border px-3.5 py-3 transition ${
+        isSelected ? 'border-hb-primary bg-hb-primary-tint' : 'border-hb-border bg-hb-surface'
+      }`}
+    >
       <button
         type="button"
-        onClick={() => onEdit(item)}
+        role="checkbox"
+        aria-checked={isSelected}
+        aria-label={`Select ${item.name}`}
+        onClick={() => onToggle(item)}
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-hb-primary ${
+          isSelected ? 'border-hb-primary bg-hb-primary text-hb-on-primary' : 'border-hb-input text-transparent hover:border-hb-primary'
+        }`}
+      >
+        <Icon name="check" size={14} />
+      </button>
+      <button
+        type="button"
+        // While picking items, tapping anywhere on a row ticks it instead of opening it
+        onClick={() => (isSelecting ? onToggle(item) : onEdit(item))}
         className="flex-1 min-w-0 text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-hb-primary"
-        aria-label={`Edit ${item.name}`}
+        aria-label={isSelecting ? `Select ${item.name}` : `Edit ${item.name}`}
       >
         <p className="text-[15px] font-semibold text-hb-text truncate">{item.name}</p>
         {label && <p className={`text-xs ${EXPIRY_COLORS[state]}`}>{label}</p>}
         {item.quantity && <p className="text-xs text-hb-text2 truncate">{item.quantity}</p>}
         {item.note && <p className="text-xs text-hb-text3 truncate">{item.note}</p>}
-      </button>
-      <button
-        type="button"
-        onClick={() => onUsedUp(item)}
-        className="shrink-0 rounded-full border border-hb-input px-3 py-1.5 text-xs font-semibold text-hb-text2 hover:border-hb-primary hover:text-hb-primary transition"
-      >
-        Used up
       </button>
     </div>
   )
@@ -111,17 +138,20 @@ const TABS = [
 ]
 
 // The Home section: the fridge's contents, or `recipesView` / `inventoryView` on those tabs
-export default function FridgeView({ tab, onTabChange, recipesView, inventoryView, items, lists, isLoading, error, onQuickAdd, onEditItem, onUsedUp }) {
-  const [usedUpId, setUsedUpId] = useState(null)
+export default function FridgeView({ tab, onTabChange, recipesView, inventoryView, items, lists, isLoading, error, onQuickAdd, onEditItem, onUsedUp, onMove }) {
+  const [selectedIds, setSelectedIds] = useState([])
   const [quickName, setQuickName] = useState('')
   const [quickError, setQuickError] = useState('')
   const today = todayDateString()
   // The Fridge and Pantry tabs show the same list for their own place
   const location = tab === 'pantry' ? 'pantry' : 'fridge'
+  const otherLocation = location === 'fridge' ? 'pantry' : 'fridge'
   const place = LOCATIONS[location]
   const shown = itemsIn(items, location)
   const { useSoon, rest } = groupFridgeItems(shown, today)
   const useSoonAll = groupFridgeItems(items, today).useSoon.length
+  // Ticks only count for items still on this tab, so a live update can't act on items that moved away
+  const selected = shown.filter((item) => selectedIds.includes(item.id))
 
   const quickAdd = async (event) => {
     event.preventDefault()
@@ -137,17 +167,32 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
     }
   }
 
-  const confirmUsedUp = async (item, listId) => {
-    await onUsedUp(item, listId)
-    setUsedUpId(null)
+  const toggleSelected = (item) =>
+    setSelectedIds((current) => (current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id]))
+
+  const clearSelection = () => setSelectedIds([])
+
+  const usedUpSelected = async (listId) => {
+    await Promise.all(selected.map((item) => onUsedUp(item, listId)))
+    clearSelection()
   }
 
-  const renderItem = (item) =>
-    item.id === usedUpId ? (
-      <UsedUpPanel key={item.id} item={item} lists={lists} onConfirm={confirmUsedUp} onCancel={() => setUsedUpId(null)} />
-    ) : (
-      <FridgeRow key={item.id} item={item} today={today} onEdit={onEditItem} onUsedUp={(chosen) => setUsedUpId(chosen.id)} />
-    )
+  const moveSelected = async () => {
+    await Promise.all(selected.map((item) => onMove(item, otherLocation)))
+    clearSelection()
+  }
+
+  const renderItem = (item) => (
+    <FridgeRow
+      key={item.id}
+      item={item}
+      today={today}
+      isSelected={selectedIds.includes(item.id)}
+      isSelecting={selected.length > 0}
+      onEdit={onEditItem}
+      onToggle={toggleSelected}
+    />
+  )
 
   return (
     <div className="h-full overflow-y-auto pb-28">
@@ -169,7 +214,10 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
                 type="button"
                 role="tab"
                 aria-selected={isOn}
-                onClick={() => onTabChange(option.id)}
+                onClick={() => {
+                  clearSelection()
+                  onTabChange(option.id)
+                }}
                 className={`truncate rounded-[10px] px-1 py-2 text-sm transition ${
                   isOn ? 'bg-hb-seg-on text-hb-text font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.12)]' : 'text-hb-text2 font-medium'
                 }`}
@@ -184,29 +232,40 @@ export default function FridgeView({ tab, onTabChange, recipesView, inventoryVie
           <>
             {error && <p className="rounded-xl bg-hb-danger-bg px-3 py-2 text-sm text-hb-danger">{error}</p>}
 
-            <form onSubmit={quickAdd} className="flex gap-2">
-              <label htmlFor="fridgeQuickAdd" className="sr-only">Add {place.to}</label>
-              <input
-                id="fridgeQuickAdd"
-                type="text"
-                value={quickName}
-                onChange={(event) => {
-                  setQuickName(event.target.value)
-                  setQuickError('')
-                }}
-                maxLength={120}
-                placeholder={`Add ${place.to}…`}
-                className="min-w-0 flex-1 rounded-xl border border-hb-input bg-hb-field px-3 py-[11px] text-sm text-hb-text focus:outline-none focus:ring-2 focus:ring-hb-primary"
+            {selected.length > 0 ? (
+              <SelectionBar
+                count={selected.length}
+                lists={lists}
+                otherPlace={LOCATIONS[otherLocation]}
+                onUsedUp={usedUpSelected}
+                onMove={moveSelected}
+                onClear={clearSelection}
               />
-              <button
-                type="submit"
-                disabled={!quickName.trim()}
-                aria-label={`Add ${place.to}`}
-                className="flex w-11 shrink-0 items-center justify-center rounded-xl bg-hb-primary text-hb-on-primary disabled:opacity-40"
-              >
-                <Icon name="plus" size={20} />
-              </button>
-            </form>
+            ) : (
+              <form onSubmit={quickAdd} className="flex gap-2">
+                <label htmlFor="fridgeQuickAdd" className="sr-only">Add {place.to}</label>
+                <input
+                  id="fridgeQuickAdd"
+                  type="text"
+                  value={quickName}
+                  onChange={(event) => {
+                    setQuickName(event.target.value)
+                    setQuickError('')
+                  }}
+                  maxLength={120}
+                  placeholder={`Add ${place.to}…`}
+                  className="min-w-0 flex-1 rounded-xl border border-hb-input bg-hb-field px-3 py-[11px] text-sm text-hb-text focus:outline-none focus:ring-2 focus:ring-hb-primary"
+                />
+                <button
+                  type="submit"
+                  disabled={!quickName.trim()}
+                  aria-label={`Add ${place.to}`}
+                  className="flex w-11 shrink-0 items-center justify-center rounded-xl bg-hb-primary text-hb-on-primary disabled:opacity-40"
+                >
+                  <Icon name="plus" size={20} />
+                </button>
+              </form>
+            )}
             {quickError && <p role="alert" className="text-xs text-hb-danger">{quickError}</p>}
 
             {isLoading && shown.length === 0 ? (

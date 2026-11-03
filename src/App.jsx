@@ -401,6 +401,7 @@ export default function App() {
             onQuickAdd={fridge.addItem}
             onEditItem={(item) => setSheet({ type: 'fridge', record: item })}
             onUsedUp={handleUsedUp}
+            onMove={(item, location) => fridge.updateItem(item.id, { location })}
           />
         ) : activeView === 'chores' ? (
           <ChoresView

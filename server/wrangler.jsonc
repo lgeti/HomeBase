@@ -8,8 +8,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "SUPABASE_URL": "https://uqbajkgaivtqiiwexwjl.supabase.co",
-    "PUBLIC_API_URL": "https://homebase-api.REPLACE-WITH-SUBDOMAIN.workers.dev"
+    "PUBLIC_API_URL": "https://homebase-api.igetigames-363.workers.dev"
   },
+  // One public address; no extra per-version preview addresses
+  "workers_dev": true,
+  "preview_urls": false,
   // Logs show in the Cloudflare dashboard, like Render's
   "observability": { "enabled": true }
 }

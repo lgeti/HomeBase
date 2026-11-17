@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { createRateLimiter, limitPerAddress } from '../src/rateLimit.js'
+import { INTERNAL_HEADER, internalToken } from '../src/runtime.js'
 
 describe('createRateLimiter', () => {
   it('allows a few calls per window per key', () => {
@@ -21,11 +22,11 @@ describe('createRateLimiter', () => {
 })
 
 describe('limitPerAddress', () => {
-  const run = (middleware, ip) => {
+  const run = (middleware, ip, headers = {}) => {
     let status = null
     let passed = false
     const response = { set() {}, status(code) { status = code; return this }, json() {} }
-    middleware({ ip }, response, () => { passed = true })
+    middleware({ ip, headers }, response, () => { passed = true })
     return { passed, status }
   }
 
@@ -38,6 +39,21 @@ describe('limitPerAddress', () => {
 
   it('never limits the API calling itself for the MCP tools', () => {
     const middleware = limitPerAddress({ limit: 1, windowMs: 60000 })
-    for (let index = 0; index < 3; index += 1) assert.equal(run(middleware, '127.0.0.1').passed, true)
+    for (let index = 0; index < 3; index += 1) {
+      assert.equal(run(middleware, '127.0.0.1', { [INTERNAL_HEADER]: internalToken() }).passed, true)
+    }
+  })
+
+  it('does not trust a guessed internal marker', () => {
+    const middleware = limitPerAddress({ limit: 1, windowMs: 60000 })
+    assert.equal(run(middleware, '127.0.0.1', { [INTERNAL_HEADER]: 'guess' }).passed, true)
+    assert.equal(run(middleware, '127.0.0.1', { [INTERNAL_HEADER]: 'guess' }).status, 429)
+  })
+
+  it('limits by the address Cloudflare reports', () => {
+    const middleware = limitPerAddress({ limit: 1, windowMs: 60000 })
+    assert.equal(run(middleware, '127.0.0.1', { 'cf-connecting-ip': '203.0.113.7' }).passed, true)
+    assert.equal(run(middleware, '127.0.0.1', { 'cf-connecting-ip': '203.0.113.7' }).status, 429)
+    assert.equal(run(middleware, '127.0.0.1', { 'cf-connecting-ip': '203.0.113.8' }).passed, true)
   })
 })

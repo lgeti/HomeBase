@@ -4,7 +4,7 @@ import Logo from './Logo'
 export default function LoadingScreen() {
   const [isSlow, setIsSlow] = useState(false)
 
-  // The API sleeps when idle (Render free plan) and can take 20+ seconds to wake, so explain long waits
+  // The API (Cloudflare Workers) answers at once, so a long wait is usually a slow connection
   useEffect(() => {
     const timer = setTimeout(() => setIsSlow(true), 3000)
     return () => clearTimeout(timer)
@@ -18,7 +18,7 @@ export default function LoadingScreen() {
         <p className="text-hb-text2 mt-2">Loading...</p>
         {isSlow && (
           <p className="text-sm text-hb-text2 mt-3 max-w-xs mx-auto">
-            Waking up the server. After a quiet period this can take up to a minute.
+            This is taking longer than usual. Check your internet connection.
           </p>
         )}
       </div>

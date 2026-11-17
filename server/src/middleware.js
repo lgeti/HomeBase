@@ -1,6 +1,7 @@
 import { sendError } from './http.js'
 import { hasFeature, isOverQuota, monthStartUtc, planError, planOf, usageLimit } from './plans.js'
 import { createRateLimiter } from './rateLimit.js'
+import { runInBackground } from './runtime.js'
 import { supabase } from './supabase.js'
 
 // Generous for a person using the app (and Claude through MCP), low enough to stop a runaway script
@@ -112,10 +113,10 @@ export const checkQuota = (kind) => async (request, response, next) => {
 
   response.on('finish', () => {
     if (response.statusCode >= 400) return
-    supabase
+    runInBackground(supabase
       .from('usage_events')
       .insert({ household_id: household.household_id, kind })
-      .then(({ error }) => { if (error) console.error('Could not record usage:', error.message) })
+      .then(({ error }) => { if (error) console.error('Could not record usage:', error.message) }))
   })
   request.planId = planId
   next()

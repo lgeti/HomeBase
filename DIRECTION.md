@@ -41,7 +41,7 @@ The visual system should remain warm, polished, and restrained. Use color for ca
 
 ## Recommended Technical Direction
 
-The current repository is a React + Vite + Tailwind client on GitHub Pages, an Express API on Render, and Supabase for authentication and PostgreSQL. All data is stored in the database and scoped to the authenticated household by the API; the browser no longer stores expenses locally.
+The current repository is a React + Vite + Tailwind client on GitHub Pages, an Express API on Cloudflare Workers, and Supabase for authentication and PostgreSQL. All data is stored in the database and scoped to the authenticated household by the API; the browser no longer stores expenses locally.
 
 The next production architecture should use a server-backed application with a relational database. The core domain should be organized around `users`, `households`, `household_members`, `transactions`, `categories`, `budgets`, `bank_connections`, `bank_accounts`, and `sync_runs`. Imported transactions should retain both normalized fields for HomeBase and the provider's external identifiers for reconciliation.
 

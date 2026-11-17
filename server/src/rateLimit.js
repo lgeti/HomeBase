@@ -1,9 +1,11 @@
 import { sendError } from './http.js'
+import { INTERNAL_HEADER, internalToken } from './runtime.js'
 
 // Keys not seen for a whole window are forgotten once this many are tracked, so memory stays small
 const MAX_TRACKED_KEYS = 5000
 
-// Allows `limit` calls per key within `windowMs`. In memory, which is fine for the single API instance.
+// Allows `limit` calls per key within `windowMs`. In memory, so on Workers each running copy of the API
+// counts on its own: a guard against runaway scripts, not an exact quota.
 export const createRateLimiter = ({ limit, windowMs }) => {
   const calls = new Map()
 
@@ -26,14 +28,15 @@ export const createRateLimiter = ({ limit, windowMs }) => {
   }
 }
 
-const isLoopback = (ip) => ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1'
+// Cloudflare puts the visitor's address in CF-Connecting-IP; on Node it is the socket's
+const addressOf = (request) => request.headers?.['cf-connecting-ip'] || request.ip
 
-// Per-address limit for every request, before sign-in is checked. The MCP tools call the API over loopback;
-// those are skipped here because the /mcp request that started them was already counted.
+// Per-address limit for every request, before sign-in is checked. The MCP tools' own calls (see runtime.js)
+// are skipped here because the /mcp request that started them was already counted.
 export const limitPerAddress = ({ limit, windowMs }) => {
   const allow = createRateLimiter({ limit, windowMs })
   return (request, response, next) => {
-    if (isLoopback(request.ip) || allow(request.ip)) return next()
+    if (request.headers?.[INTERNAL_HEADER] === internalToken() || allow(addressOf(request))) return next()
     response.set('Retry-After', String(Math.ceil(windowMs / 1000)))
     sendError(response, 429, 'Too many requests; slow down and try again shortly')
   }

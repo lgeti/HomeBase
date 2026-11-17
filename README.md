@@ -12,7 +12,7 @@ A shared expense tracker for a household: log who paid for what, see monthly tot
 | Part | Where it runs | Code |
 | --- | --- | --- |
 | Web app (React, Vite, Tailwind) | GitHub Pages | `src/` |
-| API (Express) | Render | `server/src/` |
+| API (Express) | Cloudflare Workers | `server/src/` (`worker.js` in production, `server.js` locally) |
 | Sign-in and database | Supabase | `server/db/` (SQL migrations) |
 
 The API uses Supabase's secret key and checks every request itself; the browser never talks to the database directly.
@@ -66,6 +66,6 @@ Migrations live in `server/db/` and are numbered. Run each new one in the Supaba
 
 ## Deploying
 
-- **API:** Render deploys automatically when a pull request is merged into `main`.
+- **API:** Cloudflare Workers Builds deploys `server/` automatically when a pull request is merged into `main`. To deploy by hand: `npm run deploy --prefix server`. Settings are in `server/wrangler.jsonc`; secrets (`SUPABASE_SECRET_KEY`, `GEMINI_API_KEY`) are set with `npx wrangler secret put <NAME>` from `server/`. To try the API on the Workers runtime locally, put the dev secrets in `server/.dev.vars` and run `npm run dev:worker --prefix server`.
 - **Web app:** from `main`, run `npm run deploy`. It builds with the production settings in `.env` and publishes to GitHub Pages.
   It first checks that this folder is on `main`, has no uncommitted changes and matches GitHub exactly (`scripts/check-deploy.js`), and stops with what to do if not. After merging a PR, pull before deploying.

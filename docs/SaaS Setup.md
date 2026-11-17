@@ -6,7 +6,7 @@ The plans and limits are built (PR #63: Free = 2 members and 10 AI calls a month
 
 - [ ] Create a Stripe account and turn on test mode
 - [ ] Create a **Pro** product with a monthly price, and note its **price ID**
-- [ ] Put the test **secret key** and, later, the **webhook signing secret** in the server environment (Render, and `server/.env.development.local` for dev)
+- [ ] Put the test **secret key** and, later, the **webhook signing secret** in the server environment (`npx wrangler secret put` in `server/`, and `server/.env.development.local` for dev)
 - [ ] Code, in a new PR:
   - a checkout endpoint that starts Stripe Checkout for a household
   - a webhook that sets `households.plan`, `plan_status`, `current_period_end`, `stripe_customer_id` and `stripe_subscription_id` (the columns already exist from `014_plans.sql`)
@@ -16,7 +16,7 @@ The plans and limits are built (PR #63: Free = 2 members and 10 AI calls a month
 
 ## 2. Hosting off the free tiers
 
-- [ ] **Render:** move the API to a paid plan (Starter). The free plan sleeps, so the first load can take up to a minute
+- [x] **API:** moved from Render to Cloudflare Workers, which never sleeps. The free plan allows 100,000 requests a day and 10 ms of CPU per request; move to Workers Paid ($5/month) if either gets tight
 - [ ] **Supabase:** move prod to Pro, for backups and no pausing
 - [ ] **GitHub Pages** can stay for the web app
 

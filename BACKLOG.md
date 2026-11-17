@@ -81,7 +81,7 @@ The bottom bar becomes **Money · Shopping · ＋ · Fridge · Chores**.
 
 ### AI provider and cost (decided 2026-10-12: Google Gemini, free tier)
 
-- The model is called from the API server only, with the key in Render's environment settings, never in the app.
+- The model is called from the API server only, with the key stored as a Cloudflare Workers secret, never in the app.
 - Anthropic's API is pay-as-you-go; a Claude subscription does not cover an app's API use. A small model (Claude Haiku) costs well under a cent per suggestion, so a household's use should cost cents a month. A monthly spending limit can be set in the Anthropic console.
 - Free alternative: some providers (for example Google's Gemini API) have a free tier with rate limits; free tiers may use the requests to train their models.
 - The provider sits behind one small server module, so it can be switched later.
@@ -110,5 +110,5 @@ One of the main features: one photo of a receipt adds the expense and fills the 
 
 ## Not yet prioritized
 
-- **The API sleeps when idle.** Render's free plan stops the API after about 15 idle minutes, and the next visit waits about 20 seconds (measured: 22 s cold, 0.13 s warm). The app shows a "waking up" message after 3 seconds. Fixes if it becomes a problem: Render's paid plan, or a scheduled ping that keeps it awake.
+- **API on the Cloudflare Workers free plan (moved from Render on 2026-11-17, which slept when idle).** Limits: 100,000 requests a day and 10 ms of CPU per request. Waiting on Supabase or Gemini doesn't count toward the CPU limit, but parsing a large receipt photo might. The rate limits are counted per running copy of the API, so they are a rough guard, not an exact quota. If either limit gets tight: Workers Paid ($5/month).
 - **No database access rules (RLS policies) on app tables: decided to skip for now (2026-10-10).** Row level security is on with no policies, so browsers cannot touch the app's tables at all; only the API (with the secret key) can, and it checks every request. Policies would only add a second layer. The one rule that exists (2026-10-12) lets household members listen on their household's live-update channel (`realtime.messages`); it opens no app data.

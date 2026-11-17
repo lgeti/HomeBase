@@ -1,0 +1,57 @@
+import cors from 'cors'
+import express from 'express'
+import { sendError } from './http.js'
+import { limitPerAddress } from './rateLimit.js'
+import { liveUpdates } from './realtime.js'
+import choresRouter from './routes/chores.js'
+import expensesRouter from './routes/expenses.js'
+import fridgeRouter from './routes/fridge.js'
+import householdsRouter from './routes/households.js'
+import inventoryRouter from './routes/inventory.js'
+import invitationsRouter from './routes/invitations.js'
+import mcpRouter from './routes/mcp.js'
+import receiptsRouter from './routes/receipts.js'
+import recipeSuggestionsRouter from './routes/recipeSuggestions.js'
+import recipesRouter from './routes/recipes.js'
+import shoppingRouter from './routes/shopping.js'
+import shoppingImportRouter from './routes/shoppingImport.js'
+
+// Websites allowed to call the API from a browser: the live app and local development.
+// Set CORS_ORIGINS (comma-separated) to override. Requests still need a valid sign-in token either way.
+const allowedOrigins = (process.env.CORS_ORIGINS || 'https://lgeti.github.io,http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+
+// The whole API. server.js runs it on Node for local development, worker.js on Cloudflare Workers.
+export const app = express()
+
+app.use(cors({ origin: allowedOrigins }))
+// Before sign-in is checked, so unsigned floods are turned away without asking Supabase about each one
+app.use(limitPerAddress({ limit: 600, windowMs: 60 * 1000 }))
+// Announces successful changes to the household's other devices (see realtime.js)
+app.use(liveUpdates)
+// Before the 1 MB body limit: receipt photos are larger and the receipt route reads its own body
+app.use(receiptsRouter)
+app.use(express.json({ limit: '1mb' }))
+
+app.get('/health', (request, response) => {
+  response.json({ status: 'ok' })
+})
+
+app.use(householdsRouter)
+app.use(invitationsRouter)
+app.use(expensesRouter)
+app.use(shoppingRouter)
+app.use(shoppingImportRouter)
+app.use(fridgeRouter)
+app.use(inventoryRouter)
+app.use(choresRouter)
+app.use(recipesRouter)
+app.use(recipeSuggestionsRouter)
+// Claude's way in (see mcp.js)
+app.use(mcpRouter)
+
+app.use((request, response) => {
+  sendError(response, 404, 'Route not found')
+})

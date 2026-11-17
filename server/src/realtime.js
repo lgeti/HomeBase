@@ -1,5 +1,6 @@
 // Live updates: after a change, tell the household's devices which section changed, so they reload it.
 // The message carries no data; the apps fetch what changed through the API as usual.
+import { runInBackground } from './runtime.js'
 
 const CHANGING_METHODS = new Set(['POST', 'PATCH', 'PUT', 'DELETE'])
 
@@ -59,7 +60,9 @@ export const liveUpdates = (request, response, next) => {
   const change = changeFromRequest(request.method, request.path)
   if (change) {
     response.on('finish', () => {
-      if (response.statusCode < 400) announceChange({ ...change, clientId: cleanClientId(request.get('x-homebase-client')) })
+      if (response.statusCode < 400) {
+        runInBackground(announceChange({ ...change, clientId: cleanClientId(request.get('x-homebase-client')) }))
+      }
     })
   }
   next()

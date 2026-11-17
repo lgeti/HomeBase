@@ -1,5 +1,5 @@
 // Fetches a public web page for link import, refusing anything that could reach private networks.
-import { lookup } from 'node:dns/promises'
+import { resolve4, resolve6 } from 'node:dns/promises'
 import { isIP } from 'node:net'
 import { isPrivateAddress } from './linkImport.js'
 
@@ -11,14 +11,20 @@ const USER_AGENT = 'Mozilla/5.0 (compatible; HomeBase/1.0; +https://lgeti.github
 
 export class PageError extends Error {}
 
+// Every address the name points to. Not dns.lookup, which Cloudflare Workers do not have.
+const resolveAll = async (hostname) => {
+  const results = await Promise.allSettled([resolve4(hostname), resolve6(hostname)])
+  return results.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
+}
+
 const assertPublicUrl = async (url) => {
   if (url.protocol !== 'https:') throw new PageError('Only https links can be imported')
   if (url.username || url.password || (url.port && url.port !== '443')) throw new PageError('That link cannot be imported')
 
   const hostname = url.hostname.replace(/^\[|\]$/g, '')
-  const addresses = isIP(hostname) ? [{ address: hostname }] : await lookup(hostname, { all: true }).catch(() => [])
+  const addresses = isIP(hostname) ? [hostname] : await resolveAll(hostname)
   if (addresses.length === 0) throw new PageError('That website could not be found')
-  if (addresses.some(({ address }) => isPrivateAddress(address))) throw new PageError('That link cannot be imported')
+  if (addresses.some(isPrivateAddress)) throw new PageError('That link cannot be imported')
 }
 
 const readLimited = async (response) => {

@@ -3,12 +3,10 @@ import express from 'express'
 import { sendError } from '../http.js'
 import { createMcpServer } from '../mcp.js'
 import { requirePlan } from '../middleware.js'
+import { fetchApi } from '../runtime.js'
 import { supabase } from '../supabase.js'
 
 const router = express.Router()
-
-// The MCP tools call this same API over the loopback address, as the signed-in person
-const apiBaseUrl = `http://127.0.0.1:${Number(process.env.PORT || 3000)}`
 
 // The address Claude reaches the API at. Set PUBLIC_API_URL in production, where a proxy sits in front.
 const publicUrl = (request) => process.env.PUBLIC_API_URL
@@ -27,8 +25,9 @@ router.get([metadataPath, `${metadataPath}/mcp`], (request, response) => {
   })
 })
 
+// The MCP tools call this same API as the signed-in person (see runtime.js)
 const callApi = (authorization) => async (path, { method = 'GET', body } = {}) => {
-  const response = await fetch(`${apiBaseUrl}${path}`, {
+  const response = await fetchApi(path, {
     method,
     headers: { 'Content-Type': 'application/json', Authorization: authorization },
     body: body === undefined ? undefined : JSON.stringify(body),

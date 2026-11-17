@@ -106,7 +106,7 @@
 - Sign-up with password confirmation; sessions survive a refresh
 - "Forgot your password?" sends a reset email; the link brings you back to choose a new password
 - Sign out from the Household screen
-- While the API is waking up (Render free plan), the loading screen explains the wait after 3 seconds
+- If loading takes more than 3 seconds, the loading screen suggests checking the connection
 
 ## Live updates
 
@@ -131,7 +131,7 @@ React app on GitHub Pages
         |
         | Supabase sign-in token on every request
         v
-Express API on Render  ---->  Supabase Auth and PostgreSQL
+Express API on Cloudflare Workers  ---->  Supabase Auth and PostgreSQL
 ```
 
 Known gaps and planned work are tracked in `BACKLOG.md`.
